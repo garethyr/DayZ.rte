@@ -1,0 +1,14 @@
+IDEAS
+
+2 gangs (blue fists, yellowback vipers)
+	1 has base on island, other has base accessible by truck
+	Fix boat and exit left to get choices:
+		Can go to shipwreck, island, etc.
+	Fix truck and exit right to get different choices:
+		Can go to base, farmhouse (lots of food), etc.
+	From viper base, can steal heli (need to kill them all and loot for fuel or something)
+	With heli, can go left or right for different options:
+		Go right to get to ghost tower and finish
+		Go left to get to somewhere else important?
+		
+	Scene transition choices in vehicles are done with weegee mission framework style stuff.

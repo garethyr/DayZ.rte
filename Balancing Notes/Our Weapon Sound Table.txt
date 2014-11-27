@@ -1,0 +1,30 @@
+Key:
+N - 10
+VVL - 25
+VL - 50
+L - 100
+L/M - 150
+M - 200
+M/H - 250
+H - 300
+VH - 350
+VVH - 400
+
+Makarov PM			L
+.45 Revolver		L/M
+M1911A1				L/M
+G17					L
+
+Crossbow			N
+
+MR43				M
+Winchester 1866		L/M
+Lee Enfield			VH
+AKM					M
+M16A2				M
+MP5SD6				VVL
+M4A1 CCO SD			VL
+Mk 48 Mod 0			H
+M14 AIM				H
+CZ 550				VH
+M107				VH

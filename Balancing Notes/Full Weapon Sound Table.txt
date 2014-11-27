@@ -1,0 +1,58 @@
+G17				L
+M1911				M
+M9				L
+M9 SD				N
+Makarov PM			L/M
+PDW				M
+Revolver			M
+
+Compound Crossbow		N
+
+Double-barreled Shotgun		M
+M1014				M
+Remington 870 (Flashlight)	M
+Winchester 1866			L
+
+Bizon PP-19 SD			VL
+MP5A5				L/M
+MP5SD6				N
+
+AK-74				M
+AKM				H
+AKS-74 Kobra			M
+AKS-74U				M
+FN FAL				H
+FN FAL AN/PVS-4			H
+G36A CAMO			M
+G36C				M
+G36C CAMO			M
+G36K CAMO			M
+L85A2 RIS Holo			H
+Lee Enfield			VH
+M16A2				M
+M16A2 M203			M/H
+M16A4 ACOG			M/H
+M4A1				M
+M4A1 CCO			M
+M4A1 CCO SD			VVL
+M4A1 Holo			M
+M4A3 CCO			M
+Sa58P				H
+Sa58V				H
+Sa58V CCO			H
+Sa58V RCO			H
+
+M240				H
+M249 SAW			H
+Mk 48 Mod 0			H
+
+AS50				M
+CZ 550				VH
+DMR				VH
+M107				VH
+M14 AIM				H
+M24				VH
+M40A3				VH
+SVD CAMO			M
+
+M136				VH

@@ -1,0 +1,19 @@
+Here's what would be ideal to match the A2DZ lists:
+
+1) Civilian/Residential: Bandage, matches, hunting knife, crowbar, light items, drink items, food items, junk items. Firearms would have a smaller chance, like you specified: Makarov PM, Revolver, M1911A1, MR43, Compound Crossbow, Lee Enfield, Winchester 1866, CZ 550 (yup, it's actually a civ spawn in-game). And of course ammo for all these weapons: Makarov PM Magazine, .45 ACP Speedloader, M1911A1 Magazine, 12 Gauge Buckshot (2), Metal Bolts (I changed the name to reflect the addition of 2 bolts now; I haven't gotten around to the quiver sprite yet), Lee Enfield Stripper Clip, .44 Henry Rounds, 9.3x62 Mauser Rounds.
+
+Additionally, there is only a 40% chance that each item will spawn; sometimes you won't find anything. So the random number anywhere between 0 and 0.6 should be nothing, and the rest of items should have their respective proportions allotted to the remaining decimals from 0.61 to 1.0.
+
+If you're wondering where I'm getting this, someone made a DayZ Loot Cheat Sheet from reading the game's code, to get the exact percentages down to each item. Mountain Dew is actually one of the rarest items in the game, it's like an easter egg or something. :)
+
+2) Factory/Industrial: Hatchet, jerry can, matches, hunting knife, crowbar, bandage, light items, food items, drink items, junk items. Firearms: All the same firearms from 1). Ammo: All the same ammo from 1).
+
+3) Medical/Hospital: Bandage, bloodbag, medical box (roof only if you can; it's Loot Area 43), junk items. NO weapons or ammo, and no sustenance here (oddly enough).
+
+4) Military: Bandage, hunting knife, food items, drink items, junk items, light items. Firearms: M67 Grenade, AKM, M16A2, M14 AIM, G17, MP5SD6. Ammo: all ammo from 1) PLUS AKM Magazine, STANAG Magazine, DMR Magazine, G17 Magazine, MP5SD6 Magazine, M240 Belt, M107 Magazine. (even though the guns don't spawn here, these last two ammo items will :P )
+
+5) Barracks (only the last building on the map): Everything from 4) PLUS the M4A1 CCO SD, M107, and Mk 48 Mod 0. Ammo: everything from 4) PLUS the STANAG SD Magazine, M107 Magazine, and M240 Belt (I know, #4 already had these, but I'm reiterating just in case).
+
+
+Also look here:
+http://picacid.com/arma2/loot_en.html

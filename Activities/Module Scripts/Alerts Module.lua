@@ -184,9 +184,55 @@ end
 function Chernarus:GetWeaponAlertStrength(soundlevel)
 	return math.min(self.AlertStrengthLimit, self.AlertValue*soundlevel/self.WeaponAlertValues[self.WeaponAlertStrengthComparator]);
 end
--------------------
---UPDATE FUNCTION--
--------------------
+
+function Chernarus:AlertVisibilityDistance(alertstrength)
+	return alertstrength/self.AlertAwareness;
+end
+--TODO make this also take a maxdist so alerts can trigger things like zombie spawns by being visible within the max spawndist???
+--Return true if there are any visible alerts more than mindist away from the visible position, based on awarenessmod*self:AlertDistance
+function Chernarus:CheckForVisibleAlerts(pos, awarenessmod, mindist)
+	local dist, maxdist, visdist;
+	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
+	
+	for _, alert in pairs(self.AlertTable) do
+		dist = SceneMan:ShortestDistance(pos, alert.pos, true).Magnitude;
+		visdist = self:AlertVisibilityDistance(alert.strength)*awarenessmod; --The maximum visibility distance for the alert
+		if dist >= mindist and dist <= maxdist and dist <= visdist then
+			return true;
+		end
+	end
+	return false;
+end
+function Chernarus:NearestVisibleAlert(pos, awarenessmod, mindist)
+	local dist, maxdist, visdist, target = nil;
+	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
+	
+	for _, alert in pairs(self.AlertTable) do
+		dist = SceneMan:ShortestDistance(pos, alert.pos, true).Magnitude;
+		visdist = self:AlertVisibilityDistance(alert.strength)*awarenessmod; --The maximum visibility distance for the alert
+		if dist >= mindist and dist <= maxdist and dist <= visdist then
+			maxdist = dist;
+			target = alert;
+		end
+	end
+	return target;
+end
+function Chernarus:VisibleAlerts(pos, awarenessmod, mindist)
+	local dist, maxdist, visdist, alerts = {};
+	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
+	
+	for _, alert in pairs(self.AlertTable) do
+		dist = SceneMan:ShortestDistance(pos, alert.pos, true).Magnitude;
+		visdist = self:AlertVisibilityDistance(alert.strength)*awarenessmod; --The maximum visibility distance for the alert
+		if dist >= mindist and dist <= maxdist and dist <= visdist then
+			alerts[#alerts+1] = alert;
+		end
+	end
+	return alerts;
+end
+--------------------
+--UPDATE FUNCTIONS--
+--------------------
 --Main alert function, increases sound upon firing, transfers alert to locations, runs everything else
 function Chernarus:DoAlerts()
 	--Clean the table before doing any alert stuff
@@ -217,7 +263,9 @@ function Chernarus:DoAlerts()
 	--Objective arrows are cleared every frame so this must always be run
 	self:MakeAlertArrows();
 end
-
+--------------------
+--DELETE FUNCTIONS--
+--------------------
 --Clean up the alert table for a variety of reasons
 function Chernarus:DoAlertCleanup()
 	for k, v in pairs(self.AlertTable) do
@@ -239,6 +287,12 @@ function Chernarus:DoAlertCleanup()
 				for _, humantable in pairs(self.HumanTable) do
 					if humantable[v.target.UniqueID] ~= nil then
 						humantable[v.target.UniqueID].alert = false;
+					end
+				end
+				for _, zombie in pairs(self.ZombieTable) do
+					if zombie.targettype == "alert" and zombie.target.val == v then
+						zombie.targettype = "pos";
+						zombie.target.val = v.pos;
 					end
 				end
 			end
@@ -324,7 +378,9 @@ function Chernarus:RemoveDeadHeldAlertItem(item, atype, actor)
 	end
 	return false;
 end
-
+--------------------
+--ACTION FUNCTIONS--
+--------------------
 --Deal with adding to humans' activity levels
 function Chernarus:DoAlertHumanAddActivity()
 	for humankey, tab in pairs(self.HumanTable) do
@@ -483,7 +539,7 @@ function Chernarus:MakeAlertArrows()
 	for _, players in pairs(self.HumanTable.Players) do
 		for __, alert in pairs(self.AlertTable) do
 			--Only add the points if the player is closer than the alert's strength divided by the awareness constant
-			if SceneMan:ShortestDistance(alert.pos, players.actor.Pos, false).Magnitude < alert.strength/(self.AlertAwareness) then
+			if SceneMan:ShortestDistance(alert.pos, players.actor.Pos, false).Magnitude <  self:AlertVisibilityDistance(alert.strength) then
 				--Modify alert's location and change the displayed text if it's mobile
 				local pos = alert.pos;
 				local st = "";
@@ -499,7 +555,7 @@ function Chernarus:MakeAlertArrows()
 				end
 				
 				--Add the objective point
-				self:AddObjectivePoint(st.." Alert\nStrength: "..tostring(math.ceil(alert.strength/1000)).."\nPos: "..tostring(alert.pos).."\nTarget: "..tostring(alert.target)..(alert.light.parent == nil and "" or ("\nLight Parent: "..tostring(alert.light.parent)))..(alert.sound.parent == nil and "" or ("\nSound Parent: "..tostring(alert.sound.parent))), pos, self.PlayerTeam, GameActivity.ARROWDOWN);
+				self:AddObjectivePoint(st.." Alert\nStrength: "..tostring(math.ceil(alert.strength/1000)).."\nPos: "..tostring(alert.pos).."\nBase Pull Distance: "..tostring(self:AlertVisibilityDistance(alert.strength)).."\nTarget: "..tostring(alert.target)..(alert.light.parent == nil and "" or ("\nLight Parent: "..tostring(alert.light.parent)))..(alert.sound.parent == nil and "" or ("\nSound Parent: "..tostring(alert.sound.parent))), pos, self.PlayerTeam, GameActivity.ARROWDOWN);
 			end
 		end
 	end

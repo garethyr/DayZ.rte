@@ -33,7 +33,7 @@ function Chernarus:StartSustenance()
 	self.SustVomitDrainMult = {hunger = 0.75, thirst = 0.75}; --The percentage mult vomiting drains each sust type (0.75 means actor ends up with 75% of previous sust)
 end
 ---------------------
---CREATION FUNCTION--
+--CREATION FUNCTIONS--
 ---------------------
 --Adding an actor to the table
 function Chernarus:AddToSustenanceTable(actor)
@@ -41,11 +41,11 @@ function Chernarus:AddToSustenanceTable(actor)
 	self.SustTable[actor.UniqueID].htimer:Reset();
 	self.SustTable[actor.UniqueID].ttimer:Reset();
 end
--------------------
---UPDATE FUNCTION--
--------------------
+--------------------
+--UPDATE FUNCTIONS--
+--------------------
 --Track stuff for killing
-function Chernarus:DoSustenance()
+function Chernarus:DoSustenance() --TODO refactor this, cleaner update function and make the notification for dead players apply to all humans and call a deletion function in Sust
 	for k, v in pairs (self.SustTable) do
 		--Do movement multipliers, base is 1, the rest are defined in create
 		v.drainMult = 1;
@@ -84,6 +84,9 @@ function Chernarus:DoSustenance()
 		end
 	end
 end
+--------------------
+--ACTION FUNCTIONS--
+--------------------
 --The actual killing
 function Chernarus:NoSustenanceKill(actor, key)
 	local damage = 1;

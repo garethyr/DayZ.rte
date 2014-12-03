@@ -15,7 +15,7 @@ function Chernarus:StartActivity()
 	--START OF CONSTANTS--
 	----------------------
 	self.NumberOfLootAreas = 58; --The number of loot areas, must be updated to match the number of such areas defined in the scene
-	self.NumberOfLootZombieSpawnAreas = 27; --The number of spawn areas for loot zombies, must be updated to match the number of such areas defined in the scene
+	self.NumberOfLootZombieSpawnAreas = 26; --The number of spawn areas for loot zombies, must be updated to match the number of such areas defined in the scene
 	self.ZombieAlertDistance = 300; --The distance a target needs to be within of a zombie for it to stop wandering and move at the target
 
 	---------
@@ -28,23 +28,26 @@ function Chernarus:StartActivity()
 	------------------
 	--A table of humans, key is actor.UniqueId
 	--Keys - Values 
-	--actor, alert = whether or not they have an alert on them and if so the alert, lightOn = whether their flashlight is on or off,
+	--actor, alert - whether or not they have an alert on them and if so the alert, lightOn - whether their flashlight is on or off,
 	--rounds - the number of rounds left in their gun if they have one (USED FOR ALERTS),
-	--activity = {sound = {current - current sound addition value, total - total sound level, timer - a timer for lowering their sound level}
-	--			  light = {current - current light addition value, total - total light level, timer - a timer for lowering their light level}}
+	--activity - {sound - {current - current sound addition value, total - total sound level, timer - a timer for lowering their sound level}
+	--			  light - {current - current light addition value, total - total light level, timer - a timer for lowering their light level}}
 	self.HumanTable = {
 		Players = {},
 		NPCs = {}
 	};
 	--A table of all zombies, key is actor.UniqueId
-	--Keys-Values: actor, target-if it's an emergency zombie, its target, else false.
+	--Keys-Values
+	--actor,
+	--target - {val - the zombie's actor or position target, ttype - the target type (actor or alert or pos),
+	--			startdist - the starting dist to the target, dynamically decreased and used to determine when to remove the zombie's actor target}
 	self.ZombieTable = {};
 	
 	---------------
 	--OTHER STUFF--
 	---------------
 	--Limit of MOIDs allowed in the activity
-	self.MOIDLimit = 200;
+	self.MOIDLimit = 175;
 
 	self:SetTeamFunds(0 , 0);
 
@@ -60,14 +63,14 @@ function Chernarus:StartActivity()
 	--MODULE INCLUSION--
 	--------------------
 	self.IncludeLoot = true;
-	self.IncludeSustenance = true;
-	self.IncludeSpawns = false;
-	self.IncludeDayNight = false;
-	self.IncludeFlashlight = false;
+	self.IncludeSustenance = false;
+	self.IncludeSpawns = true;
+	self.IncludeDayNight = true;
+	self.IncludeFlashlight = true;
 	self.IncludeIcons = true;
-	self.IncludeBehaviours = false;
+	self.IncludeBehaviours = true; --Behaviours requires spawns
 	self.IncludeAudio = false;
-	self.IncludeAlerts = false;
+	self.IncludeAlerts = true;
 	self:DoModuleInclusion();
 	
 	-------------------
@@ -100,7 +103,7 @@ function Chernarus:DoModuleInclusion()
 	if self.IncludeIcons then
 		dofile("DayZ.rte/Activities/Module Scripts/Icons Module.lua");
 	end
-	if self.IncludeBehaviours then
+	if self.IncludeBehaviours and self.IncludeSpawns then --Behaviours requires spawns
 		dofile("DayZ.rte/Activities/Module Scripts/Behaviours Module.lua");
 	end
 	if self.IncludeAudio then
@@ -125,10 +128,13 @@ function Chernarus:DoModuleInitialization()
 	if self.IncludeDayNight then
 		self:StartDayNight();
 	end
+	if self.IncludeFlashlight then
+		self:StartFlashlight(); --Doesn't actually do anything
+	end
 	if self.IncludeIcons then
 		self:StartIcons();
 	end
-	if self.IncludeBehaviours then
+	if self.IncludeBehaviours and self.IncludeSpawns then --Behaviours requires spawns
 		self:StartBehaviours();
 	end
 	if self.IncludeAudio then
@@ -231,9 +237,12 @@ function Chernarus:UpdateActivity()
 		end
 	end
 	if UInputMan:KeyPressed(26) then --Print some stuff
-		print ("Zombies: "..tostring(#self.ZombieTable));
 		local count = 0;
-		for i, v in pairs (self.LootTable) do
+		for k, v in pairs (self.ZombieTable) do
+			count = count + #v;
+		end
+		print ("Zombies: "..tostring(count));
+		for k, v in pairs (self.LootTable) do
 			count = count + #v;
 		end
 		print ("Loot: "..tostring(count));
@@ -301,7 +310,7 @@ function Chernarus:UpdateActivity()
 		
 		--Deal with zombie and NPC behaviours
 		if self.IncludeBehaviours then
-			self:DoZombieActions();
+			self:DoBehaviours();
 		end
 		
 		--Deal with loot actions
@@ -335,32 +344,39 @@ function Chernarus:DoActorChecksAndCleanup()
 		end
 	end
 	for k, v in pairs(self.ZombieTable) do
-		if not MovableMan:IsActor(self.ZombieTable.actor) then
+		if not MovableMan:IsActor(v.actor) then
+			print ("Removing dead zombie from table in Main Script");
 			self.ZombieTable[k] = nil;
 		end
 	end
 end
 -----------------------------------------------------------------------------------------
+-- Sort maxdist and mindist inputs so they parse correctly even if the order is mixed up
+-----------------------------------------------------------------------------------------
+function Chernarus:SortMaxAndMinArguments(dists)
+	local mindist = dists[1];
+	local maxdist = dists[2];
+	--If we have both max and min dists, make sure they're set right
+	if maxdist ~= nil then
+		mindist = math.min(dists[1], dists[2]);
+		maxdist = math.max(dists[1], dists[2]);
+	--Otherwise, the mindist is already set so set the maxdist to a large number
+	else
+		maxdist = SceneMan.SceneWidth*10;
+	end
+	return mindist, maxdist;
+end
+-----------------------------------------------------------------------------------------
 -- Find the nearest human to a point TODO move this to spawn??? Make human and zombie management modules???
 -----------------------------------------------------------------------------------------
 function Chernarus:NearestHuman(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
-	local mindist = arg[1];
-	local maxdist = arg[2];
-	local newdist, target;
-	--If we have both max and min dists, make sure they're set right
-	if maxdist ~= nil then
-		mindist = math.min(arg[1], arg[2]);
-		maxdist = math.max(arg[1], arg[2]);
-	else
-		maxdist = SceneMan.SceneWidth*10;
-		mindist = maxdist;
-	end
-
+	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
+	local dist, target;
 	for _, humantable in pairs(self.HumanTable) do
 		for __, v in pairs(humantable) do
-			newdist = SceneMan:ShortestDistance(pos, v.actor.Pos, false).Magnitude;
-			if maxdist > newdist and maxdist >= mindist then
-				maxdist = newdist;
+			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, true).Magnitude;
+			if dist >= mindist and dist <= maxdist then
+				maxdist = dist;
 				target = v.actor;
 			end
 		end
@@ -371,22 +387,12 @@ end
 -- Find whether or not there are humans less than maxdist away from the passed in pos
 -----------------------------------------------------------------------------------------
 function Chernarus:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
-	local mindist = arg[1];
-	local maxdist = arg[2];
+	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
 	local dist;
-	--If we have both max and min dists, make sure they're set right
-	if maxdist ~= nil then
-		mindist = math.min(arg[1], arg[2]);
-		maxdist = math.max(arg[1], arg[2]);
-	else
-		maxdist = SceneMan.SceneWidth*10;
-		mindist = maxdist;
-	end
-	
 	for _, humantable in pairs(self.HumanTable) do
 		for __, v in pairs(humantable) do
 			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, true).Magnitude;
-			if dist > mindist and dist < maxdist then
+			if dist >= mindist and dist <= maxdist then
 				return true;
 			end
 		end
@@ -417,6 +423,6 @@ function Chernarus:AddToNPCTable(actor)
 	};
 	self:RequestSustenance_AddToSustenanceTable(actor);
 end
-function Chernarus:AddToZombieTable(actor, target)
-	self.ZombieTable[#self.ZombieTable+1] = {actor = actor, target = target};
+function Chernarus:AddToZombieTable(actor, target, targettype, startdist)
+	self.ZombieTable[actor.UniqueID] = {actor = actor, target = {val = target, ttype = targettype, startdist = startdist}};
 end

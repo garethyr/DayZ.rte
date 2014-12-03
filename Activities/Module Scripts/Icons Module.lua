@@ -28,9 +28,9 @@ function Chernarus:StartIcons()
 		["Blood Meter"] = {pos = function(screen) return Vector(SceneMan:GetOffset(screen).X + self.IconMeterSpacing*5, SceneMan:GetOffset(screen).Y + self.IconMeterSpacing*1) end},
 	};
 end
----------------------
---CREATION FUNCTION--
----------------------
+----------------------
+--CREATION FUNCTIONS--
+----------------------
 --Adding an actor to the meter table
 function Chernarus:AddToMeterTable(actor)
 	self.MeterTable[actor.UniqueID] = {};
@@ -45,11 +45,18 @@ function Chernarus:AddToMeterTable(actor)
 		table.insert(self.MeterTable[actor.UniqueID], meter);
 	end
 end
--------------------
---UPDATE FUNCTION--
--------------------
+--------------------
+--UPDATE FUNCTIONS--
+--------------------
 --Update frame and position for all icons
 function Chernarus:DoIcons()
+	self:DoMeters();
+end
+--------------------
+--ACTION FUNCTIONS--
+--------------------
+--Manage all meters
+function Chernarus:DoMeters()
 	for _, meters in pairs (self.MeterTable) do
 		--Update meter positions and frames
 		for k, meter in pairs (meters) do
@@ -78,10 +85,9 @@ function Chernarus:DoIcons()
 		self:IconsNotifyDayNight_RevealIcons(SceneMan:GetOffset(meters.screen));
 	end
 end
-
--------------------
---DELETE FUNCTION--
--------------------
+--------------------
+--DELETE FUNCTIONS--
+--------------------
 function Chernarus:IconsRemoveMeter(ID)
 	for k, v in pairs(self.MeterTable[ID]) do
 		if type(k) == "number" then

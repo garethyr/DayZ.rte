@@ -14,6 +14,25 @@ function Chernarus:RequestIcons_AddToMeterTable(actor)
 		self:AddToMeterTable(actor);
 	end
 end
+--TODO make this also take a maxdist so alerts can trigger things like zombie spawns by being visible within the max spawndist???
+function Chernarus:RequestAlerts_CheckForVisibleAlerts(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+	if self.IncludeAlerts then
+		return self:CheckForVisibleAlerts(pos, awarenessmod, mindist);
+	end
+	return false;
+end
+function Chernarus:RequestAlerts_NearestVisibleAlert(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+	if self.IncludeAlerts then
+		return self:NearestVisibleAlert(pos, awarenessmod, mindist);
+	end
+	return nil;
+end
+function Chernarus:RequestAlerts_VisibleAlerts(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+	if self.IncludeAlerts then
+		return self:VisibleAlerts(pos, awarenessmod, mindist);
+	end
+	return {};
+end
 --Loot
 
 --Sustenance

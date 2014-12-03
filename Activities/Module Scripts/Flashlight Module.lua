@@ -1,14 +1,14 @@
 -----------------------------------------------------------------------------------------
 -- Do everything for flashlights
 -----------------------------------------------------------------------------------------
--------------------
---CREATE FUNCTION--
--------------------
+--------------------
+--CREATE FUNCTIONS--
+--------------------
 function Chernarus:StartFlashlight()
 end
--------------------
---UPDATE FUNCTION--
--------------------
+--------------------
+--UPDATE FUNCTIONS--
+--------------------
 --Turn flashlights on or off for players and npcs
 function Chernarus:DoFlashlights()
 	for _, tab in pairs(self.HumanTable) do
@@ -41,6 +41,9 @@ function Chernarus:DoFlashlights()
 		end
 	end
 end
+--------------------
+--ACTION FUNCTIONS--
+--------------------
 --Add a new flashlight to the actor's inventory, flashlight battery starts off very low as punishment for losing it
 function ReAddFlashlight(actor)
 	local newlight = CreateHDFirearm("Flashlight", "DayZ.rte");

@@ -24,9 +24,9 @@ function Chernarus:StartDayNight()
 	
 	self.DayNightExtraRevealBoxes = {} --Key is array index, value is box
 end
--------------------
---CREATE FUNCTION--
--------------------
+--------------------
+--CREATE FUNCTIONS--
+--------------------
 --Add a light item so we can reveal it
 function Chernarus:AddDayNightLightItem(item)  --TODO Decide if I want daynight to handle this and flashlight, or let the items do it by themselves
 	if self.DayNightLightItemTable[item.UniqueID] == nil then
@@ -34,9 +34,9 @@ function Chernarus:AddDayNightLightItem(item)  --TODO Decide if I want daynight 
 		self.DayNightLightItemTable[item.UniqueID] = {item = item, reveal = self.DayNightLightItemBaseRevealSize[str]};
 	end
 end
--------------------
---UPDATE FUNCTION--
--------------------
+--------------------
+--UPDATE FUNCTIONS--
+--------------------
 --Swap day and night and act accordingly
 function Chernarus:DoDayNight()
 	self:DoDayNightCleanup();
@@ -64,6 +64,9 @@ function Chernarus:DoDayNight()
 		end
 	end
 end
+--------------------
+--DELETE FUNCTIONS--
+--------------------
 --Cleanup any dead items
 function Chernarus:DoDayNightCleanup()
 	for k, v in pairs(self.DayNightLightItemTable) do
@@ -73,6 +76,9 @@ function Chernarus:DoDayNightCleanup()
 		end
 	end
 end
+--------------------
+--ACTION FUNCTIONS--
+--------------------
 --Cycle the day and night
 function Chernarus:CycleDayNight()
 	if self.DayNightIsNight == true then

@@ -1,5 +1,33 @@
-IDEAS
+ALERT ZOMBIE SPAWNS AND BEHAVIOURS:
 
+Note: Need to allow for zombies with variable sprint distances OR must allow for flag to set them sprinting on start (probably latter) - could also spawn ones that are always sprinting instead?
+VL - Zombies within 500px sprint towards alert, spawns 1 walking zombie 750px away (sprints on reaching default sprint distance) with respawn time 1 minute
+L - Zombies on screen sprint towards alert, spawns 1 sprinting zombie 1000px away with respawn time 30 seconds
+M - Zombies within 1100px sprint towards alert, spawns 1 walking zombie 1500px away with respawn 10 seconds
+H - Zobmies within 2000px sprint towards alert, spawns 2 sprinting zombies 1500px away with respawn time of 1 minute
+VH - Zombies within 3250px sprint towards alert, spawns 3 sprinting zombies 1500px away with respawn time of 3 minutes
+VVH - Used only for endgame, pulls all zombies on map?
+
+Don't use pixel distances, use the strength of the alert and fiddle with the distance formula.
+Also need to spawn any loot zombies within visible distance of the alert.
+
+
+----------------------------------------------
+I think I might have a solution, tell me if you think it's feasible. We'll need to change a few of the weapons' sound table values (in Balancing Notes folder) to deviate from the canon values a little, though. Like, instead of Low/Med, the Makarov should just be Low I think. Revolver and M1911A1 should now be Low/Med, as should the Winchester 1866.
+
+• The Makarov and G17 are fairly weak - sound and damage wise. Their noise level should make any zombies within 500 pixels sprint towards the alert. They can spawn one additional zombie 750 pixels away who will walk towards the alert, not sprint (until they see the player, of course). Spawning should have a cooldown of 1 minute.
+• The Revolver and M1911A1 are more powerful - again, sound and damage wise. We should change their sound level to Low/Medium. These should make any zombie on screen sprint, and spawn one zombie 1000 pixels away who will spawn sprinting toward the alert. The cooldown should be 30 seconds.
+• Medium sound value weapons - should make any zombie within 1100 pixels of player's position sprint towards the alert's point of origin. These should also spawn one zombie, 1500 pixels from player's position, who will spawn walking towards the alert, not sprinting. This cooldown should be 10 seconds.
+• High sound value weapons - should make zombies sprint towards the alert who are within 2000 pixels. This will also spawn two zombies, who can appear 1500 pixels away from the player's position, but will be sprinting towards the alert when spawned. The cooldown should be 1 minute, to balance the severity.
+• Finally, Very High sound weapons should make zombies within 3250 pixels sprint towards the player, and spawn three zombies 1500 pixels away who will spawn spriting towards the alert. The cooldown for this should be 3 minutes. (simulates "pulling" all nearby zombies so there wouldn't be left to hear additional shots that hadn't already been alerted)
+• Very Very high should be saved for endgame-related stuff, or stuff we haven't thought about yet. Maybe something to do with the heli? A large enough alert to pull all the zombies on map? IDK.
+
+I based those pixel values on the actual placement of stuff on the map, for example 3250 covers the whole military base portion; these values can change after we've tested it of course. It seems like a ton of different stuff for each sound level (N, L, L/M, M, H, VH, VVH), so please, if it's not possible tell me, and I'll come up with a new plan.
+---------------------------------------------
+
+
+
+IDEAS:
 2 gangs (blue fists, yellowback vipers)
 	1 has base on island, other has base accessible by truck
 	Fix boat and exit left to get choices:
@@ -12,3 +40,17 @@ IDEAS
 		Go left to get to somewhere else important?
 		
 	Scene transition choices in vehicles are done with weegee mission framework style stuff.
+
+	
+STAIRS:
+Bottom area and top area, script on them checks occasionally for actors within either area and tables them by UniqueID
+
+The look through all actors in the above or below table to see if they should be using the stairs:
+	If the actor is player controlled and double taps up at the bottom or down at the top, they'll ascend/descend the stairs
+	If the actor is not player controlled and has a waypoint above the bottom or below the top and has a MovePath element that's visible from the opposite area
+		(i.e. actor is at bottom of the stairs and its movepath goes through the stairs area) then walk the actor up the stairs
+	Either way, the actor is added to a table of actors using the stairs that also mentions whether they came from above or below
+	
+Actors using the stairs have their controllers disabled and are force moved - walked in the right direction and have some relevant vel added to them
+
+Stairs can be both directions, that will be accounted for in the create part of the script that'll determine up and down x movements based on their name

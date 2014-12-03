@@ -1,7 +1,74 @@
 -----------------------------------------------------------------------------------------
--- Functions for the spawn queue, which keeps us from spawning too many MOs at once
+-- Manage zombie and NPC actions and behaviours
 -----------------------------------------------------------------------------------------
-
+-----------------------------------------------------------------------------------------
+-- Use FOW to fake night
+-----------------------------------------------------------------------------------------
+--Setup
+function Chernarus:StartBehaviours()
+	------------------------------
+	--ZOBMIE BEHAVIOUR CONSTANTS--
+	------------------------------
+	self.ZombieDespawnDistance = FrameMan.PlayerScreenWidth/2 + 600; --Despawn distance for all zombies, no specific despawn distances should be less than this
+	self.ZombieIdleDistance = 25; --The distance below which a zombie can stop moving towards a position target and idle
+	
+	---------------------------
+	--NPC BEHAVIOUR CONSTANTS--
+	---------------------------
+end
+--------------------
+--CREATE FUNCTIONS--
+--------------------
+--------------------
+--UPDATE FUNCTIONS--
+--------------------
+function Chernarus:DoBehaviours()
+	self:ManageZombieTargets();
+	self:DespawnZombies();
+end
+--------------------
+--DELETE FUNCTIONS--
+--------------------
+--Despawn any zombies with no target and nearby alerts or humans
+function Chernarus:DespawnZombies()
+	for k, zombie in pairs(self.ZombieTable) do
+		if not zombie.target.val and not self:CheckForNearbyHumans(zombie.actor.Pos, 0, self.ZombieDespawnDistance) and not self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier) then
+			print ("Kill zombie "..tostring(zombie.actor.UniqueID).." because it has no target and no nearby humans or visible alerts");
+			zombie.actor.ToDelete = true;
+			self.ZombieTable[k] = nil;
+		end
+	end
+end
+--------------------
+--ACTION FUNCTIONS--
+--------------------
+--
+function Chernarus:ManageZombieTargets()
+	for _, zombie in pairs(self.ZombieTable) do
+		if zombie.target.val then
+			--If we have an actor target, update the startdist and, if the zombie's too far, make it lose its target completely
+			if zombie.target.ttype == "actor" then
+				local curdist = SceneMan:ShortestDistance(zombie.target.val.Pos, zombie.actor.Pos, true).Magnitude;
+				zombie.target.startdist = math.max(self.ZombieDespawnDistance, math.min(curdist, zombie.target.startdist));
+				if curdist > zombie.target.startdist*1.1 then
+					print ("Remove zombie actor target because curdist is "..tostring(curdist).." out of "..tostring(zombie.target.startdist*1.5));
+					zombie.target = {val = false, ttype = "", startdist = 0};
+				end
+			--If we have a position target and the zombie's close to it, lose the target so the zombie can idle
+			elseif zombie.target.ttype == "pos" then
+				local curdist = SceneMan:ShortestDistance(zombie.target.val, zombie.actor.Pos, true).Magnitude;
+				if curdist <= self.ZombieIdleDistance then
+					print ("Remove zombie pos target because curdist is "..tostring(curdist).." less than "..tostring(self.ZombieIdleDistance));
+					zombie.target.val = false;
+				end
+			--If we have an alert target, update its position to account for any movement it may have
+			elseif zombie.target.ttype == "alert" then
+				zombie.actor:ClearAIWaypoints();
+				ToAHuman(zombie.actor):AddAISceneWaypoint(zombie.target.val.pos);
+			end
+		end	
+	end
+end
 -----------------------------------------------------------------------------------------
 -- A convenient function for finding the closest target, also returns
 -----------------------------------------------------------------------------------------
@@ -75,78 +142,6 @@ function Chernarus:FindTarget(start, bool, hasactorbool) --TODO change this so i
 		print ("NO START FOR TARGET FINDING FUNCTION");
 	end
 	return target, tmod, hasactors;
-end
------------------------------------------------------------------------------------------
--- A convenient function for comparing height areas of two points (i.e. in tunnels or above ground)
------------------------------------------------------------------------------------------
-function SameHeightArea(p1, p2)
-	--Returns true if both points are in the same height area and false otherwise
-	local h = 560; --The height to check
-	if (p1.Y >= h and p2.Y >= h) or (p1.Y < h and p2.Y < h) then
-		return true;
-	else
-		return false;
-	end
-end
------------------------------------------------------------------------------------------
--- Everything for Zombies
------------------------------------------------------------------------------------------
---The actual zombie spawning
-function Chernarus:SpawnZombies(point)
-	local target = self:FindTarget(point, false, false);
-	if target ~= nil then
-		for i = 1, 3 do
-			if MovableMan:GetMOIDCount() <= self.MOIDLimit then
-				local actor = CreateAHuman("Zombie 1", "DayZ.rte");
-				actor:AddInventoryItem(CreateHDFirearm("Zombie Attack", "DayZ.rte"));
-				actor.Pos = Vector(point.X - 60 + 30*i + math.random(-10, 10), point.Y);
-				actor.Team = self.ZombieTeam;
-				actor:AddAISceneWaypoint(Vector(actor.Pos.X - (actor.Pos.X - target.X)/4 + math.random(-50, 50), actor.Pos.Y));
-				actor.AIMode = Actor.AIMODE_GOTO;
-				self:AddToSpawnQueue(actor, "z", false);
-			end
-		end
-	end
-end
---Emergency zombie spawns, called by other things with the target already chosen
-function Chernarus:SpawnAlertZombie(alertpos)
-	if MovableMan:GetMOIDCount() <= self.MOIDLimit then
-		local actor = CreateAHuman("Zombie 1", "DayZ.rte");
-		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack", "DayZ.rte"));
-		actor.Pos = Vector(alertpos.X - self.ZombieSpawnMinDistance + math.random(-20, 20), alertpos.Y);--SceneMan.MovePointToGround(Vector(alertpos.X - self.ZombieSpawnMinDistance + math.random(-20, 20), alertpos.Y), 20, 20);
-		actor.Team = self.ZombieTeam;
-		actor:AddAISceneWaypoint(alertpos);
-		actor.AIMode = Actor.AIMODE_GOTO;
-		self:AddToSpawnQueue(actor, "z", alert);
-	end
-end
---Pick where to spawn the zombies based on player position
-function Chernarus:DoZombieSpawning()
-	for i = 1, #self.SpawnArea do
-		--Find the nearest target to check if we should spawn zombies
-		local target, tmod = self:FindTarget(self.SpawnArea[i]:GetCenterPoint(), false, false);
-		local maxdist = self.ZombieSpawnMaxDistance;
-		local mindist = self.ZombieSpawnMinDistance;
-		--If there's an alert strength modifier, use it and make sure it still does something
-		if tmod ~= nil then
-			maxdist = maxdist*tmod;
-			if maxdist < 50 then
-				maxdist = 50;
-			end
-			mindist = mindist - 500*tmod;
-		end
-		--Spawn zombies to go to target
-		if target ~= nil then
-			if SceneMan:ShortestDistance(target, self.SpawnArea[i]:GetCenterPoint(), false).Magnitude <= maxdist and SceneMan:ShortestDistance(target, self.SpawnArea[i]:GetCenterPoint(), false).Magnitude >= mindist and self.ZombieSpawnTimer[i]:IsPastSimMS(self.ZombieSpawnInterval) then
-				for j = 1, math.random(1,2) do
-					self:SpawnZombies(self.SpawnArea[i]:GetCenterPoint());
-				end
-				print ("ZOMBIES QUEUED FOR AREA "..tostring(i));
-				self.ZombieSpawnTimer[i]:Reset();
-				break;
-			end
-		end
-	end
 end
 --Zombie actions - follow player when close and move around randomly when not
 function Chernarus:DoZombieActions()

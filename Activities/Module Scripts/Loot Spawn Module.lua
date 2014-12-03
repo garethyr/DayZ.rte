@@ -57,9 +57,9 @@ function Chernarus:StartLoot() --TODO make it so loot items die over time, if th
 	self.LootTable = {{}}; --Key based on areanum then number - self.LootTable[areanum][index] = loot item
 	
 end
----------------------
---CREATION FUNCTION--
----------------------
+----------------------
+--CREATION FUNCTIONS--
+----------------------
 --The actual loot spawning
 function Chernarus:SpawnLoot(area, areanum, set)
 	if MovableMan:GetMOIDCount() <= self.MOIDLimit+30 then
@@ -100,6 +100,9 @@ function Chernarus:DoLoot()
 	self:DoLootCleanup();
 	self:DoLootSpawning();
 end
+--------------------
+--DELETE FUNCTIONS--
+--------------------
 --Kill loot that's been sitting around past the loot lifetime
 function Chernarus:DoLootDespawns()
 	for areanum, tab in ipairs(self.LootTable) do
@@ -129,6 +132,9 @@ function Chernarus:DoLootCleanup()
 		self.LootAreas[areanum].filled = (#tab > 0);
 	end
 end
+--------------------
+--ACTION FUNCTIONS--
+--------------------
 --Pick where to spawn loot based on nearby humans (players or NPCs)
 function Chernarus:DoLootSpawning()
 	for i, v in ipairs(self.LootAreas) do

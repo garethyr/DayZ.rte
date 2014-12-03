@@ -48,7 +48,7 @@ function Chernarus:StartAlerts()
 	self.AlertTypes = {"sound", "light"};
 	
 	--Weapon sound values ordered from lowest (None) to highest (Very Very High), hunting knife with 0 sound is outside of this table
-	self.WeaponAlertValues = {N=10, VVL=25, VL=50, L=100, LM=150, M=200, MH=250, H=300, VH=350, VVH=400};
+	self.WeaponAlertValues = {N=10, VVL=25, VL=50, L=100, LM=150, M=200, MH=250, H=300, VH=350, VVH=500};
 	self.WeaponAlertTable = { --Note: weapons aren't separated by civilian/military for alerts since there's no need for that distinction here
 		--Civilian weapon alert values
 		["Hunting Knife"] = 0, ["Crowbar"] = self.WeaponAlertValues.N, ["Hatchet"] = self.WeaponAlertValues.N, ["[DZ] Makarov PM"] = self.WeaponAlertValues.L, ["[DZ] .45 Revolver"] = self.WeaponAlertValues.LM, ["[DZ] M1911A1"] = self.WeaponAlertValues.LM, ["[DZ] Compound Crossbow"] = self.WeaponAlertValues.N, ["[DZ] MR43"] = self.WeaponAlertValues.M, ["[DZ] Winchester 1866"] = self.WeaponAlertValues.LM, ["[DZ] Lee Enfield"] = self.WeaponAlertValues.VH, ["[DZ] CZ 550"] = self.WeaponAlertValues.VH,

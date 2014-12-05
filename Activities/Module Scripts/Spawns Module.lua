@@ -13,7 +13,7 @@ function Chernarus:StartSpawns()
 	self.ZombieAlertAwarenessModifier = 1; --The modifier for zombie alert awareness range, < 1 is less aware, > 1 is more aware
 	
 	--Loot area zombies
-	self.SpawnLootZombieMaxGroupSize = 6; --The maximum number of loot zombies that will spawn for one area
+	self.SpawnLootZombieMaxGroupSize = 4; --The maximum number of loot zombies that will spawn for one area
 	self.SpawnLootZombieMinDistance = self.ZombieSpawnMinDistance; --Minimum spawn distance for loot zombies
 	self.SpawnLootZombieMaxDistance = self.ZombieSpawnMaxDistance; --Maximum spawn distance for loot zombies
 	

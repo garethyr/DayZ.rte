@@ -66,7 +66,7 @@ function Chernarus:SpawnZombie(spawnpoint, target, targettype, spawntype)
 		end
 		actor.AIMode = Actor.AIMODE_GOTO;
 		MovableMan:AddActor(actor);
-		local startdist =  math.floor(SceneMan:ShortestDistance(targetpos, actor.Pos, true).Magnitude);
+		local startdist = math.floor(SceneMan:ShortestDistance(targetpos, actor.Pos, true).Magnitude);
 		self:AddToZombieTable(actor, target, targettype, startdist);
 	end
 end

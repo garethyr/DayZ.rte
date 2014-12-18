@@ -86,7 +86,7 @@ function Chernarus:CycleDayNight()
 	else
 		self.DayNightIsNight = true;
 	end
-	self:DayNightNotifyAlerts_DayNightCycle();
+	self:DayNightNotifyMany_DayNightCycle();
 	self.DayNightCheck = false;
 end
 --Actions performed once whenever the game changes from night to day

@@ -110,9 +110,13 @@ end
 --Sustenance
 
 --DayNight
-function Chernarus:DayNightNotifyAlerts_DayNightCycle()
+function Chernarus:DayNightNotifyMany_DayNightCycle()
 	if self.IncludeAlerts then
 		self.AlertIsDay = not self.DayNightIsNight;
+	end
+	if self.IncludeAudio then
+		local status = self.DayNightIsNight and "night" or "day";
+		self:AudioChangeGlobalSounds(status);
 	end
 end
 

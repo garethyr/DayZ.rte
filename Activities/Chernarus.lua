@@ -3,7 +3,9 @@
 -----------------------------------------------------------------------------------------
 function Chernarus:StartActivity()
 	--Remove the starting GO banner
-	local banner = self:GetBanner(GUIBanner.YELLOW, Activity.PLAYER_1):HideText(-1,-1);
+	for i = 0, 3 do
+		local banner = self:GetBanner(GUIBanner.YELLOW, i):HideText(-1,-1);
+	end
 
 	--------------------
 	--GLOBAL VARIABLES--
@@ -17,6 +19,9 @@ function Chernarus:StartActivity()
 	self.NumberOfLootAreas = 58; --The number of loot areas, must be updated to match the number of such areas defined in the scene
 	self.NumberOfLootZombieSpawnAreas = 26; --The number of spawn areas for loot zombies, must be updated to match the number of such areas defined in the scene
 	self.ZombieAlertDistance = 300; --The distance a target needs to be within of a zombie for it to stop wandering and move at the target
+	self.NumberOfShelterAreas = 20; --The number of shelter areas, places players and NPCs can use to avoid getting sickness due to bad weather
+	self.NumberOfCivilizationAreas = 5; --The number of civilization areas where civilization localized audio will play instead of nature audio
+	self.NumberOfBeachAreas = 2; --The number of beach areas where beach localized audio will play instead of generic nature audio
 
 	---------
 	--AREAS--
@@ -68,8 +73,8 @@ function Chernarus:StartActivity()
 	self.IncludeDayNight = true;
 	self.IncludeFlashlight = true;
 	self.IncludeIcons = true;
-	self.IncludeBehaviours = true; --Behaviours requires spawns
-	self.IncludeAudio = false;
+	self.IncludeBehaviours = true; --Note: Behaviours requires spawns, this is enforced automatically
+	self.IncludeAudio = true;
 	self.IncludeAlerts = true;
 	self:DoModuleInclusion();
 	
@@ -145,7 +150,7 @@ function Chernarus:DoModuleInitialization()
 	end
 	if self.IncludeAlerts then
 		self:StartAlerts();
-		self:DayNightNotifyAlerts_DayNightCycle(); --Notify alerts so they know the time of day
+		self:DayNightNotifyMany_DayNightCycle(); --Notify alerts so they know the time of day
 	end
 end
 -----------------------------------------------------------------------------------------
@@ -198,6 +203,9 @@ end
 -- This function is called after mission has ended
 function Chernarus:EndActivity()
 	DayZHumanWoundTable = nil;
+	if self.IncludeAudio then
+		AudioMan.MusicVolume = self.AudioGlobalMaxVolume;
+	end
 	print("END! -- Chernarus:EndActivity()!");
 end
 -----------------------------------------------------------------------------------------

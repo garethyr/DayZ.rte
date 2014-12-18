@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------------
--- Drain actor sustenance, add to it on item use and injure/kill them if they run out
+-- Display meters for player stats and any other icons
 -----------------------------------------------------------------------------------------
 --Setup
 function Chernarus:StartIcons()
@@ -31,7 +31,7 @@ end
 ----------------------
 --CREATION FUNCTIONS--
 ----------------------
---Adding an actor to the meter table
+--Add an actor to the meter table
 function Chernarus:AddToMeterTable(actor)
 	self.MeterTable[actor.UniqueID] = {};
 	self.MeterTable[actor.UniqueID].actor = actor;
@@ -51,6 +51,17 @@ end
 --Update frame and position for all icons
 function Chernarus:DoIcons()
 	self:DoMeters();
+end
+--------------------
+--DELETE FUNCTIONS--
+--------------------
+function Chernarus:IconsRemoveMeter(ID)
+	for k, v in pairs(self.MeterTable[ID]) do
+		if type(k) == "number" then
+			v.ToDelete = true;
+		end
+	end
+	self.MeterTable[ID] = nil;
 end
 --------------------
 --ACTION FUNCTIONS--
@@ -84,15 +95,4 @@ function Chernarus:DoMeters()
 		end
 		self:IconsNotifyDayNight_RevealIcons(SceneMan:GetOffset(meters.screen));
 	end
-end
---------------------
---DELETE FUNCTIONS--
---------------------
-function Chernarus:IconsRemoveMeter(ID)
-	for k, v in pairs(self.MeterTable[ID]) do
-		if type(k) == "number" then
-			v.ToDelete = true;
-		end
-	end
-	self.MeterTable[ID] = nil;
 end

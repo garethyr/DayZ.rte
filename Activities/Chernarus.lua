@@ -160,8 +160,13 @@ function Chernarus:AddStartingActors()
 	--The player actors
 	for i = 0 , self.PlayerCount do
 		if self:PlayerHuman(i) then
-			local player = CreateAHuman("Survivor Black" , "DayZ.rte");
-			player:AddInventoryItem(CreateHDFirearm("[DZ] Mk 48 Mod 0" , "DayZ.rte"));
+			local player = CreateAHuman("Survivor Black Reticle Actor" , "DayZ.rte");
+			player:AddInventoryItem(CreateHDFirearm("[DZ] .45 Revolver" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
 			player:AddInventoryItem(CreateHDFirearm("Baked Beans" , "DayZ.rte"));
 			player:AddInventoryItem(CreateHDFirearm("Coke" , "DayZ.rte"));
 			if self.IncludeFlashlight then

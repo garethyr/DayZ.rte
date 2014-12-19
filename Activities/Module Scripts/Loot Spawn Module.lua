@@ -5,7 +5,7 @@ function Chernarus:StartLoot() --TODO make it so loot items die over time, if th
 	------------------
 	--LOOT CONSTANTS--
 	------------------
-	self.LootInterval = 30000; --30 second loot spawn interval
+	self.LootInterval = 90000; --90 second loot spawn interval - default 30000 (30 sec)
 	self.LootLifetime = self.LootInterval*0.5; --Loot despawns if not picked up after half the loot spawn interval
 	self.LootMaxDistance = 750; --750 pixel distance for the outermost distance where loot spawns.
 	self.LootMinDistance = 500; --500 pixel distance for the innermost distance where loot spawns.

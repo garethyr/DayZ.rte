@@ -19,7 +19,7 @@ function Chernarus:StartAudio()
 	-------------------
 	--AUDIO CONSTANTS--
 	-------------------
-	self.AudioGlobalFadeSpeed = AudioMan.MusicVolume/250; --The speed at which to fade in and out audio, the divisor determines the speed
+	self.AudioGlobalFadeSpeed = AudioMan.MusicVolume/125; --The speed at which to fade in and out audio, the divisor determines the speed - default 250
 	self.AudioGlobalMaxVolume = AudioMan.MusicVolume; --The maximum volume to fade-in to, based on the volume set by the player
 	self.AudioGlobalMinVolume = 0; --The minimum volume to fade-out to, when the volume reaches this level the next track fades in
 	print (self.AudioGlobalMaxVolume)

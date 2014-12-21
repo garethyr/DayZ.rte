@@ -48,7 +48,8 @@ function Chernarus:SpawnZombie(spawnpoint, target, targettype, spawntype)
 			targetpos = targettype == "actor" and target.Pos or target;
 		end
 	
-		local actor = CreateAHuman("Zombie 1", "DayZ.rte");
+		local actor = CreateAHuman("[DZ] Zombie 1", "DayZ.rte");
+		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack BG", "DayZ.rte"));
 		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack", "DayZ.rte"));
 		actor.Team = self.ZombieTeam;
 		

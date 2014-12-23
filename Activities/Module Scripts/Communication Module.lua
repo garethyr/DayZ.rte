@@ -62,6 +62,12 @@ function Chernarus:IconsRequestSustenance_ActorSustenancePercent(susttype, actor
 end
 
 --Audio
+function Chernarus:AudioRequestDayNight_DayOrNightCapitalizedString()
+	if self.IncludeDayNight then
+		return self.DayNightIsNight and "Night" or "Day";
+	end
+	return "Day";
+end
 
 --Alerts
 function Chernarus:AlertsRequestSpawns_SpawnAlertZombie(position)
@@ -115,8 +121,8 @@ function Chernarus:DayNightNotifyMany_DayNightCycle()
 		self.AlertIsDay = not self.DayNightIsNight;
 	end
 	if self.IncludeAudio then
-		local status = self.DayNightIsNight and "night" or "day";
-		self:AudioChangeGlobalSounds(status);
+		local soundtype = self.DayNightIsNight and "night" or "day";
+		self:AudioChangeGlobalSounds(soundtype);
 	end
 end
 

@@ -1,14 +1,18 @@
 -----------------------------------------------------------------------------------------
 -- Everything for loot
 -----------------------------------------------------------------------------------------
-function Chernarus:StartLoot() --TODO make it so loot items die over time, if there are no nearby players and they aren't being held.
+function Chernarus:StartLoot()
 	------------------
 	--LOOT CONSTANTS--
 	------------------
-	self.LootInterval = 90000; --90 second loot spawn interval - default 30000 (30 sec)
-	self.LootLifetime = self.LootInterval*0.5; --Loot despawns if not picked up after half the loot spawn interval
-	self.LootMaxDistance = 750; --750 pixel distance for the outermost distance where loot spawns.
-	self.LootMinDistance = 500; --500 pixel distance for the innermost distance where loot spawns.
+	self.LootSpawnChance = 0.3; --The chance to spawn any loot at all
+	self.LootSpawnChanceModifier = 0.2; --The random additive modifier for loot spawn chance, so 0.3 Chance and 0.2 Modifier will have somewhere between 30% and 50% chance of spawning loot 
+	self.LootInterval = 90000; --90 second loot spawn interval
+	self.LootLifetime = self.LootInterval*0.5; --The time after which loot despawns if not picked up
+	self.LootSpawnMinDistance = FrameMan.PlayerScreenWidth/2 + 100; --1/2 of screen width + 100 for the innermost distance where loot spawns
+	self.LootSpawnMaxDistance = FrameMan.PlayerScreenWidth/2 + 300; --1/2 of screen width + 300 for the outermost distance where loot spawns
+	self.LootMinSpawnAmount = 2; --The minimum amount of loot that can spawn per batch
+	self.LootMaxSpawnAmount = 5; --The maximum amount of loot that can spawn per batch
 	
 	--------------
 	--LOOT AREAS--
@@ -43,6 +47,9 @@ function Chernarus:StartLoot() --TODO make it so loot items die over time, if th
 	
 	--This table stores all light making throwables
 	self.LootLightTable = {"Red Chemlight", "Green Chemlight", "Blue Chemlight", "Flare"};
+	
+	--This table stores all ammo
+	self.LootAmmoTable = {}
 	
 	--This table stores all civilian weapons
 	self.LootCWeaponTable = {"Hunting Knife", "Crowbar", "Hatchet", "[DZ] Makarov PM", "[DZ] .45 Revolver", "[DZ] M1911A1", "[DZ] Compound Crossbow", "[DZ] MR43", "[DZ] Winchester 1866", "[DZ] Lee Enfield", "[DZ] CZ 550"};
@@ -107,7 +114,7 @@ end
 function Chernarus:DoLootDespawns()
 	for areanum, tab in ipairs(self.LootTable) do
 		for _, item in ipairs(tab) do
-			if item.Age > self.LootLifetime then
+			if item.Age > self.LootLifetime and self:CheckForNearbyHumans(item.Pos, 0, LootSpawnMaxDistance) then
 				item.ToDelete = true; --Delete it, it will be removed in the cleanup function
 			end
 		end
@@ -139,11 +146,13 @@ end
 function Chernarus:DoLootSpawning()
 	for i, v in ipairs(self.LootAreas) do
 		--If there's no loot in the area, a player nearby but not too close and the timer's ready, spawn loot
-		if v.filled == false and self:CheckForNearbyHumans(v.area:GetCenterPoint(), self.LootMinDistance, self.LootMaxDistance) and self.LootTimer[i]:IsPastSimMS(self.LootInterval) then
-			for j = 1, math.random(1,4) do
-				self:SpawnLoot(v.area, i, v.lootSet);
-				self.LootTimer[i]:Reset();
-				v.filled = true;
+		if v.filled == false and self.LootTimer[i]:IsPastSimMS(self.LootInterval) then
+			if math.random() < (self.LootSpawnChance + RangeRand(0, self.LootSpawnChanceModifier)) and self:CheckForNearbyHumans(v.area:GetCenterPoint(), self.LootSpawnMinDistance, self.LootSpawnMaxDistance) then
+				for j = self.LootMinSpawnAmount, math.random(self.LootMinSpawnAmount,self.LootMaxSpawnAmount) do
+					self:SpawnLoot(v.area, i, v.lootSet);
+					self.LootTimer[i]:Reset();
+					v.filled = true;
+				end
 			end
 		end
 	end

@@ -20,8 +20,8 @@ function Chernarus:StartActivity()
 	self.NumberOfLootZombieSpawnAreas = 26; --The number of spawn areas for loot zombies, must be updated to match the number of such areas defined in the scene
 	self.ZombieAlertDistance = 300; --The distance a target needs to be within of a zombie for it to stop wandering and move at the target
 	self.NumberOfShelterAreas = 20; --The number of shelter areas, places players and NPCs can use to avoid getting sickness due to bad weather
-	self.NumberOfCivilizationAreas = 5; --The number of civilization areas where civilization localized audio will play instead of nature audio
-	self.NumberOfBeachAreas = 2; --The number of beach areas where beach localized audio will play instead of generic nature audio
+	self.NumberOfAudioCivilizationAreas = 5; --The number of civilization areas where civilization localized audio will play instead of nature audio
+	self.NumberOfAudioBeachAreas = 2; --The number of beach areas where beach localized audio will play instead of generic nature audio
 
 	---------
 	--AREAS--
@@ -68,7 +68,7 @@ function Chernarus:StartActivity()
 	--MODULE INCLUSION--
 	--------------------
 	self.IncludeLoot = true;
-	self.IncludeSustenance = false;
+	self.IncludeSustenance = true;
 	self.IncludeSpawns = true;
 	self.IncludeDayNight = true;
 	self.IncludeFlashlight = true;
@@ -76,7 +76,10 @@ function Chernarus:StartActivity()
 	self.IncludeBehaviours = true; --Note: Behaviours requires spawns, this is enforced automatically
 	self.IncludeAudio = true;
 	self.IncludeAlerts = true;
+	--v DO NOT TOUCH FOR MODULE CHANGES v--
+	self:DoModuleEnforcement();
 	self:DoModuleInclusion();
+	--^ DO NOT TOUCH FOR MODULE CHANGES ^--
 	
 	-------------------
 	--STARTING ACTORS--
@@ -87,6 +90,10 @@ end
 -----------------------------------------------------------------------------------------
 -- Module Stuff
 -----------------------------------------------------------------------------------------
+--Enforce any module constraints
+function Chernarus:DoModuleEnforcement()
+	self.IncludeBehaviours = self.IncludeSpawns and self.IncludeBehaviours;
+end
 --Include modules we want
 function Chernarus:DoModuleInclusion()
 	dofile("DayZ.rte/Activities/Module Scripts/Communication Module.lua"); --Communication always included
@@ -174,7 +181,7 @@ function Chernarus:AddStartingActors()
 			end
 			player:AddInventoryItem(CreateTDExplosive("Flare" , "DayZ.rte"));
 			player.Sharpness = 0;
-			player.Pos = Vector(1250, 400)--(350, 550);
+			player.Pos = Vector(2250, 300)--(350, 550);
 			player.Team = self.PlayerTeam;
 			player.AIMode = Actor.AIMODE_SENTRY;
 			player.HUDVisible = false
@@ -316,6 +323,7 @@ function Chernarus:UpdateActivity()
 	end
 	
 	if self.GeneralLagTimer:IsPastSimMS(100) then
+		
 		--Deal with zombie and NPC spawns
 		if self.IncludeSpawns then
 			self:DoSpawns();
@@ -413,7 +421,7 @@ function Chernarus:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum
 	return false;
 end
 -----------------------------------------------------------------------------------------
--- Functions for adding actors to mission tables, for convenient updating TODO move this to spawns???
+-- Functions for adding actors to mission tables, for convenient updating
 -----------------------------------------------------------------------------------------
 function Chernarus:AddToPlayerTable(actor)
 	self.HumanTable.Players[actor.UniqueID] = {

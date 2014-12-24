@@ -180,7 +180,7 @@ function Chernarus:AddStartingActors()
 			end
 			player:AddInventoryItem(CreateTDExplosive("Flare" , "DayZ.rte"));
 			player.Sharpness = 0;
-			player.Pos = Vector(2250, 300)--(350, 550);
+			player.Pos = Vector(1250, 300)--(350, 550);
 			player.Team = self.PlayerTeam;
 			player.AIMode = Actor.AIMODE_SENTRY;
 			player.HUDVisible = false

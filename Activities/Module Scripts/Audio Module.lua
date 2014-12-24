@@ -152,8 +152,8 @@ function Chernarus:AudioChangeGlobalSound(soundtype) --Called by notifications f
 	end
 end
 function Chernarus:AudioChangeGlobalOverrideSound(overridesound)
-	print ("hi");
 	if self.AudioGlobalCurrentOverrideSound ~= overridesound then
+	print ("hi");
 		self.AudioGlobalCurrentOverrideSound = overridesound;
 		self.AudioGlobalSoundStatus = "fadeout";
 	end
@@ -207,6 +207,8 @@ function Chernarus:GetActorAudioArea(actor)
 			if v.area:IsInside(actor.Pos) then
 				if v.name == "Beach" then
 					self:AudioChangeGlobalOverrideSound("beach");
+				else
+					self:AudioChangeGlobalOverrideSound(nil);
 				end
 				return v.name;
 			end

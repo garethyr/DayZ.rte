@@ -24,11 +24,11 @@ function Chernarus:StartAudio()
 	
 	self.AudioPath = "DayZ.rte/Sounds/" --The path to the audio folder
 	self.AudioTableSetup =  {Localized = {
-								["Nature Day"] = {19, "DAmbient "},
-								["Nature Night"] = {21, "NAmbient "},
+								["Nature Day"] = {17, "DAmbient "},
+								["Nature Night"] = {18, "NAmbient "},
 								["Civilization"] = {9, "CAmbient "},
 								["Beach"] = {1, "DAmbient "}},
-							Suspense = {17, "Suspense "}};
+							Suspense = {16, "Suspense "}};
 								
 	
 	---------------

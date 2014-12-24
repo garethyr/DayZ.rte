@@ -68,7 +68,7 @@ function Chernarus:StartActivity()
 	--MODULE INCLUSION--
 	--------------------
 	self.IncludeLoot = true;
-	self.IncludeSustenance = true;
+	self.IncludeSustenance = false;
 	self.IncludeSpawns = true;
 	self.IncludeDayNight = true;
 	self.IncludeFlashlight = true;
@@ -168,12 +168,11 @@ function Chernarus:AddStartingActors()
 	for i = 0 , self.PlayerCount do
 		if self:PlayerHuman(i) then
 			local player = CreateAHuman("Survivor Black Reticle Actor" , "DayZ.rte");
-			player:AddInventoryItem(CreateHDFirearm("[DZ] .45 Revolver" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHDFirearm("[DZ] MR43" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHDFirearm("Crowbar" , "DayZ.rte"));
 			player:AddInventoryItem(CreateHDFirearm("Baked Beans" , "DayZ.rte"));
 			player:AddInventoryItem(CreateHDFirearm("Coke" , "DayZ.rte"));
 			if self.IncludeFlashlight then

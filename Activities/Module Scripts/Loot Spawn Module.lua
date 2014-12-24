@@ -11,7 +11,7 @@ function Chernarus:StartLoot()
 	self.LootLifetime = self.LootInterval*0.5; --The time after which loot despawns if not picked up
 	self.LootSpawnMinDistance = FrameMan.PlayerScreenWidth/2 + 100; --1/2 of screen width + 100 for the innermost distance where loot spawns
 	self.LootSpawnMaxDistance = FrameMan.PlayerScreenWidth/2 + 300; --1/2 of screen width + 300 for the outermost distance where loot spawns
-	self.LootMinSpawnAmount = 2; --The minimum amount of loot that can spawn per batch
+	self.LootMinSpawnAmount = 2; --The minimum amount of loot that can spawn per batch, must be greater than 0
 	self.LootMaxSpawnAmount = 5; --The maximum amount of loot that can spawn per batch
 	
 	--------------
@@ -114,7 +114,7 @@ end
 function Chernarus:DoLootDespawns()
 	for areanum, tab in ipairs(self.LootTable) do
 		for _, item in ipairs(tab) do
-			if item.Age > self.LootLifetime and self:CheckForNearbyHumans(item.Pos, 0, LootSpawnMaxDistance) then
+			if item.Age > self.LootLifetime and not self:CheckForNearbyHumans(item.Pos, 0, LootSpawnMaxDistance) then
 				item.ToDelete = true; --Delete it, it will be removed in the cleanup function
 			end
 		end

@@ -27,7 +27,7 @@ function Chernarus:StartAudio()
 								["Nature Day"] = {17, "DAmbient "},
 								["Nature Night"] = {18, "NAmbient "},
 								["Civilization"] = {9, "CAmbient "},
-								["Beach"] = {1, "DAmbient "}},
+								["Beach"] = {3, "BAmbient "}},
 							Suspense = {16, "Suspense "}};
 								
 	

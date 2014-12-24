@@ -82,6 +82,8 @@ function Chernarus:SpawnLoot(area, areanum, set)
 				loot = CreateTDExplosive(self.LootLightTable[math.random(#self.LootLightTable)], "DayZ.rte");
 			elseif math.random() < 0.15 then
 				loot = CreateHDFirearm(self.LootMedicineTable[math.random(#self.LootMedicineTable)], "DayZ.rte");
+			elseif math.random() < 0.15 then
+				loot = CreateHeldDevice(self.LootAmmoTable[math.random(#self.LootAmmoTable)], "DayZ.rte");
 			else
 				loot = CreateHDFirearm(self.LootCWeaponTable[math.random(#self.LootCWeaponTable)], "DayZ.rte");
 			end

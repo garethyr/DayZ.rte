@@ -46,9 +46,10 @@ function Chernarus:StartAudio()
 	--STATIC AUDIO TABLES--
 	-----------------------
 	--Global
-	self.AudioGlobalSoundTable = {day = self.AudioPath.."Non-Localized/Day Loop.ogg",
-								  night = self.AudioPath.."Non-Localized/Night Loop.ogg",
-								  storm = self.AudioPath.."Non-Localized/Stormy Loop.ogg"}
+	self.AudioGlobalSoundTable = {day = self.AudioPath.."Global/Day Loop.ogg",
+								  night = self.AudioPath.."Global/Night Loop.ogg",
+								  storm = self.AudioPath.."Global/Stormy Loop.ogg"};
+	self.AudioGlobalSoundOverrideTable = {beach = self.AudioPath.."Global/Beach Loop.ogg"}
 	--Localized and suspense
 	self.AudioLocalizedSoundDefinitionTable = {};
 	self.AudioSuspenseSoundDefinitionTable = {};
@@ -86,6 +87,7 @@ function Chernarus:StartAudio()
 	-------------------
 	--Global
 	self.AudioGlobalCurrentSound = nil;
+	self.AudioGlobablOverrideSound = nil;
 	self.AudioGlobalSoundStatus = "ready";
 	--Localized
 	--Suspense
@@ -143,9 +145,16 @@ end
 --------------------
 --GLOBAL--
 --Deal with global audio, based on time of day and weather
-function Chernarus:AudioChangeGlobalSounds(soundtype) --Called by notifications from DayNight and Weather module
+function Chernarus:AudioChangeGlobalSound(soundtype) --Called by notifications from DayNight and Weather module
 	if self.AudioGlobalCurrentSound ~= soundtype then
 		self.AudioGlobalCurrentSound = soundtype;
+		self.AudioGlobalSoundStatus = "fadeout";
+	end
+end
+function Chernarus:AudioChangeGlobalOverrideSound(overridesound)
+	print ("hi");
+	if self.AudioGlobalCurrentOverrideSound ~= overridesound then
+		self.AudioGlobalCurrentOverrideSound = overridesound;
 		self.AudioGlobalSoundStatus = "fadeout";
 	end
 end
@@ -157,7 +166,11 @@ function Chernarus:AudioDoGlobalSoundTransitions()
 			AudioMan.MusicVolume = self.AudioGlobalMinVolume;
 			self.AudioGlobalSoundStatus = "fadein";
 			AudioMan:StopMusic();
-			AudioMan:PlayMusic(self.AudioGlobalSoundTable[self.AudioGlobalCurrentSound], -1, -1); --Play infinitely with no volume override
+			if self.AudioGlobalCurrentOverrideSound ~= nil then
+				AudioMan:PlayMusic(self.AudioGlobalSoundOverrideTable[self.AudioGlobalCurrentOverrideSound], -1, -1); --Play infinitely with no volume override
+			else
+				AudioMan:PlayMusic(self.AudioGlobalSoundTable[self.AudioGlobalCurrentSound], -1, -1); --Play infinitely with no volume override
+			end
 		end
 	elseif self.AudioGlobalSoundStatus == "fadein" and AudioMan.MusicVolume <= self.AudioGlobalMaxVolume then
 		AudioMan.MusicVolume = AudioMan.MusicVolume + self.AudioGlobalFadeSpeed;
@@ -192,6 +205,9 @@ function Chernarus:GetActorAudioArea(actor)
 	for _, areatype in pairs (self.AudioAreas) do
 		for i, v in ipairs(areatype) do
 			if v.area:IsInside(actor.Pos) then
+				if v.name == "Beach" then
+					self:AudioChangeGlobalOverrideSound("beach");
+				end
 				return v.name;
 			end
 		end

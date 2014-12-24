@@ -122,7 +122,7 @@ function Chernarus:DayNightNotifyMany_DayNightCycle()
 	end
 	if self.IncludeAudio then
 		local soundtype = self.DayNightIsNight and "night" or "day";
-		self:AudioChangeGlobalSounds(soundtype);
+		self:AudioChangeGlobalSound(soundtype);
 	end
 end
 

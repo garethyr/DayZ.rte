@@ -7,13 +7,13 @@ function Chernarus:StartSpawns()
 	--ZOMBIE SPAWN CONSTANTS--
 	--------------------------
 	--General
-	self.ZombieSpawnInterval = 30000; --General purpose spawn interval used for various specific ones
+	self.ZombieSpawnInterval = 90000; --General purpose spawn interval used for various specific ones (default 30000)
 	self.ZombieSpawnMinDistance = FrameMan.PlayerScreenWidth/2 + 100; --Minimum spawn distance for all zombies, no specific minimum spawn should be less than this
 	self.ZombieSpawnMaxDistance = FrameMan.PlayerScreenWidth/2 + 300; --Minimum spawn distance for all zombies, specific maximum spawns can be greater than this
 	self.ZombieAlertAwarenessModifier = 1; --The modifier for zombie alert awareness range, < 1 is less aware, > 1 is more aware
 	
 	--Loot area zombies
-	self.SpawnLootZombieMaxGroupSize = 4; --The maximum number of loot zombies that will spawn for one area
+	self.SpawnLootZombieMaxGroupSize = 1; --The maximum number of loot zombies that will spawn for one area (default 4)
 	self.SpawnLootZombieMinDistance = self.ZombieSpawnMinDistance; --Minimum spawn distance for loot zombies
 	self.SpawnLootZombieMaxDistance = self.ZombieSpawnMaxDistance; --Maximum spawn distance for loot zombies
 	

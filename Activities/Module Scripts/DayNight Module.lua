@@ -13,7 +13,7 @@ function Chernarus:StartDayNight()
 
 	--Day/Night
 	self.DayNightTimer = Timer(); --Don't change
-	self.DayNightInterval = 60000; --60 seconds for every day/night change
+	self.DayNightInterval = 180000; -- default 60 seconds for every day/night change
 	self.DayNightCheckDone = false; --A flag for whether the various once-off things that need checking on day/night change have been checked
 	self.DayNightIsNight = true;
 	

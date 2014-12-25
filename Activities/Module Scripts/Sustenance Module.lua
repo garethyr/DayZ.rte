@@ -17,8 +17,8 @@ function Chernarus:StartSustenance()
 	----------------------------
 	--This table stores all sustenance items and their values
 	self.SustItems = {
-			Food = {["Baked Beans"] = 5000},
-			Drink = {["Coke"] = 5000, ["Pepsi"] = 5000, ["Mountain Dew"] = 5000} --Note: ["name"] = value is the same as name = value, brackets are need for multiple words
+			Food = {["Baked Beans"] = 5000}, -- default 5000
+			Drink = {["Coke"] = 5000, ["Pepsi"] = 5000, ["Mountain Dew"] = 5000} --Note: ["name"] = value is the same as name = value, brackets are need for multiple words (default 5000, 5000, 5000)
 		};
 	------------------------
 	--SUSTENANCE CONSTANTS--
@@ -26,9 +26,9 @@ function Chernarus:StartSustenance()
 	self.SustTypes = {"hunger", "thirst"}; --The different sustenance types. Must be updated
 	self.InitialSust = {hunger = 10000, thirst = 10000}; --Initial hunger and thirst values
 	self.MaxSust = {hunger = 15000, thirst = 15000}; --Maximum hunger and thirst values
-	self.SustDrainMult = {hunger = 1, thirst = 1}; --Hunger and thirst extra drain multiplier
+	self.SustDrainMult = {hunger = .45, thirst = .45}; --Hunger and thirst extra drain multiplier (def 1,1)
 	self.SustDamageDelay = {hunger = 1000, thirst = 500}; --Hunger and thirst damage delay
-	self.SustDrainMultAct = {move = 3, jump = 5} --Multipliers for moving and jumping
+	self.SustDrainMultAct = {move = 2, jump = 5} --Multipliers for moving and jumping (def 3,5)
 	self.SustItemGroups = {hunger = "Food", thirst = "Drink"} --The names of the different item groups for sust types
 	--Vomiting
 	self.SustVomitRequirementMult = {hunger = 1.5, thirst = 2} --The multiple of self.MaxSust required for either sustenance type to cause vomiting.
@@ -90,9 +90,9 @@ end
 function Chernarus:NoSustenanceKill(actor, susttype)
 	local damage = 1;
 	if actor.Health <= 25 or actor.Health >= 90 then
-		damage = 3;
+		damage = 1; -- default 3
 	elseif actor.Health >= 75 then
-		damage = 2;
+		damage = 2; -- default 2
 	end
 	 --TODO Refactor this and susttable to allow for easier extension - make susttable have a different subtable for each susttype and put the timers in that, much like alerts
 	if susttype == "hunger" then

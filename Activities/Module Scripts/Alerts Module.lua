@@ -6,7 +6,7 @@ function Chernarus:StartAlerts()
 	--ALERT CONSTANTS--
 	-------------------
 	--The alert value at which to change activity to alerts
-	self.AlertValue = 10000;
+	self.AlertValue = 5000; -- default 10000
 	--The base value for alert lifetimes, in MS, only applies to alerts that aren't being renewed
 	self.AlertBaseLifetime = 5000;
 	--The base value for alert strengths, technically an arbitrary number but a lot is balanced to it
@@ -14,7 +14,7 @@ function Chernarus:StartAlerts()
 	--The limit for the strength of alerts (based on the base strength), to avoid ridiculous noise alerts and such
 	self.AlertStrengthLimit = 50000;
 	--The number of MS to wait after an actor shoots to start lowering his total activity
-	self.ActorActivityRemoveTime = 5000;
+	self.ActorActivityRemoveTime = 5000; -- default 5000
 	--The rate at which activity is removed from actors, removed every MS
 	self.ActorActivityRemoveSpeed = 10;
 	--The number to divide the alert strength by when determining if actors are close enough to react. Greater number means less reactive.
@@ -27,7 +27,7 @@ function Chernarus:StartAlerts()
 	--The default alert value for junk items when they hit the ground, each item can have a different value
 	self.JunkNoise = self.AlertValue*0.5;
 	--The alert value for flashlights, not relevant if they're not included
-	self.FlashlightAlertStrength = self.AlertValue;
+	self.FlashlightAlertStrength = self.AlertValue*.1; -- default NOT *.1
 	--A modifier for the light activity increase speed on light use, so they get slowed by some amount for balance. The actual speed is also based on the light's strength
 	self.LightActivityGainModifier = 0.02;
 	--The weapon alert value to compare strength with when making alerts (i.e. a weapon with 4 times this alert value will make an alert 4 times self.AlertValue)
@@ -48,10 +48,10 @@ function Chernarus:StartAlerts()
 	self.AlertTypes = {"sound", "light"};
 	
 	--Weapon sound values ordered from lowest (None) to highest (Very Very High), hunting knife with 0 sound is outside of this table
-	self.WeaponAlertValues = {N=10, VVL=25, VL=50, L=100, LM=150, M=200, MH=250, H=300, VH=350, VVH=500};
+	self.WeaponAlertValues = {N=100, VVL=250, VL=500, L=1000, LM=1650, M=2250, MH=3250, H=4500, VH=6000, VVH=10000}; -- default 10, 25, 50, 100, 150, 200, 250, 300, 350, 500
 	self.WeaponAlertTable = { --Note: weapons aren't separated by civilian/military for alerts since there's no need for that distinction here
-		--Civilian weapon alert values
-		["Hunting Knife"] = 0, ["Crowbar"] = self.WeaponAlertValues.N, ["Hatchet"] = self.WeaponAlertValues.N, ["[DZ] Makarov PM"] = self.WeaponAlertValues.L, ["[DZ] .45 Revolver"] = self.WeaponAlertValues.LM, ["[DZ] M1911A1"] = self.WeaponAlertValues.LM, ["[DZ] Compound Crossbow"] = self.WeaponAlertValues.N, ["[DZ] MR43"] = self.WeaponAlertValues.M, ["[DZ] Winchester 1866"] = self.WeaponAlertValues.LM, ["[DZ] Lee Enfield"] = self.WeaponAlertValues.VH, ["[DZ] CZ 550"] = self.WeaponAlertValues.VH,
+		--Civilian weapon alert values (crowbar & hatchet default = self.WeaponAlertValues.N)
+		["Hunting Knife"] = 0, ["Crowbar"] = 0, ["Hatchet"] = 0, ["[DZ] Makarov PM"] = self.WeaponAlertValues.L, ["[DZ] .45 Revolver"] = self.WeaponAlertValues.LM, ["[DZ] M1911A1"] = self.WeaponAlertValues.LM, ["[DZ] Compound Crossbow"] = self.WeaponAlertValues.N, ["[DZ] MR43"] = self.WeaponAlertValues.M, ["[DZ] Winchester 1866"] = self.WeaponAlertValues.LM, ["[DZ] Lee Enfield"] = self.WeaponAlertValues.VH, ["[DZ] CZ 550"] = self.WeaponAlertValues.VH,
 		--Military weapons and their alert values
 		["[DZ] G17"] = self.WeaponAlertValues.L, ["[DZ] AKM"] = self.WeaponAlertValues.M, ["[DZ] M16A2"] = self.WeaponAlertValues.M, ["[DZ] MP5SD6"] = self.WeaponAlertValues.VVL, ["[DZ] M4A1 CCO SD"] = self.WeaponAlertValues.VL, ["[DZ] Mk 48 Mod 0"] = self.WeaponAlertValues.H, ["[DZ] M14 AIM"] = self.WeaponAlertValues.H, ["[DZ] M107"] = self.WeaponAlertValues.VH
 	};

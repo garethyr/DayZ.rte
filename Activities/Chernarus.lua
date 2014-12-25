@@ -168,11 +168,9 @@ function Chernarus:AddStartingActors()
 	for i = 0 , self.PlayerCount do
 		if self:PlayerHuman(i) then
 			local player = CreateAHuman("Survivor Black Reticle Actor" , "DayZ.rte");
-			player:AddInventoryItem(CreateHDFirearm("[DZ] MR43" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHDFirearm("Crowbar" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHDFirearm("Hunting Knife" , "DayZ.rte"));
+			player:AddInventoryItem(CreateHDFirearm("[DZ] .45 Revolver" , "DayZ.rte"));
+--			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
 			player:AddInventoryItem(CreateHDFirearm("Baked Beans" , "DayZ.rte"));
 			player:AddInventoryItem(CreateHDFirearm("Coke" , "DayZ.rte"));
 			if self.IncludeFlashlight then
@@ -180,7 +178,7 @@ function Chernarus:AddStartingActors()
 			end
 			player:AddInventoryItem(CreateTDExplosive("Flare" , "DayZ.rte"));
 			player.Sharpness = 0;
-			player.Pos = Vector(1250, 300)--(350, 550);
+			player.Pos = Vector(165, 570)--(1250, 300);
 			player.Team = self.PlayerTeam;
 			player.AIMode = Actor.AIMODE_SENTRY;
 			player.HUDVisible = false

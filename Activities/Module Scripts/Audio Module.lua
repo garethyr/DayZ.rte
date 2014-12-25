@@ -153,7 +153,6 @@ function Chernarus:AudioChangeGlobalSound(soundtype) --Called by notifications f
 end
 function Chernarus:AudioChangeGlobalOverrideSound(overridesound)
 	if self.AudioGlobalCurrentOverrideSound ~= overridesound then
-	print ("hi");
 		self.AudioGlobalCurrentOverrideSound = overridesound;
 		self.AudioGlobalSoundStatus = "fadeout";
 	end

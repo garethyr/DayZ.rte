@@ -68,7 +68,7 @@ function Chernarus:StartActivity()
 	--MODULE INCLUSION--
 	--------------------
 	self.IncludeLoot = true;
-	self.IncludeSustenance = false;
+	self.IncludeSustenance = true;
 	self.IncludeSpawns = true;
 	self.IncludeDayNight = true;
 	self.IncludeFlashlight = true;

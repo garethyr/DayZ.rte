@@ -25,11 +25,13 @@ function Chernarus:StartSustenance()
 	------------------------
 	self.SustTypes = {"hunger", "thirst"}; --The different sustenance types. Must be updated
 	self.InitialSust = {hunger = 10000, thirst = 10000}; --Initial hunger and thirst values
-	self.MaxSust = {hunger = 11000, thirst = 11000}; --Maximum hunger and thirst values
+	self.MaxSust = {hunger = 15000, thirst = 15000}; --Maximum hunger and thirst values
 	self.SustDrainMult = {hunger = 1, thirst = 1}; --Hunger and thirst extra drain multiplier
 	self.SustDamageDelay = {hunger = 1000, thirst = 500}; --Hunger and thirst damage delay
 	self.SustDrainMultAct = {move = 3, jump = 5} --Multipliers for moving and jumping
 	self.SustItemGroups = {hunger = "Food", thirst = "Drink"} --The names of the different item groups for sust types
+	--Vomiting
+	self.SustVomitRequirementMult = {hunger = 1.5, thirst = 2} --The multiple of self.MaxSust required for either sustenance type to cause vomiting.
 	self.SustVomitDrainMult = {hunger = 0.75, thirst = 0.75}; --The percentage mult vomiting drains each sust type (0.75 means actor ends up with 75% of previous sust)
 end
 ---------------------
@@ -56,15 +58,12 @@ function Chernarus:DoSustenance() --TODO refactor this, cleaner update function 
 		end
 		if ToAHuman(v.actor) ~= nil then
 			--Drain hunger and thirst and call the kill function if necessary
-			local hasSust = false;
 			for _, susttype in pairs(self.SustTypes) do
 				if v[susttype] > 0 then
 					v[susttype] = v[susttype] - v.drainMult*self.SustDrainMult[susttype];
-					hasSust = true;
+				else
+					self:NoSustenanceKill(v.actor, susttype);
 				end
-			end
-			if not hasSust then
-				self:NoSustenanceKill(v.actor, k);
 			end
 			
 			--TODO potentially refactor this into one universal item use check
@@ -74,7 +73,7 @@ function Chernarus:DoSustenance() --TODO refactor this, cleaner update function 
 				for susttype, itemgroup in pairs (self.SustItemGroups) do
 					if ahuman.EquippedItem:HasObjectInGroup(itemgroup) then
 						v[susttype] = v[susttype] + self.SustItems[itemgroup][ahuman.EquippedItem.PresetName];
-						if v[susttype] > self.MaxSust[susttype] then
+						if v[susttype] > self.MaxSust[susttype]*self.SustVomitRequirementMult[susttype] then
 							self:DoSustenanceVomiting(v);
 						end
 						break; --No need to check the rest of them since one won't eat/drink more than one item per frame
@@ -88,22 +87,26 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --The actual killing
-function Chernarus:NoSustenanceKill(actor, key)
+function Chernarus:NoSustenanceKill(actor, susttype)
 	local damage = 1;
 	if actor.Health <= 25 or actor.Health >= 90 then
 		damage = 3;
 	elseif actor.Health >= 75 then
 		damage = 2;
 	end
-	if self.SustTable[key].htimer:IsPastSimMS(self.SustDamageDelay.hunger*damage) then
-		actor.Health = actor.Health - damage;
-		actor:FlashWhite(100);
-		self.SustTable[key].htimer:Reset();
-	end
-	if self.SustTable[key].ttimer:IsPastSimMS(self.SustDamageDelay.thirst*damage) then
-		actor.Health = actor.Health - damage;
-		actor:FlashWhite(100);
-		self.SustTable[key].ttimer:Reset();
+	 --TODO Refactor this and susttable to allow for easier extension - make susttable have a different subtable for each susttype and put the timers in that, much like alerts
+	if susttype == "hunger" then
+		if self.SustTable[actor.UniqueID].htimer:IsPastSimMS(self.SustDamageDelay.hunger) then
+			actor.Health = actor.Health - damage;
+			actor:FlashWhite(100);
+			self.SustTable[actor.UniqueID].htimer:Reset();
+		end
+	elseif susttype == "thirst" then
+		if self.SustTable[actor.UniqueID].ttimer:IsPastSimMS(self.SustDamageDelay.thirst) then
+			actor.Health = actor.Health - damage;
+			actor:FlashWhite(100);
+			self.SustTable[actor.UniqueID].ttimer:Reset();
+		end
 	end
 end
 --Makes the sust table entry's actor vomit and decreases all of his susts
@@ -112,7 +115,9 @@ function Chernarus:DoSustenanceVomiting(sust)
 	sust.actor:GetController():SetState(Controller.BODY_CROUCH, true);
 	sust.actor:GetController():SetState(Controller.BODY_JUMP, false);
 	sust.actor:GetController():SetState(Controller.BODY_JUMPSTART, false);
-	for k, v in pairs(self.SustTypes) do
-		sust[k] = self.MaxSust[k]*self.SustVomitDrainMult[k];
+	sust.actor:FlashWhite(500);
+	--Set the actor's sustenance as the minimum of the MaxSust*VomitDrain or the actor's CurrentSust*VomitDrain for each sustenance type
+	for _, susttype in pairs(self.SustTypes) do
+		sust[susttype] = math.min(self.MaxSust[susttype]*self.SustVomitDrainMult[susttype], sust[susttype]*self.SustVomitDrainMult[susttype]);
 	end
 end

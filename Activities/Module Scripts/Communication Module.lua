@@ -55,7 +55,7 @@ end
 function Chernarus:IconsRequestSustenance_ActorSustenancePercent(susttype, actor)
 	if self.IncludeSustenance then
 		if self.SustTable[actor.UniqueID] ~= nil then
-			return (self.InitialSust[susttype] - math.min(self.InitialSust[susttype], self.SustTable[actor.UniqueID][susttype]))/self.InitialSust[susttype];
+			return (self.MaxSust[susttype] - math.min(self.MaxSust[susttype], self.SustTable[actor.UniqueID][susttype]))/self.MaxSust[susttype];
 		end
 	end
 	return 0;

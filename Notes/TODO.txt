@@ -1,0 +1,42 @@
+Todo List (in no particular order unless otherwise stated)
+
+1) Map transition to tunnel scene
+	(has to be made playable before I get an idea of how deep to set the tunnels)
+2) Zombie AI
+3) More food/ drink items
+4) Well areas/ refillable canteen
+5) Zombie sprites - at least several more sets; is randomization possible (like Ronin)?
+6) Remove suspense sounds (reimplement after new build's sound update?)
+7) Weather?
+8) More transitions to other scenes
+	(Skalisty Island; shipwreck; bandit hideout; Green Mountain)
+	- If you can code one transition, I'll probably be able to see how you did it and be able to add new areas by myself
+9) Add ammo to loot spawn
+	(you can check the xmas alpha to see how I did it; I'm not sure if it was the best way)
+10) Separate military loot areas
+	(at this point, only the ATC, two hangars, and last building on the map, but not the firehouse)
+11) BG spawning for day/night backgrounds?
+12) Sharpaim shenanigans for weapons
+13) X amt of damage in X time - zombie ragdolls for a second to simulate stumbling
+	(player too?)
+14) NPCs?
+15) Helicopter?
+	(flyby along preset path until offscreen with mounted MG, shooting at player if spotted? possible?)
+16) "Dodge" system
+17) Beartrap
+18) Fix medical box
+19) Random events? (NPCs, bandit ambush, zombie hordes, etc?)
+20) Bandit sprites/actor
+21) Clock (days survived and/or current time?)
+22) "Zombies killed" counter
+22) Rethink stairs?
+23) Zombie climbing? (next build possible?)
+24) Vomit emitter fx
+25) New player condition - shaking?
+	(after receiving x amt heavy damage; will throw off sharpaim when implemented; cured by (26...
+26) ... Painkillers?
+27) New player condition - unconsciousness?
+	(after significant bloodloss or by random zombie hit; unable to move and complete fog of war for x seconds; cured by (28...
+28) ... Epi-pen? (adrenaline shot) - for player, will need NPC to administer
+	(could be incentive to group up w/NPCs
+29) Implement more DayZ player sounds (mostly damage sounds)

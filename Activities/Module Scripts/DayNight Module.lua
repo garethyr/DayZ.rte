@@ -14,8 +14,9 @@ function Chernarus:StartDayNight()
 	--Day/Night
 	self.DayNightTimer = Timer(); --Don't change
 	self.DayNightInterval = 60000; --60 seconds for every day/night change
+	self.DayNightTimer.ElapsedSimTimeMS = self.DayNightInterval*0.5; --Initial start time for the game, best defined as some < 1 multiplier of the interval
 	self.DayNightCheckDone = false; --A flag for whether the various once-off things that need checking on day/night change have been checked
-	self.DayNightIsNight = true;
+	self.DayNightIsNight = false; --Flag for whether it's night, true starts the game off during the night, false starts it off during the day
 	
 	---------------------------
 	--DYNAMIC DAYNIGHT TABLES--
@@ -41,7 +42,7 @@ end
 function Chernarus:DoDayNight()
 	self:DoDayNightCleanup();
 	--Swap from day to night after a certain amount of time
-	--TODO Have a more smooth swapping, gradual darnkess etc. Use numbers instead of booleans to determine when alerts will have effects?
+	--TODO Have a more smooth swapping, gradual darkness etc. Use numbers instead of booleans to determine when alerts will have effects?
 	if self.DayNightTimer:IsPastSimMS(self.DayNightInterval) then
 		self:CycleDayNight();
 		self.DayNightTimer:Reset();
@@ -54,7 +55,7 @@ function Chernarus:DoDayNight()
 	
 	self:DoDayNightContinuousActions();
 	
-	--Remove light alerts during day, increase alert distances for zombies.
+	--TODO: Remove light alerts during day, increase alert distances for zombies.
 	if self.DayNightIsNight == false then
 	--Make nighttime when in night
 	elseif self.DayNightIsNight == true then

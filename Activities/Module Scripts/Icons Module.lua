@@ -51,6 +51,7 @@ end
 --Update frame and position for all icons
 function Chernarus:DoIcons()
 	self:DoMeters();
+	self:DoScoreDisplay();
 end
 --------------------
 --DELETE FUNCTIONS--
@@ -94,5 +95,11 @@ function Chernarus:DoMeters()
 																	--To get screen of player, use Activity.ScreenOfPlayer(player)
 		end
 		self:IconsNotifyDayNight_RevealIcons(SceneMan:GetOffset(meters.screen));
+	end
+end
+--Write screentext displaying number of zombie kills days survived
+function Chernarus:DoScoreDisplay()
+	for i = 0, 3 do
+		FrameMan:SetScreenText(string.format("Total Zombies Killed: %d\nTotal Nights Survived: %d", self.ZombiesKilled, self.NightsSurvived), i, 0, 0, false);
 	end
 end

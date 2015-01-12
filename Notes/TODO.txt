@@ -1,5 +1,9 @@
-Todo List (in no particular order unless otherwise stated)
-
+-----------------------------------------------------------------------------------------
+--TODO List (in no particular order unless otherwise stated)
+-----------------------------------------------------------------------------------------
+-----------
+--General--
+-----------
 1) Map transition to tunnel scene
 	(has to be made playable before I get an idea of how deep to set the tunnels)
 2) Zombie AI
@@ -11,42 +15,48 @@ Todo List (in no particular order unless otherwise stated)
 8) More transitions to other scenes
 	(Skalisty Island; shipwreck; bandit hideout; Green Mountain)
 	- If you can code one transition, I'll probably be able to see how you did it and be able to add new areas by myself
-10) Separate military loot areas
+9) Separate military loot areas
 	(at this point, only the ATC, two hangars, and last building on the map, but not the firehouse)
-11) BG spawning for day/night backgrounds?
-12) Sharpaim shenanigans for weapons
-13) X amt of damage in X time - zombie ragdolls for a second to simulate stumbling
+10) BG spawning for day/night backgrounds?
+11) Sharpaim shenanigans for weapons
+12) X amt of damage in X time - zombie ragdolls for a second to simulate stumbling
 	(player too?)
-14) NPCs?
-15) Helicopter?
+13) NPCs?
+14) Helicopter?
 	(flyby along preset path until offscreen with mounted MG, shooting at player if spotted? possible?)
-16) "Dodge" system
-17) Beartrap
-18) Fix medical box -- NEED [DZ] version of medical box with no script
-19) Random events? (NPCs, bandit ambush, zombie hordes, etc?)
-20) Bandit sprites/actor
-21) Clock (days survived and/or current time?)
-22) "Zombies killed" counter
-22) Rethink stairs?
-23) Zombie climbing? (next build possible?)
-24) Vomit emitter fx
-25) New player condition - shaking?
+15) "Dodge" system
+16) Beartrap
+17) Fix medical box -- NEED [DZ] version of medical box with no script
+18) Random events? (NPCs, bandit ambush, zombie hordes, etc?)
+19) Bandit sprites/actor
+20) Clock (days survived and/or current time?)
+21) Rethink stairs?
+22) Zombie climbing? (next build possible?)
+23) Vomit emitter fx
+24) New player condition - shaking?
 	(after receiving x amt heavy damage; will throw off sharpaim when implemented; cured by (26...
-26) ... Painkillers?
-27) New player condition - unconsciousness?
+25) ... Painkillers?
+26) New player condition - unconsciousness?
 	(after significant bloodloss or by random zombie hit; unable to move and complete fog of war for x seconds; cured by (28...
-28) ... Epi-pen? (adrenaline shot) - for player, will need NPC to administer
+27) ... Epi-pen? (adrenaline shot) - for player, will need NPC to administer
 	(could be incentive to group up w/NPCs
-29) Implement more DayZ player sounds (mostly damage sounds)
+28) Implement more DayZ player sounds (mostly damage sounds)
 
 
-Lua Specific TODOs (in no particular order):
+----------------
+--Lua Specific--
+----------------
 1) Make custom zombie AI (bleh)
 2) Make vomit act over time
 3) Fix alert bugs where they place late or in strange locations
 4) Completely properly fix all crashes on death
 5) Smooth out day/night transition
+6) Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
 
-Completed
-9) Add ammo to loot spawn -- COMPLETED IN XMAS ALPHA (yes this is the best way, gj :D)
-	(you can check the xmas alpha to see how I did it; I'm not sure if it was the best way)
+
+-------------
+--Completed--
+-------------
+1) Added ammo to loot spawn
+2) Added "Zombies killed" counter
+3) Added "Nights survived" counter

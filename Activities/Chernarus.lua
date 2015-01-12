@@ -53,8 +53,12 @@ function Chernarus:StartActivity()
 	---------------
 	--Limit of MOIDs allowed in the activity
 	self.MOIDLimit = 175;
-
+	--Gold is not allowed or applicable
 	self:SetTeamFunds(0 , 0);
+	--Tracker for zombies killed
+	self.ZombiesKilled = 0;
+	--Tracker for nights survived
+	self.NightsSurvived = -1; --Note: This count will be 1 less than it should if the game begins during night instead of day. This can be fixed if we keep these counters forever
 
 	--Teams
 	self.PlayerTeam = Activity.TEAM_1;
@@ -229,6 +233,8 @@ function Chernarus:UpdateActivity()
 	---------------------
 	if true then
 	if UInputMan:KeyPressed(3) then --Reset all
+		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.PlayerTeam);
+		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.NPCTeam);
 		for k, v in pairs (self.ZombieTable) do
 			v.actor.ToDelete = true;
 		end
@@ -367,6 +373,7 @@ function Chernarus:DoActorChecksAndCleanup()
 		if not MovableMan:IsActor(v.actor) then
 			print ("Removing dead zombie from table in Main Script");
 			self.ZombieTable[k] = nil;
+			self.ZombiesKilled = self.ZombiesKilled + 1;
 		end
 	end
 end

@@ -124,6 +124,10 @@ function Chernarus:DayNightNotifyMany_DayNightCycle()
 		local soundtype = self.DayNightIsNight and "night" or "day";
 		self:AudioChangeGlobalSound(soundtype);
 	end
+	--Every morning, increment the nights survived count
+	if self.DayNightIsNight == false then
+		self.NightsSurvived = self.NightsSurvived + 1;
+	end
 end
 
 --Flashlight

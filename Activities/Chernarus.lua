@@ -90,6 +90,14 @@ function Chernarus:StartActivity()
 	-------------------
 	--Add starting actors
 	self:AddStartingActors();
+	
+	
+	
+	--GIANT MODULE TEST--
+	self.GiantModuleTestTimer = Timer();
+	self.GiantModuleTestInterval = 10000;
+	self.GiantModuleTestTimer.ElapsedSimTimeMS = self.GiantModuleTestInterval*0.75;
+	--GIANT MODULE TEST--
 end
 -----------------------------------------------------------------------------------------
 -- Module Stuff
@@ -293,6 +301,19 @@ function Chernarus:UpdateActivity()
 	---------------------
 	--TODO TESTING KEYS--
 	---------------------
+	
+	--GIANT MODULE TEST--
+	if self.GiantModuleTestTimer:IsPastSimMS(self.GiantModuleTestInterval) then
+		local obj = CreateTerrainObject("BG Test", "DayZ.rte");
+		if obj then
+			obj.Pos = Vector(SceneMan.SceneWidth/2, SceneMan.SceneHeight/2);
+			obj.Team = 0;
+			print ("GIANT MODULE TEST: Adding "..obj.PresetName.." to scene at point "..tostring(obj.Pos));
+			SceneMan:AddTerrainObject(obj);
+		end
+		self.GiantModuleTestTimer:Reset();
+	end
+	--GIANT MODULE TEST--
 	
 	--Clean tables, must be done first as it's important to prevent crashes
 	self:DoActorChecksAndCleanup();

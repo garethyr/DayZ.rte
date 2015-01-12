@@ -152,10 +152,12 @@ function Chernarus:DoLootSpawning()
 			if math.random() < (self.LootSpawnChance + RangeRand(0, self.LootSpawnChanceModifier)) and self:CheckForNearbyHumans(v.area:GetCenterPoint(), self.LootSpawnMinDistance, self.LootSpawnMaxDistance) then
 				for j = self.LootMinSpawnAmount, math.random(self.LootMinSpawnAmount,self.LootMaxSpawnAmount) do
 					self:SpawnLoot(v.area, i, v.lootSet);
-					self.LootTimer[i]:Reset();
 					v.filled = true;
 				end
 			end
+			self.LootTimer[i]:Reset();
+		elseif v.filled == true then
+			self.LootTimer[i]:Reset();
 		end
 	end
 end

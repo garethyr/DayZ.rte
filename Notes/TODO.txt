@@ -11,8 +11,6 @@ Todo List (in no particular order unless otherwise stated)
 8) More transitions to other scenes
 	(Skalisty Island; shipwreck; bandit hideout; Green Mountain)
 	- If you can code one transition, I'll probably be able to see how you did it and be able to add new areas by myself
-9) Add ammo to loot spawn -- COMPLETED IN XMAS ALPHA (yes this is the best way, gj :D)
-	(you can check the xmas alpha to see how I did it; I'm not sure if it was the best way)
 10) Separate military loot areas
 	(at this point, only the ATC, two hangars, and last building on the map, but not the firehouse)
 11) BG spawning for day/night backgrounds?
@@ -48,3 +46,7 @@ Lua Specific TODOs (in no particular order):
 3) Fix alert bugs where they place late or in strange locations
 4) Completely properly fix all crashes on death
 5) Smooth out day/night transition
+
+Completed
+9) Add ammo to loot spawn -- COMPLETED IN XMAS ALPHA (yes this is the best way, gj :D)
+	(you can check the xmas alpha to see how I did it; I'm not sure if it was the best way)

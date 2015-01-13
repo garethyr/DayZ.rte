@@ -2,7 +2,7 @@
 -- Display meters for player stats and any other icons
 -----------------------------------------------------------------------------------------
 --Setup
-function Chernarus:StartIcons()
+function DayZActivity:StartIcons()
 	------------------
 	--ICON CONSTANTS--
 	------------------
@@ -32,7 +32,7 @@ end
 --CREATION FUNCTIONS--
 ----------------------
 --Add an actor to the meter table
-function Chernarus:AddToMeterTable(actor)
+function DayZActivity:AddToMeterTable(actor)
 	self.MeterTable[actor.UniqueID] = {};
 	self.MeterTable[actor.UniqueID].actor = actor;
 	self.MeterTable[actor.UniqueID].screen = actor:GetController().Player; --Starts as -1 as there actor isn't selected yet
@@ -49,14 +49,14 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Update frame and position for all icons
-function Chernarus:DoIcons()
+function DayZActivity:DoIcons()
 	self:DoMeters();
 	self:DoScoreDisplay();
 end
 --------------------
 --DELETE FUNCTIONS--
 --------------------
-function Chernarus:IconsRemoveMeter(ID)
+function DayZActivity:IconsRemoveMeter(ID)
 	for k, v in pairs(self.MeterTable[ID]) do
 		if type(k) == "number" then
 			v.ToDelete = true;
@@ -68,7 +68,7 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Manage all meters
-function Chernarus:DoMeters()
+function DayZActivity:DoMeters()
 	for _, meters in pairs (self.MeterTable) do
 		--Update meter positions and frames
 		for k, meter in pairs (meters) do
@@ -98,7 +98,7 @@ function Chernarus:DoMeters()
 	end
 end
 --Write screentext displaying number of zombie kills days survived
-function Chernarus:DoScoreDisplay()
+function DayZActivity:DoScoreDisplay()
 	for i = 0, 3 do
 		FrameMan:SetScreenText(string.format("Total Zombies Killed: %d\nTotal Nights Survived: %d", self.ZombiesKilled, self.NightsSurvived), i, 0, 0, false);
 	end

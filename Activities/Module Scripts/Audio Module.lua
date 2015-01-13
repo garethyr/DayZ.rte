@@ -2,7 +2,7 @@
 -- Play global and location based audio for the players
 -----------------------------------------------------------------------------------------
 --Setup
-function Chernarus:StartAudio()
+function DayZActivity:StartAudio()
 	AudioMan:StopMusic();
 	
 	-------------------
@@ -97,7 +97,7 @@ end
 --CREATION FUNCTIONS--
 ----------------------
 --Add an audio emitter to the table
-function Chernarus:AudioAddLocalizedSound(actor, areaname)
+function DayZActivity:AudioAddLocalizedSound(actor, areaname)
 	local choice = math.random(1, self.AudioLocalizedSoundDefinitionTable[areaname].size);
 	local emitter = CreateAEmitter(self.AudioLocalizedSoundDefinitionTable[areaname][choice], "DayZ.rte");
 	emitter.Pos = actor.Pos;
@@ -117,7 +117,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Manage and play all audio
-function Chernarus:DoAudio()
+function DayZActivity:DoAudio()
 	self:CleanupAudio();
 	self:AudioDoLocalSounds(); --TODO Simplify this, it doesn't need any complexity
 	self:AudioDoSuspenseSounds();
@@ -130,7 +130,7 @@ end
 --DELETE FUNCTIONS--
 --------------------
 --Find any audio emitters that need to be removed
-function Chernarus:CleanupAudio()
+function DayZActivity:CleanupAudio()
 	for k, v in pairs (self.AudioLocalizedSoundTable) do
 		if not MovableMan:IsActor(v.target) then
 			self.AudioLocalizedSoundTable[k] = nil;
@@ -145,20 +145,20 @@ end
 --------------------
 --GLOBAL--
 --Deal with global audio, based on time of day and weather
-function Chernarus:AudioChangeGlobalSound(soundtype) --Called by notifications from DayNight and Weather module
+function DayZActivity:AudioChangeGlobalSound(soundtype) --Called by notifications from DayNight and Weather module
 	if self.AudioGlobalCurrentSound ~= soundtype then
 		self.AudioGlobalCurrentSound = soundtype;
 		self.AudioGlobalSoundStatus = "fadeout";
 	end
 end
-function Chernarus:AudioChangeGlobalOverrideSound(overridesound)
+function DayZActivity:AudioChangeGlobalOverrideSound(overridesound)
 	if self.AudioGlobalCurrentOverrideSound ~= overridesound then
 		self.AudioGlobalCurrentOverrideSound = overridesound;
 		self.AudioGlobalSoundStatus = "fadeout";
 	end
 end
 --Fade in and out sound and transition between it when it's done fading
-function Chernarus:AudioDoGlobalSoundTransitions()
+function DayZActivity:AudioDoGlobalSoundTransitions()
 	if self.AudioGlobalSoundStatus == "fadeout" and AudioMan.MusicVolume >= self.AudioGlobalMinVolume then
 		AudioMan.MusicVolume = AudioMan.MusicVolume - self.AudioGlobalFadeSpeed;
 		if AudioMan.MusicVolume <= self.AudioGlobalMinVolume then
@@ -181,7 +181,7 @@ function Chernarus:AudioDoGlobalSoundTransitions()
 end
 --LOCAL--
 --Deal with local sounds, add them and move them as necessary
-function Chernarus:AudioDoLocalSounds()
+function DayZActivity:AudioDoLocalSounds()
 	for i = 0, Activity.MAXPLAYERCOUNT do
 		if self:PlayerHuman(i) then
 			local tab = self.AudioLocalizedSoundTable[i];
@@ -200,7 +200,7 @@ function Chernarus:AudioDoLocalSounds()
 	end
 end
 --Get the audio area the actor is in
-function Chernarus:GetActorAudioArea(actor)
+function DayZActivity:GetActorAudioArea(actor)
 	for _, areatype in pairs (self.AudioAreas) do
 		for i, v in ipairs(areatype) do
 			if v.area:IsInside(actor.Pos) then
@@ -218,7 +218,7 @@ function Chernarus:GetActorAudioArea(actor)
 end
 --SUSPENSE--
 --Deal with suspense sounds, play them randomly over time
-function Chernarus:AudioDoSuspenseSounds() --TODO when new version of CC is released, swap over to using PlaySound for proper full map coverage
+function DayZActivity:AudioDoSuspenseSounds() --TODO when new version of CC is released, swap over to using PlaySound for proper full map coverage
 	if self.AudioSuspenseTimer:IsPastSimMS(self.AudioSuspenseSoundInterval) then
 		local choice = math.random(1, self.AudioSuspenseSoundDefinitionTable.size);
 		local postable = {100, SceneMan.SceneWidth/2, SceneMan.SceneWidth - 100};

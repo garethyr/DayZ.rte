@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------
 -- Everything for loot
 -----------------------------------------------------------------------------------------
-function Chernarus:StartLoot()
+function DayZActivity:StartLoot()
 	------------------
 	--LOOT CONSTANTS--
 	------------------
@@ -68,7 +68,7 @@ end
 --CREATION FUNCTIONS--
 ----------------------
 --The actual loot spawning
-function Chernarus:SpawnLoot(area, areanum, set)
+function DayZActivity:SpawnLoot(area, areanum, set)
 	if MovableMan:GetMOIDCount() <= self.MOIDLimit+30 then
 		local loot;
 		if set == 1 then --Basic loot set: junk, food, drinks, sometimes melee weapons
@@ -104,7 +104,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Run the loot update functions, cleanup first then check for spawning
-function Chernarus:DoLoot()
+function DayZActivity:DoLoot()
 	self:DoLootDespawns();
 	self:DoLootCleanup();
 	self:DoLootSpawning();
@@ -113,7 +113,7 @@ end
 --DELETE FUNCTIONS--
 --------------------
 --Kill loot that's been sitting around past the loot lifetime
-function Chernarus:DoLootDespawns()
+function DayZActivity:DoLootDespawns()
 	for areanum, tab in ipairs(self.LootTable) do
 		for _, item in ipairs(tab) do
 			if item.Age > self.LootLifetime and not self:CheckForNearbyHumans(item.Pos, 0, LootSpawnMaxDistance) then
@@ -123,7 +123,7 @@ function Chernarus:DoLootDespawns()
 	end
 end
 --Remove loot from table when picked up or destroyed
-function Chernarus:DoLootCleanup()
+function DayZActivity:DoLootCleanup()
 	local v;
 	--Iterate through each area section of the loot table
 	for areanum, tab in ipairs(self.LootTable) do
@@ -145,17 +145,20 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Pick where to spawn loot based on nearby humans (players or NPCs)
-function Chernarus:DoLootSpawning()
+function DayZActivity:DoLootSpawning()
 	for i, v in ipairs(self.LootAreas) do
 		--If there's no loot in the area, a player nearby but not too close and the timer's ready, spawn loot
 		if v.filled == false and self.LootTimer[i]:IsPastSimMS(self.LootInterval) then
-			if math.random() < (self.LootSpawnChance + RangeRand(0, self.LootSpawnChanceModifier)) and self:CheckForNearbyHumans(v.area:GetCenterPoint(), self.LootSpawnMinDistance, self.LootSpawnMaxDistance) then
-				for j = self.LootMinSpawnAmount, math.random(self.LootMinSpawnAmount,self.LootMaxSpawnAmount) do
-					self:SpawnLoot(v.area, i, v.lootSet);
-					v.filled = true;
+			if self:CheckForNearbyHumans(v.area:GetCenterPoint(), self.LootSpawnMinDistance, self.LootSpawnMaxDistance) then
+				if math.random() < (self.LootSpawnChance + RangeRand(0, self.LootSpawnChanceModifier)) then
+					for j = self.LootMinSpawnAmount, math.random(self.LootMinSpawnAmount, self.LootMaxSpawnAmount) do
+						self:SpawnLoot(v.area, i, v.lootSet);
+						v.filled = true;
+					end
 				end
+				self.LootTimer[i]:Reset(); --Only reset the timer if we actually have a human close enough to try to trigger loot
 			end
-			self.LootTimer[i]:Reset();
+		--Otherwise if there's loot in the area, reset the timer to avoid instant loot spawning
 		elseif v.filled == true then
 			self.LootTimer[i]:Reset();
 		end

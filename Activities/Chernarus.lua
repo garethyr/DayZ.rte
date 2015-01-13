@@ -12,6 +12,7 @@ function Chernarus:StartActivity()
 	--------------------
 	--Global DayZ Human Wound Table, reset/created on mission start just in case
 	DayZHumanWoundTable = {};
+	DayZActivity = self;
 	
 	----------------------
 	--START OF CONSTANTS--

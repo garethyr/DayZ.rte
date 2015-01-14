@@ -2,7 +2,7 @@
 -- Spawn zombies and NPCs for a variety of reasons and purposes
 -----------------------------------------------------------------------------------------
 --Setup
-function DayZActivity:StartSpawns()
+function DayZ:StartSpawns()
 	--------------------------
 	--ZOMBIE SPAWN CONSTANTS--
 	--------------------------
@@ -38,7 +38,7 @@ end
 --Spawn 3 zombies in the area
 --SpawnTypes: alert, loot - the former is only for alert zombies
 --TargetTypes: alert, actor, pos - the first is for any alert triggered spawn, the second for actor and the third for static position --TODO is pos never used???
-function DayZActivity:SpawnZombie(spawnpoint, target, targettype, spawntype)
+function DayZ:SpawnZombie(spawnpoint, target, targettype, spawntype)
 	if MovableMan:GetMOIDCount() <= self.MOIDLimit then
 		local targetpos;
 		--Get the target's position to calculate startdist and use for waypoints
@@ -74,14 +74,14 @@ end
 --------------------
 --UPDATE FUNCTIONS--
 --------------------
-function DayZActivity:DoSpawns()
+function DayZ:DoSpawns()
 	self:DoLootZombieSpawning();
 end
 --------------------
 --ACTION FUNCTIONS--
 --------------------
 --Pick where to spawn the zombies based on player position
-function DayZActivity:DoLootZombieSpawning()
+function DayZ:DoLootZombieSpawning()
 	--If we have a human in one of the loot zombie spawn areas and haven't spawned recently, spawn zombies for the area.
 	local target, nearhumans, nearalerts;
 	for i, v in ipairs(self.SpawnLootZombieArea) do

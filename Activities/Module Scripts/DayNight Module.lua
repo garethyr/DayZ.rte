@@ -2,7 +2,7 @@
 -- Use FOW to fake night
 -----------------------------------------------------------------------------------------
 --Setup
-function DayZActivity:StartDayNight()
+function DayZ:StartDayNight()
 	----------------------
 	--DAYNIGHT CONSTANTS--
 	----------------------
@@ -29,7 +29,7 @@ end
 --CREATE FUNCTIONS--
 --------------------
 --Add a light item so we can reveal it
-function DayZActivity:AddDayNightLightItem(item)  --TODO Decide if I want daynight to handle this and flashlight, or let the items do it by themselves
+function DayZ:AddDayNightLightItem(item)  --TODO Decide if I want daynight to handle this and flashlight, or let the items do it by themselves
 	if self.DayNightLightItemTable[item.UniqueID] == nil then
 		local str = string.find(item.PresetName,"Chemlight") and "Chemlight" or item.PresetName;
 		self.DayNightLightItemTable[item.UniqueID] = {item = item, reveal = self.DayNightLightItemBaseRevealSize[str]};
@@ -39,7 +39,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Swap day and night and act accordingly
-function DayZActivity:DoDayNight()
+function DayZ:DoDayNight()
 	self:DoDayNightCleanup();
 	--Swap from day to night after a certain amount of time
 	--TODO Have a more smooth swapping, gradual darkness etc. Use numbers instead of booleans to determine when alerts will have effects?
@@ -69,7 +69,7 @@ end
 --DELETE FUNCTIONS--
 --------------------
 --Cleanup any dead items
-function DayZActivity:DoDayNightCleanup()
+function DayZ:DoDayNightCleanup()
 	for k, v in pairs(self.DayNightLightItemTable) do
 		if v.item.RootID == 255 or (v.item.RootID ~= 255 and v.item.RootID ~= v.item.ID and ToAHuman(MovableMan:GetMOFromID(v.item.RootID)).EquippedItem.UniqueID ~= v.item.UniqueID) then
 			print ("REMOVING ITEM FROM DAYNIGHT ITEM TABLE: "..v.item.UniqueID);
@@ -81,7 +81,7 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Cycle the day and night
-function DayZActivity:CycleDayNight()
+function DayZ:CycleDayNight()
 	if self.DayNightIsNight == true then
 		self.DayNightIsNight = false;
 	else
@@ -91,7 +91,7 @@ function DayZActivity:CycleDayNight()
 	self.DayNightCheck = false;
 end
 --Actions performed once whenever the game changes from night to day
-function DayZActivity:DoDayNightChangeActions()
+function DayZ:DoDayNightChangeActions()
 	if self.DayNightIsNight == true then --During the night
 	else --During the day
 		--Reveal the map (only for Players and NPCs)
@@ -100,7 +100,7 @@ function DayZActivity:DoDayNightChangeActions()
 	end
 end
 --Actions performed continuously during day or night
-function DayZActivity:DoDayNightContinuousActions()
+function DayZ:DoDayNightContinuousActions()
 	if self.DayNightIsNight == true then --During the night
 		--Make everything invisible for humans
 		SceneMan:MakeAllUnseen(Vector(24, 24), self.PlayerTeam);

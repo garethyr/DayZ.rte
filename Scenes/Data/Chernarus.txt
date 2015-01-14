@@ -1,0 +1,25 @@
+||AREA NUMBERS||
+LootAreas = 58
+LootZombieSpawnAreas = 26
+ShelterAreas = 20
+AudioCivilizationAreas = 5
+AudioBeachAreas = 2
+
+||TRANSITION AREAS||
+Transition Area 1 = Chernarus Tunnels 1
+Transition Area 2 = Chernarus Tunnels 1
+Transition Area 3 = Ocean
+	Constraints = HAS BOAT
+Transition Area 4 = Chernarus Tunnels 1
+	Constraints = IN HELICOPTER
+
+||MODULE INCLUSIONS||
+Loot = 1
+Sustenance = 1
+Spawns = 1
+DayNight = 1
+Flashlight = 1
+Icons = 1
+Behaviours = 1
+Audio = 1
+Alerts = 1

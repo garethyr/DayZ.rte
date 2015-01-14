@@ -1,0 +1,19 @@
+||AREA NUMBERS||
+LootAreas = 0
+LootZombieSpawnAreas = 0
+ShelterAreas = 0
+AudioCivilizationAreas = 0
+AudioBeachAreas = 0
+
+||TRANSITION AREAS||
+
+||MODULE INCLUSIONS||
+Loot = 0
+Sustenance = 1
+Spawns = 1
+DayNight = 1
+Flashlight = 1
+Icons = 1
+Behaviours = 1
+Audio = 1
+Alerts = 1

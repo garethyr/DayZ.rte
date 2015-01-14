@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------
 -- Everything for loot
 -----------------------------------------------------------------------------------------
-function DayZActivity:StartLoot()
+function DayZ:StartLoot()
 	------------------
 	--LOOT CONSTANTS--
 	------------------
@@ -68,7 +68,7 @@ end
 --CREATION FUNCTIONS--
 ----------------------
 --The actual loot spawning
-function DayZActivity:SpawnLoot(area, areanum, set)
+function DayZ:SpawnLoot(area, areanum, set)
 	if MovableMan:GetMOIDCount() <= self.MOIDLimit+30 then
 		local loot;
 		if set == 1 then --Basic loot set: junk, food, drinks, sometimes melee weapons
@@ -104,7 +104,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Run the loot update functions, cleanup first then check for spawning
-function DayZActivity:DoLoot()
+function DayZ:DoLoot()
 	self:DoLootDespawns();
 	self:DoLootCleanup();
 	self:DoLootSpawning();
@@ -113,7 +113,7 @@ end
 --DELETE FUNCTIONS--
 --------------------
 --Kill loot that's been sitting around past the loot lifetime
-function DayZActivity:DoLootDespawns()
+function DayZ:DoLootDespawns()
 	for areanum, tab in ipairs(self.LootTable) do
 		for _, item in ipairs(tab) do
 			if item.Age > self.LootLifetime and not self:CheckForNearbyHumans(item.Pos, 0, LootSpawnMaxDistance) then
@@ -123,7 +123,7 @@ function DayZActivity:DoLootDespawns()
 	end
 end
 --Remove loot from table when picked up or destroyed
-function DayZActivity:DoLootCleanup()
+function DayZ:DoLootCleanup()
 	local v;
 	--Iterate through each area section of the loot table
 	for areanum, tab in ipairs(self.LootTable) do
@@ -145,7 +145,7 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Pick where to spawn loot based on nearby humans (players or NPCs)
-function DayZActivity:DoLootSpawning()
+function DayZ:DoLootSpawning()
 	for i, v in ipairs(self.LootAreas) do
 		--If there's no loot in the area, a player nearby but not too close and the timer's ready, spawn loot
 		if v.filled == false and self.LootTimer[i]:IsPastSimMS(self.LootInterval) then

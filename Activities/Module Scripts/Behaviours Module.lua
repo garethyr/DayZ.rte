@@ -1,16 +1,14 @@
 -----------------------------------------------------------------------------------------
 -- Manage zombie and NPC actions and behaviours
 -----------------------------------------------------------------------------------------
------------------------------------------------------------------------------------------
--- Use FOW to fake night
------------------------------------------------------------------------------------------
 --Setup
-function DayZActivity:StartBehaviours()
+function DayZ:StartBehaviours()
 	------------------------------
 	--ZOBMIE BEHAVIOUR CONSTANTS--
 	------------------------------
 	self.ZombieDespawnDistance = FrameMan.PlayerScreenWidth/2 + 600; --Despawn distance for all zombies, no specific despawn distances should be less than this
 	self.ZombieIdleDistance = 25; --The distance below which a zombie can stop moving towards a position target and idle
+	self.ZombieAlertDistance = 300;	--The distance a target needs to be within of a zombie for it to stop wandering and move at the target
 	
 	---------------------------
 	--NPC BEHAVIOUR CONSTANTS--
@@ -22,7 +20,7 @@ end
 --------------------
 --UPDATE FUNCTIONS--
 --------------------
-function DayZActivity:DoBehaviours()
+function DayZ:DoBehaviours()
 	self:ManageZombieTargets();
 	self:DespawnZombies();
 end
@@ -30,7 +28,7 @@ end
 --DELETE FUNCTIONS--
 --------------------
 --Despawn any zombies with no target and nearby alerts or humans
-function DayZActivity:DespawnZombies()
+function DayZ:DespawnZombies()
 	for k, zombie in pairs(self.ZombieTable) do
 		if not zombie.target.val and not self:CheckForNearbyHumans(zombie.actor.Pos, 0, self.ZombieDespawnDistance) and not self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier) then
 			print ("Kill zombie "..tostring(zombie.actor.UniqueID).." because it has no target and no nearby humans or visible alerts");
@@ -43,7 +41,7 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --
-function DayZActivity:ManageZombieTargets()
+function DayZ:ManageZombieTargets()
 	for _, zombie in pairs(self.ZombieTable) do
 		if zombie.target.val then
 			--If we have an actor target, update the startdist and, if the zombie's too far, make it lose its target completely
@@ -72,7 +70,7 @@ end
 -----------------------------------------------------------------------------------------
 -- A convenient function for finding the closest target, also returns
 -----------------------------------------------------------------------------------------
-function DayZActivity:FindTarget(start, bool, hasactorbool) --TODO change this so it takes a number as its last value, allowing you to change the range to check for actors
+function DayZ:FindTarget(start, bool, hasactorbool) --TODO change this so it takes a number as its last value, allowing you to change the range to check for actors
 	--Check through players, NPCs and alerts (if bool == true) to find a target
 	local target = nil; --Pick a distant point as the initial target
 	local tmod = nil; --Used to make alert strength affect whether or not it counts as a target in the end
@@ -144,7 +142,7 @@ function DayZActivity:FindTarget(start, bool, hasactorbool) --TODO change this s
 	return target, tmod, hasactors;
 end
 --Zombie actions - follow player when close and move around randomly when not
-function DayZActivity:DoZombieActions()
+function DayZ:DoZombieActions()
 	if #self.ZombieTable > 0 then
 		--Go through all zombies
 		for i = 1, #self.ZombieTable do

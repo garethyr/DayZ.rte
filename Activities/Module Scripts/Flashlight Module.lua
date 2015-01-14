@@ -4,13 +4,13 @@
 --------------------
 --CREATE FUNCTIONS--
 --------------------
-function DayZActivity:StartFlashlight()
+function DayZ:StartFlashlight()
 end
 --------------------
 --UPDATE FUNCTIONS--
 --------------------
 --Turn flashlights on or off for players and npcs
-function DayZActivity:DoFlashlights()
+function DayZ:DoFlashlights()
 	for _, tab in pairs(self.HumanTable) do
 		for k, v in pairs(tab) do
 			--Flag for the flashlight on or off based on its actor's sharpness
@@ -45,7 +45,7 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Add a new flashlight to the actor's inventory, flashlight battery starts off very low as punishment for losing it
-function DayZActivity:ReAddFlashlight(actor)
+function DayZ:ReAddFlashlight(actor)
 	local newlight = CreateHDFirearm("Flashlight", "DayZ.rte");
 	actor:AddInventoryItem(newlight);
 	newlight.Sharpness = newlight.Sharpness/10;

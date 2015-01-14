@@ -4,30 +4,30 @@
 ------------
 --REQUESTS--
 ------------
-function DayZActivity:RequestSustenance_AddToSustenanceTable(actor)
+function DayZ:RequestSustenance_AddToSustenanceTable(actor)
 	if self.IncludeSustenance then
 		self:AddToSustenanceTable(actor);
 	end
 end
-function DayZActivity:RequestIcons_AddToMeterTable(actor)
+function DayZ:RequestIcons_AddToMeterTable(actor)
 	if self.IncludeIcons then
 		self:AddToMeterTable(actor);
 	end
 end
 --TODO make this also take a maxdist so alerts can trigger things like zombie spawns by being visible within the max spawndist???
-function DayZActivity:RequestAlerts_CheckForVisibleAlerts(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+function DayZ:RequestAlerts_CheckForVisibleAlerts(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
 		return self:CheckForVisibleAlerts(pos, awarenessmod, mindist);
 	end
 	return false;
 end
-function DayZActivity:RequestAlerts_NearestVisibleAlert(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+function DayZ:RequestAlerts_NearestVisibleAlert(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
 		return self:NearestVisibleAlert(pos, awarenessmod, mindist);
 	end
 	return nil;
 end
-function DayZActivity:RequestAlerts_VisibleAlerts(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+function DayZ:RequestAlerts_VisibleAlerts(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
 		return self:VisibleAlerts(pos, awarenessmod, mindist);
 	end
@@ -42,7 +42,7 @@ end
 --Flashlight
 
 --Icons
-function DayZActivity:IconsRequestAlerts_ActorActivityPercent(atype, actor)
+function DayZ:IconsRequestAlerts_ActorActivityPercent(atype, actor)
 	if self.IncludeAlerts then
 		if self.AlertTable[actor.UniqueID] ~= nil and self.AlertTable[actor.UniqueID][atype].strength > 0 then
 			return 1;
@@ -52,7 +52,7 @@ function DayZActivity:IconsRequestAlerts_ActorActivityPercent(atype, actor)
 	end
 	return 0;
 end
-function DayZActivity:IconsRequestSustenance_ActorSustenancePercent(susttype, actor)
+function DayZ:IconsRequestSustenance_ActorSustenancePercent(susttype, actor)
 	if self.IncludeSustenance then
 		if self.SustTable[actor.UniqueID] ~= nil then
 			return (self.MaxSust[susttype] - math.min(self.MaxSust[susttype], self.SustTable[actor.UniqueID][susttype]))/self.MaxSust[susttype];
@@ -62,7 +62,7 @@ function DayZActivity:IconsRequestSustenance_ActorSustenancePercent(susttype, ac
 end
 
 --Audio
-function DayZActivity:AudioRequestDayNight_DayOrNightCapitalizedString()
+function DayZ:AudioRequestDayNight_DayOrNightCapitalizedString()
 	if self.IncludeDayNight then
 		return self.DayNightIsNight and "Night" or "Day";
 	end
@@ -70,19 +70,19 @@ function DayZActivity:AudioRequestDayNight_DayOrNightCapitalizedString()
 end
 
 --Alerts
-function DayZActivity:AlertsRequestSpawns_SpawnAlertZombie(position)
+function DayZ:AlertsRequestSpawns_SpawnAlertZombie(position)
 	if self.IncludeSpawns then
 		return self:SpawnZombie(position, position, "alert");
 	end
 	return false;
 end
-function DayZActivity:AlertsRequestSpawns_GetZombieSpawnInterval()
+function DayZ:AlertsRequestSpawns_GetZombieSpawnInterval()
 	if self.IncludeSpawns then
 		return self.ZombieSpawnInterval;
 	end
 	return 0;
 end
-function DayZActivity:AlertsRequestDayNight_LightItemNotInTable(item)
+function DayZ:AlertsRequestDayNight_LightItemNotInTable(item)
 	if self.IncludeDayNight then
 		return self.DayNightLightItemTable[item.UniqueID] == nil;
 	end
@@ -95,17 +95,17 @@ end
 --NOTIFICATIONS--
 -----------------
 --Main
-function DayZActivity:NotifySust_DeadPlayer(ID)
+function DayZ:NotifySust_DeadPlayer(ID)
 	if self.IncludeSustenance and self.SustTable[ID] ~= nil then
 		self.SustTable[ID] = nil;
 	end
 end
-function DayZActivity:NotifyIcons_DeadPlayer(ID)
+function DayZ:NotifyIcons_DeadPlayer(ID)
 	if self.IncludeIcons and self.MeterTable[ID] ~= nil then
 		self:IconsRemoveMeter(ID);
 	end
 end
-function DayZActivity:NotifyAlerts_DeadHuman(alert)
+function DayZ:NotifyAlerts_DeadHuman(alert)
 	if self.IncludeAlerts and alert ~= false then
 		self:MoveAlertFromDeadActor(alert);
 	end
@@ -116,7 +116,7 @@ end
 --Sustenance
 
 --DayNight
-function DayZActivity:DayNightNotifyMany_DayNightCycle()
+function DayZ:DayNightNotifyMany_DayNightCycle()
 	if self.IncludeAlerts then
 		self.AlertIsDay = not self.DayNightIsNight;
 	end
@@ -133,7 +133,7 @@ end
 --Flashlight
 
 --Icons
-function DayZActivity:IconsNotifyDayNight_RevealIcons(corner)
+function DayZ:IconsNotifyDayNight_RevealIcons(corner)
 	if self.IncludeDayNight then
 		local box = Box(corner, Vector(corner.X + self.IconMeterSpacing*(self.IconNumMeters+1), corner.Y + self.IconMeterSpacing));
 		table.insert(self.DayNightExtraRevealBoxes, box);
@@ -143,7 +143,7 @@ end
 --Audio
 
 --Alerts
-function DayZActivity:AlertsNotifyDayNight_LightEmittingItemAdded(item)
+function DayZ:AlertsNotifyDayNight_LightEmittingItemAdded(item)
 	if self.IncludeDayNight then
 		self:AddDayNightLightItem(item)
 	end

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------
 -- Start Activity
 -----------------------------------------------------------------------------------------
-function Chernarus:StartActivity()
+function DayZ:StartActivity()
 	--Remove the starting GO banner
 	for i = 0, 3 do
 		local banner = self:GetBanner(GUIBanner.YELLOW, i):HideText(-1,-1);
@@ -12,22 +12,11 @@ function Chernarus:StartActivity()
 	--------------------
 	--Global DayZ Human Wound Table, reset/created on mission start just in case
 	DayZHumanWoundTable = {};
-	DayZActivity = self;
 	
-	----------------------
-	--START OF CONSTANTS--
-	----------------------
-	self.NumberOfLootAreas = 58; --The number of loot areas, must be updated to match the number of such areas defined in the scene
-	self.NumberOfLootZombieSpawnAreas = 26; --The number of spawn areas for loot zombies, must be updated to match the number of such areas defined in the scene
-	self.ZombieAlertDistance = 300; --The distance a target needs to be within of a zombie for it to stop wandering and move at the target
-	self.NumberOfShelterAreas = 20; --The number of shelter areas, places players and NPCs can use to avoid getting sickness due to bad weather
-	self.NumberOfAudioCivilizationAreas = 5; --The number of civilization areas where civilization localized audio will play instead of nature audio
-	self.NumberOfAudioBeachAreas = 2; --The number of beach areas where beach localized audio will play instead of generic nature audio
-
 	---------
 	--AREAS--
 	---------
-	self.ChernarusUniqueArea = SceneMan.Scene:GetArea("Chernarus Unique Area");
+	local DayZUniqueArea = SceneMan.Scene:GetArea("DayZ Unique Area");
 	
 	------------------
 	--DYNAMIC TABLES--
@@ -60,7 +49,7 @@ function Chernarus:StartActivity()
 	self.ZombiesKilled = 0;
 	--Tracker for nights survived
 	self.NightsSurvived = -1; --Note: This count will be 1 less than it should if the game begins during night instead of day. This can be fixed if we keep these counters forever
-
+	
 	--Teams
 	self.PlayerTeam = Activity.TEAM_1;
 	self.NPCTeam = Activity.TEAM_2;
@@ -72,75 +61,91 @@ function Chernarus:StartActivity()
 	--------------------
 	--MODULE INCLUSION--
 	--------------------
-	self.IncludeLoot = true;
-	self.IncludeSustenance = true;
-	self.IncludeSpawns = true;
-	self.IncludeDayNight = true;
-	self.IncludeFlashlight = true;
-	self.IncludeIcons = true;
-	self.IncludeBehaviours = true; --Note: Behaviours requires spawns, this is enforced automatically
-	self.IncludeAudio = true;
-	self.IncludeAlerts = true;
+	self.ModulePath = "DayZ.rte/Activities/Module Scripts/"; --The path for all modules
+	--Note: These determine whether a module can be included at all, the actual inclusions are scene specific but can be overwritten in the relevant function
+	self.LootIncludable = true;
+	self.SustenanceIncludable = true;
+	self.SpawnsIncludable = true;
+	self.DayNightIncludable = true;
+	self.FlashlightIncludable = true; --Note: Flashlight requires DayNight, this is enforced automatically
+	self.IconsIncludable = true;
+	self.BehavioursIncludable = true; --Note: Behaviours requires Spawns, this is enforced automatically
+	self.AudioIncludable = true;
+	self.AlertsIncludable = true;
+	
 	--v DO NOT TOUCH FOR MODULE CHANGES v--
+	self:DoModuleOverwrites();
 	self:DoModuleEnforcement();
 	self:DoModuleInclusion();
+	
+	--TODO right now a scene must be loaded before module initialization, replace this call with a proper version
+	self:StartNewGame();
+	
+	
+	self:DoModuleInitialization();
 	--^ DO NOT TOUCH FOR MODULE CHANGES ^--
-	
-	-------------------
-	--STARTING ACTORS--
-	-------------------
-	--Add starting actors
-	self:AddStartingActors();
-	
-	
-	
-	--GIANT MODULE TEST--
-	self.GiantModuleTestTimer = Timer();
-	self.GiantModuleTestInterval = 10000;
-	self.GiantModuleTestTimer.ElapsedSimTimeMS = self.GiantModuleTestInterval*0.75;
-	--GIANT MODULE TEST--
 end
 -----------------------------------------------------------------------------------------
 -- Module Stuff
 -----------------------------------------------------------------------------------------
+--Overwrite scene specific module inclusions as desired here, still constrained by whether or not the module's includable
+function DayZ:DoModuleOverwrites()
+	--Example:
+	--self.IncludeAlerts = false; -- Don't include alerts regardless of the scene
+end
 --Enforce any module constraints
-function Chernarus:DoModuleEnforcement()
+function DayZ:DoModuleEnforcement()
 	self.IncludeBehaviours = self.IncludeSpawns and self.IncludeBehaviours;
+	self.IncludeFlashlight = self.IncludeDayNight and self.IncludeFlashlight;
+	
+	--Make sure to only include modules that are marked as includable
+	self.IncludeLoot = self.LootIncludable and self.IncludeLoot;
+	self.IncludeSustenance = self.SustenanceIncludable and self.IncludeSustenance;
+	self.IncludeSpawns = self.SpawnsIncludable and self.IncludeSpawns;
+	self.IncludeDayNight = self.DayNightIncludable and self.IncludeDayNight;
+	self.IncludeFlashlight = self.FlashlightIncludable and self.IncludeFlashlight;
+	self.IncludeIcons = self.IconsIncludable and self.IncludeIcons;
+	self.IncludeBehaviours = self.BehavioursIncludable and self.IncludeBehaviours;
+	self.IncludeAudio = self.AudioIncludable and self.IncludeAudio;
+	self.IncludeAlerts = self.AlertsIncludable and self.IncludeAlerts;
 end
 --Include modules we want
-function Chernarus:DoModuleInclusion()
-	dofile("DayZ.rte/Activities/Module Scripts/Communication Module.lua"); --Communication always included
-	if self.IncludeLoot then
-		dofile("DayZ.rte/Activities/Module Scripts/Loot Spawn Module.lua");
+function DayZ:DoModuleInclusion()
+	dofile(self.ModulePath.."Communication Module.lua"); --Communication always included
+	dofile(self.ModulePath.."Scene Loading and Transitions Module.lua"); --Scene Loading and Transitions always included
+	self:StartSceneLoading();
+	dofile(self.ModulePath.."Save Load Module.lua"); --Game Saving and Loading always included
+	self:StartSaveLoad();
+	if self.LootIncludable then
+		dofile(self.ModulePath.."Loot Spawn Module.lua");
 	end
-	if self.IncludeSustenance then
-		dofile("DayZ.rte/Activities/Module Scripts/Sustenance Module.lua");
+	if self.SustenanceIncludable then
+		dofile(self.ModulePath.."Sustenance Module.lua");
 	end
-	if self.IncludeSpawns then
-		dofile("DayZ.rte/Activities/Module Scripts/Spawns Module.lua");
+	if self.SpawnsIncludable then
+		dofile(self.ModulePath.."Spawns Module.lua");
 	end
-	if self.IncludeDayNight then
-		dofile("DayZ.rte/Activities/Module Scripts/DayNight Module.lua");
+	if self.DayNightIncludable then
+		dofile(self.ModulePath.."DayNight Module.lua");
 	end
-	if self.IncludeFlashlight then
-		dofile("DayZ.rte/Activities/Module Scripts/Flashlight Module.lua");
+	if self.FlashlightIncludable then
+		dofile(self.ModulePath.."Flashlight Module.lua");
 	end
-	if self.IncludeIcons then
-		dofile("DayZ.rte/Activities/Module Scripts/Icons Module.lua");
+	if self.IconsIncludable then
+		dofile(self.ModulePath.."Icons Module.lua");
 	end
-	if self.IncludeBehaviours and self.IncludeSpawns then --Behaviours requires spawns
-		dofile("DayZ.rte/Activities/Module Scripts/Behaviours Module.lua");
+	if self.BehavioursIncludable then
+		dofile(self.ModulePath.."Behaviours Module.lua");
 	end
-	if self.IncludeAudio then
-		dofile("DayZ.rte/Activities/Module Scripts/Audio Module.lua");
+	if self.AudioIncludable then
+		dofile(self.ModulePath.."Audio Module.lua");
 	end
-	if self.IncludeAlerts then
-		dofile("DayZ.rte/Activities/Module Scripts/Alerts Module.lua");
+	if self.AlertsIncludable then
+		dofile(self.ModulePath.."Alerts Module.lua");
 	end
-	self:DoModuleInitialization();
 end
 --Initialize the included modules
-function Chernarus:DoModuleInitialization()
+function DayZ:DoModuleInitialization()
 	if self.IncludeLoot then
 		self:StartLoot();
 	end
@@ -152,14 +157,15 @@ function Chernarus:DoModuleInitialization()
 	end
 	if self.IncludeDayNight then
 		self:StartDayNight();
+		self:DayNightNotifyMany_DayNightCycle(); --Notify so everything knows the time of day
 	end
 	if self.IncludeFlashlight then
-		self:StartFlashlight(); --Doesn't actually do anything
+		self:StartFlashlight(); --Doesn't actually do anything, placed here for ease
 	end
 	if self.IncludeIcons then
 		self:StartIcons();
 	end
-	if self.IncludeBehaviours and self.IncludeSpawns then --Behaviours requires spawns
+	if self.IncludeBehaviours then
 		self:StartBehaviours();
 	end
 	if self.IncludeAudio then
@@ -170,62 +176,20 @@ function Chernarus:DoModuleInitialization()
 	end
 	if self.IncludeAlerts then
 		self:StartAlerts();
-		self:DayNightNotifyMany_DayNightCycle(); --Notify alerts so they know the time of day
 	end
-end
------------------------------------------------------------------------------------------
--- Add Starting Actors
------------------------------------------------------------------------------------------
-function Chernarus:AddStartingActors()
-	--The player actors
-	for i = 0 , self.PlayerCount do
-		if self:PlayerHuman(i) then
-			local player = CreateAHuman("Survivor Black Reticle Actor" , "DayZ.rte");
-			player:AddInventoryItem(CreateHDFirearm("[DZ] MR43" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHDFirearm("Crowbar" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHDFirearm("Baked Beans" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHDFirearm("Coke" , "DayZ.rte"));
-			if self.IncludeFlashlight then
-				player:AddInventoryItem(CreateHDFirearm("Flashlight" , "DayZ.rte"));
-			end
-			player:AddInventoryItem(CreateTDExplosive("Flare" , "DayZ.rte"));
-			player.Sharpness = 0;
-			player.Pos = Vector(1250, 300)--(350, 550);
-			player.Team = self.PlayerTeam;
-			player.AIMode = Actor.AIMODE_SENTRY;
-			player.HUDVisible = false
-			MovableMan:AddActor(player);
-			--self:SetPlayerBrain(player, self.PlayerTeam);
-			self:AddToPlayerTable(player);
-		end
-	end
-	--TODO Test NPC, Remove Me!
-	--[[self.TestNPC = CreateAHuman("Survivor Black" , "DayZ.rte");
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Hatchet" , "DayZ.rte"));
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Baked Beans" , "DayZ.rte"));
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Coke" , "DayZ.rte"));
-	self.TestNPC:AddInventoryItem(CreateTDExplosive("M67" , "DayZ.rte"));
-	self.TestNPC.Pos = Vector(1250, 400);
-	self.TestNPC.Team = self.PlayerTeam;
-	self.TestNPC.AIMode = Actor.AIMODE_SENTRY;
-	MovableMan:AddActor(self.TestNPC);
-	self.NPCTable[#self.NPCTable+1] = {self.TestNPC, 0, 0}--]]
 end
 -----------------------------------------------------------------------------------------
 -- Pause Activity
 -----------------------------------------------------------------------------------------
 -- This function is called when mission is paused
-function Chernarus:PauseActivity(pause)
+function DayZ:PauseActivity(pause)
 	print("PAUSE! -- Chernarus:PauseActivity()!");
 end
 -----------------------------------------------------------------------------------------
 -- End Activity
 -----------------------------------------------------------------------------------------
 -- This function is called after mission has ended
-function Chernarus:EndActivity()
+function DayZ:EndActivity()
 	DayZHumanWoundTable = nil;
 	if self.IncludeAudio then
 		AudioMan.MusicVolume = self.AudioGlobalMaxVolume;
@@ -235,15 +199,14 @@ end
 -----------------------------------------------------------------------------------------
 -- Update Activity
 -----------------------------------------------------------------------------------------
-function Chernarus:UpdateActivity()
+function DayZ:UpdateActivity()
 	self:ClearObjectivePoints();
 	---------------------
 	--TODO TESTING KEYS--
 	---------------------
 	if true then
 	if UInputMan:KeyPressed(3) then --Reset all
-		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.PlayerTeam);
-		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.NPCTeam);
+		SceneMan:LoadScene("DayZ Loader", true);
 		for k, v in pairs (self.ZombieTable) do
 			v.actor.ToDelete = true;
 		end
@@ -303,21 +266,11 @@ function Chernarus:UpdateActivity()
 	--TODO TESTING KEYS--
 	---------------------
 	
-	--GIANT MODULE TEST--
-	if self.GiantModuleTestTimer:IsPastSimMS(self.GiantModuleTestInterval) then
-		local obj = CreateTerrainObject("BG Test", "DayZ.rte");
-		if obj then
-			obj.Pos = Vector(SceneMan.SceneWidth/2, SceneMan.SceneHeight/2);
-			obj.Team = 0;
-			print ("GIANT MODULE TEST: Adding "..obj.PresetName.." to scene at point "..tostring(obj.Pos));
-			SceneMan:AddTerrainObject(obj);
-		end
-		self.GiantModuleTestTimer:Reset();
-	end
-	--GIANT MODULE TEST--
-	
 	--Clean tables, must be done first as it's important to prevent crashes
 	self:DoActorChecksAndCleanup();
+	
+	--Run transitions to other scenes
+	self:RunTransitions();
 	
 	--Deal with food and drink, called every frame for dynamic decreasing by actions
 	if self.IncludeSustenance then
@@ -374,7 +327,7 @@ end
 -----------------------------------------------------------------------------------------
 -- Check through all tables for things to remove. Done first
 -----------------------------------------------------------------------------------------
-function Chernarus:DoActorChecksAndCleanup()
+function DayZ:DoActorChecksAndCleanup()
 	for _, humantable in pairs(self.HumanTable) do
 		for k, v in pairs(humantable) do
 			if v.actor.Health <= 0 or not MovableMan:IsActor(v.actor) or v.actor.ToDelete == true then
@@ -399,10 +352,30 @@ function Chernarus:DoActorChecksAndCleanup()
 		end
 	end
 end
+--TODO Put all the nearest check stuff and maybe the table adding stuff into a separate util script
+--Split and trim functions to be moved to util
+function string:split(sep)
+	local sep, fields = sep or ":", {}
+	local pattern = string.format("([^%s]+)", sep)
+	self:gsub(pattern, function(c) fields[#fields+1] = c end)
+	return fields
+end
+function string:trim()
+	self = self:gsub("^%s+", ""):gsub("%s+$", "");
+	return self;
+end
+function DayZ:TrimTable(tab)
+	for k, v in pairs(tab) do
+		if type(v) == "string" then
+			tab[k] = v:trim();
+		end
+	end
+	return tab;
+end
 -----------------------------------------------------------------------------------------
 -- Sort maxdist and mindist inputs so they parse correctly even if the order is mixed up
 -----------------------------------------------------------------------------------------
-function Chernarus:SortMaxAndMinArguments(dists)
+function DayZ:SortMaxAndMinArguments(dists)
 	local mindist = dists[1];
 	local maxdist = dists[2];
 	--If we have both max and min dists, make sure they're set right
@@ -418,7 +391,7 @@ end
 -----------------------------------------------------------------------------------------
 -- Find the nearest human to a point TODO move this to spawn??? Make human and zombie management modules???
 -----------------------------------------------------------------------------------------
-function Chernarus:NearestHuman(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+function DayZ:NearestHuman(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
 	local dist, target;
 	for _, humantable in pairs(self.HumanTable) do
@@ -435,7 +408,7 @@ end
 -----------------------------------------------------------------------------------------
 -- Find whether or not there are humans less than maxdist away from the passed in pos
 -----------------------------------------------------------------------------------------
-function Chernarus:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+function DayZ:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
 	local dist;
 	for _, humantable in pairs(self.HumanTable) do
@@ -451,7 +424,7 @@ end
 -----------------------------------------------------------------------------------------
 -- Functions for adding actors to mission tables, for convenient updating
 -----------------------------------------------------------------------------------------
-function Chernarus:AddToPlayerTable(actor)
+function DayZ:AddToPlayerTable(actor)
 	self.HumanTable.Players[actor.UniqueID] = {
 		actor = actor, lightOn = false, alert = false, rounds = 0,
 		activity = {
@@ -462,7 +435,7 @@ function Chernarus:AddToPlayerTable(actor)
 	self:RequestSustenance_AddToSustenanceTable(actor);
 	self:RequestIcons_AddToMeterTable(actor);
 end
-function Chernarus:AddToNPCTable(actor)
+function DayZ:AddToNPCTable(actor)
 	self.HumanTable.NPCs[actor.UniqueID] = {
 		actor = actor, lightOn = false, alert = false, rounds = 0,
 		activity = {
@@ -472,6 +445,6 @@ function Chernarus:AddToNPCTable(actor)
 	};
 	self:RequestSustenance_AddToSustenanceTable(actor);
 end
-function Chernarus:AddToZombieTable(actor, target, targettype, startdist)
+function DayZ:AddToZombieTable(actor, target, targettype, startdist)
 	self.ZombieTable[actor.UniqueID] = {actor = actor, target = {val = target, ttype = targettype, startdist = startdist}};
 end

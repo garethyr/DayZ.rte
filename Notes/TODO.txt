@@ -52,6 +52,12 @@
 6) Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
 7) Flesh out transitions more, determine extent of information in scene datafiles
 8) Reorganize scripts - create util script for all util functions
+9) Organize/Reorganize datafile parsing, allow the datafiles to use either short form names or full variable names (i.e. self.Whatever) as keys
+10) Add to scene datafiles variables:
+	Need section for backgrounds: self.BackgroundChanges = true/false, self.BackgroundsTotalNumber, self.BackgroundPosition must be reset on map change
+	Need section for other: self.AlwaysDark = true/false
+11) Add ability for comments to datafiles
+12) Organize modularity - change all rte references to self.RTE (will be set as "DayZ.rte"), change all function calls to use a global variable (i.e. function ModularActivity:etc(stuff)) set in the main script
 
 -------------
 --Completed--

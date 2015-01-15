@@ -18,11 +18,17 @@ function DayZ:StartDayNight()
 	self.DayNightCheckDone = false; --A flag for whether the various once-off things that need checking on day/night change have been checked
 	self.DayNightIsNight = false; --Flag for whether it's night, true starts the game off during the night, false starts it off during the day
 	
+	--Changing background
+	self.BackgroundChanges = true; --Whether or not the background should change, as defined by the scene's datafile
+	self.BackgroundTotalNumber = 3; --The total number of backgrounds per day/night, as defined by the scene's datafile
+	self.BackgroundCurrentNumber = 0; --The current background, must start at 0 to load the first background
+	self.BackgroundNames = {[false] = "DayBG", [true] = "NightBG"} --The naming scheme for backgrounds, day is false, night is true
+	self.BackgroundPos = Vector(SceneMan.SceneWidth/2, SceneMan.SceneHeight/2); --The position to place backgrounds at (presumably the centre of the scene)
+	
 	---------------------------
 	--DYNAMIC DAYNIGHT TABLES--
 	---------------------------
 	self.DayNightLightItemTable = {} --Key is item.UniqueID, value = {item = light item, reveal = how much the item reveals}
-	
 	self.DayNightExtraRevealBoxes = {} --Key is array index, value is box
 end
 --------------------
@@ -42,7 +48,7 @@ end
 function DayZ:DoDayNight()
 	self:DoDayNightCleanup();
 	--Swap from day to night after a certain amount of time
-	--TODO Have a more smooth swapping, gradual darkness etc. Use numbers instead of booleans to determine when alerts will have effects?
+	--TODO Have a more smooth swapping, gradual darkness etc. Use numbers instead of booleans to determine when alerts will have effects/how effective they'll be?
 	if self.DayNightTimer:IsPastSimMS(self.DayNightInterval) then
 		self:CycleDayNight();
 		self.DayNightTimer:Reset();
@@ -51,6 +57,10 @@ function DayZ:DoDayNight()
 	if self.DayNightCheck == false then
 		self:DoDayNightChangeActions();
 		self.DayNightCheck = true;
+	end
+	
+	if self.BackgroundChanges then
+		self:DoDayNightBackgroundChanges();
 	end
 	
 	self:DoDayNightContinuousActions();
@@ -82,11 +92,8 @@ end
 --------------------
 --Cycle the day and night
 function DayZ:CycleDayNight()
-	if self.DayNightIsNight == true then
-		self.DayNightIsNight = false;
-	else
-		self.DayNightIsNight = true;
-	end
+	self.DayNightIsNight = not self.DayNightIsNight;
+	self.BackgroundCurrentNumber = 0; --Reset the background number
 	self:DayNightNotifyMany_DayNightCycle();
 	self.DayNightCheck = false;
 end
@@ -97,6 +104,20 @@ function DayZ:DoDayNightChangeActions()
 		--Reveal the map (only for Players and NPCs)
 		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.PlayerTeam);
 		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.NPCTeam);
+	end
+end
+--Change the map background based on time of day/night
+function DayZ:DoDayNightBackgroundChanges()
+	local curtime = self.DayNightTimer.ElapsedSimTimeS;
+	if curtime/self.DayNightInterval > self.BackgroundCurrentNumber/self.BackgroundTotalNumber then
+		print (tostring(curtime/self.DayNightInterval).." > "..tostring(self.BackgroundCurrentNumber/self.BackgroundTotalNumber));
+		self.BackgroundCurrentNumber = self.BackgroundCurrentNumber + 1;
+        local obj = CreateTerrainObject(self.BackgroundNames[self.DayNightIsNight]..tostring(self.BackgroundCurrentNumber), "DayZ.rte");
+        if obj then
+            obj.Pos = self.BackgroundPos;
+            obj.Team = -1;
+            SceneMan:AddTerrainObject(obj);
+        end
 	end
 end
 --Actions performed continuously during day or night

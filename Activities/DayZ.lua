@@ -62,6 +62,7 @@ function DayZ:StartActivity()
 	--MODULE INCLUSION--
 	--------------------
 	self.ModulePath = "DayZ.rte/Activities/Module Scripts/"; --The path for all modules
+	self.ModulesInitialized = false;
 	--Note: These determine whether a module can be included at all, the actual inclusions are scene specific but can be overwritten in the relevant function
 	self.LootIncludable = true;
 	self.SustenanceIncludable = true;
@@ -83,6 +84,8 @@ function DayZ:StartActivity()
 	
 	
 	self:DoModuleInitialization();
+	self.ModulesInitialized = true;
+	self:AddStartingPlayerActors();
 	--^ DO NOT TOUCH FOR MODULE CHANGES ^--
 end
 -----------------------------------------------------------------------------------------

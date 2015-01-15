@@ -169,7 +169,9 @@ end
 function DayZ:DoSceneTransition(target)
 	SceneMan:LoadScene(target, true);
 	self:LoadScene(target);
-	self:AddStartingPlayerActors();
+	if self.ModulesInitialized then
+		self:AddStartingPlayerActors();
+	end
 end
 --Add starting player actors
 function DayZ:AddStartingPlayerActors()

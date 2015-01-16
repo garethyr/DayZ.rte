@@ -7,12 +7,12 @@ function DayZ:StartLoot()
 	------------------
 	self.LootSpawnChance = 0.3; --The chance to spawn any loot at all
 	self.LootSpawnChanceModifier = 0.2; --The random additive modifier for loot spawn chance, so 0.3 Chance and 0.2 Modifier will have somewhere between 30% and 50% chance of spawning loot 
-	self.LootInterval = 90000; --90 second loot spawn interval
+	self.LootInterval = 60000; --90 second loot spawn interval
 	self.LootLifetime = self.LootInterval*0.5; --The time after which loot despawns if not picked up
 	self.LootSpawnMinDistance = FrameMan.PlayerScreenWidth/2 + 100; --1/2 of screen width + 100 for the innermost distance where loot spawns
 	self.LootSpawnMaxDistance = FrameMan.PlayerScreenWidth/2 + 300; --1/2 of screen width + 300 for the outermost distance where loot spawns
-	self.LootMinSpawnAmount = 2; --The minimum amount of loot that can spawn per batch, must be greater than 0
-	self.LootMaxSpawnAmount = 5; --The maximum amount of loot that can spawn per batch
+	self.LootMinSpawnAmount = 1; --The minimum amount of loot that can spawn per batch, must be greater than 0
+	self.LootMaxSpawnAmount = 3; --The maximum amount of loot that can spawn per batch
 	
 	--------------
 	--LOOT AREAS--
@@ -57,6 +57,9 @@ function DayZ:StartLoot()
 	--This table stores all military weapons
 	self.LootMWeaponTable = {"[DZ] G17", "[DZ] AKM", "[DZ] M16A2", "[DZ] MP5SD6", "[DZ] M4A1 CCO SD", "[DZ] Mk 48 Mod 0", "[DZ] M14 AIM", "[DZ] M107"};
 	
+	--This table stores all ammo (civ only currently)
+	self.LootAmmoTable = {"Makarov PM Magazine", ".45 ACP Speedloader", "M1911A1 Magazine", "Metal Bolts", "12 Gauge Buckshot (2)", ".44 Henry Rounds", "Lee Enfield Stripper Clip", "9.3x62 Mauser Rounds"};
+	
 	----------------------
 	--DYNAMIC LOOT TABLE--
 	---------------------
@@ -82,7 +85,7 @@ function DayZ:SpawnLoot(area, areanum, set)
 				loot = CreateTDExplosive(self.LootLightTable[math.random(#self.LootLightTable)], "DayZ.rte");
 			elseif math.random() < 0.15 then
 				loot = CreateHDFirearm(self.LootMedicineTable[math.random(#self.LootMedicineTable)], "DayZ.rte");
-			elseif math.random() < 0.15 then
+			elseif math.random() < 0.3 then
 				loot = CreateHeldDevice(self.LootAmmoTable[math.random(#self.LootAmmoTable)], "DayZ.rte");
 			else
 				loot = CreateHDFirearm(self.LootCWeaponTable[math.random(#self.LootCWeaponTable)], "DayZ.rte");

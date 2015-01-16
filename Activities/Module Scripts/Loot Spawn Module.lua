@@ -24,7 +24,7 @@ function DayZ:StartLoot()
 		local s = "Loot Area "..tostring(i);
 		self.LootAreas[i].area = SceneMan.Scene:GetArea(s);
 		self.LootAreas[i].filled = false; --A value for whether the area has loot or not
-		self.LootAreas[i].lootSet = 1; --The loot set, 1 = basic
+		self.LootAreas[i].lootSet = "civilian"; --The loot set, 1 = basic
 		
 		self.LootTimer[i] = Timer();
 		self.LootTimer[i].ElapsedSimTimeMS =  self.LootInterval; --Make sure first wave of loot always spawns
@@ -59,6 +59,13 @@ function DayZ:StartLoot()
 	
 	--This table stores all ammo (civ only currently)
 	self.LootAmmoTable = {"Makarov PM Magazine", ".45 ACP Speedloader", "M1911A1 Magazine", "Metal Bolts", "12 Gauge Buckshot (2)", ".44 Henry Rounds", "Lee Enfield Stripper Clip", "9.3x62 Mauser Rounds"};
+
+	--These tables store the spawn chances for each type of loot item, based on the lootset of the area
+	self.LootSpawnChances = { --IMPORTANT NOTE: Leave the last value as 1 so something will always spawn when loot is supposed to spawn
+		civilian = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, ammo = 0.15, weapon = 1},
+		hospital = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, ammo = 0.15, weapon = 1},
+		military = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, ammo = 0.15, weapon = 1}
+	}
 	
 	----------------------
 	--DYNAMIC LOOT TABLE--
@@ -74,33 +81,32 @@ end
 function DayZ:SpawnLoot(area, areanum, set)
 	if MovableMan:GetMOIDCount() <= self.MOIDLimit+30 then
 		local loot;
-		if set == 1 then --Basic loot set: junk, food, drinks, sometimes melee weapons
-			if math.random() < 0.4 then --TODO remove magic numbers, replace with constants to be defined somwhere
-				loot = CreateTDExplosive(self.LootJunkTable[math.random(#self.LootJunkTable)], "DayZ.rte");
-			elseif math.random() < 0.3 then
-				loot = CreateHDFirearm(self.LootFoodTable[math.random(#self.LootFoodTable)], "DayZ.rte");
-			elseif math.random() < 0.3 then
-				loot = CreateHDFirearm(self.LootDrinkTable[math.random(#self.LootDrinkTable)], "DayZ.rte");
-			elseif math.random() < 0.3 then
-				loot = CreateTDExplosive(self.LootLightTable[math.random(#self.LootLightTable)], "DayZ.rte");
-			elseif math.random() < 0.15 then
-				loot = CreateHDFirearm(self.LootMedicineTable[math.random(#self.LootMedicineTable)], "DayZ.rte");
-			elseif math.random() < 0.3 then
-				loot = CreateHeldDevice(self.LootAmmoTable[math.random(#self.LootAmmoTable)], "DayZ.rte");
-			else
-				loot = CreateHDFirearm(self.LootCWeaponTable[math.random(#self.LootCWeaponTable)], "DayZ.rte");
-			end
-			loot.Pos = Vector(area:GetRandomPoint().X + math.random(-5,5), area:GetCenterPoint().Y);
-			MovableMan:AddParticle(loot);
-			print ("Added loot item "..loot.PresetName.." to position "..tostring(loot.Pos).." in loot area "..tostring(areanum));
-			--Create a loot table for this area if there's not one already
-			if self.LootTable[areanum] == nil then
-				self.LootTable[areanum] = {};
-			end
-			--Add the loot to the relevant table and set the area as filled
-			self.LootTable[areanum][#self.LootTable[areanum]+1] = loot;
-			self.LootAreas[areanum].filled = true;
+		local chance = self.LootSpawnChances[set];
+		if math.random() < chance.junk then
+			loot = CreateTDExplosive(self.LootJunkTable[math.random(#self.LootJunkTable)], "DayZ.rte");
+		elseif math.random() < chance.food then
+			loot = CreateHDFirearm(self.LootFoodTable[math.random(#self.LootFoodTable)], "DayZ.rte");
+		elseif math.random() < chance.drink then
+			loot = CreateHDFirearm(self.LootDrinkTable[math.random(#self.LootDrinkTable)], "DayZ.rte");
+		elseif math.random() < chance.light then
+			loot = CreateTDExplosive(self.LootLightTable[math.random(#self.LootLightTable)], "DayZ.rte");
+		elseif math.random() < chance.medicine then
+			loot = CreateHDFirearm(self.LootMedicineTable[math.random(#self.LootMedicineTable)], "DayZ.rte");
+		elseif math.random() < chance.ammo then
+			loot = CreateHeldDevice(self.LootAmmoTable[math.random(#self.LootAmmoTable)], "DayZ.rte");
+		elseif math.random() < chance.weapon then
+			loot = CreateHDFirearm(self.LootCWeaponTable[math.random(#self.LootCWeaponTable)], "DayZ.rte");
 		end
+		loot.Pos = Vector(area:GetRandomPoint().X + math.random(-5,5), area:GetCenterPoint().Y);
+		MovableMan:AddParticle(loot);
+		print ("Added loot item "..loot.PresetName.." to position "..tostring(loot.Pos).." in loot area "..tostring(areanum));
+		--Create a loot table for this area if there's not one already
+		if self.LootTable[areanum] == nil then
+			self.LootTable[areanum] = {};
+		end
+		--Add the loot to the relevant table and set the area as filled
+		self.LootTable[areanum][#self.LootTable[areanum]+1] = loot;
+		self.LootAreas[areanum].filled = true;
 	end
 end
 --------------------

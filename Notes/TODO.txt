@@ -58,6 +58,7 @@
 	Need section for other: self.AlwaysDark = true/false
 11) Add ability for comments to datafiles
 12) Organize modularity - change all rte references to self.RTE (will be set as "DayZ.rte"), change all function calls to use a global variable (i.e. function ModularActivity:etc(stuff)) set in the main script
+13) Make fog of war change with level of night, so evening will be brighter than midnight, etc.
 
 -------------
 --Completed--

@@ -12,6 +12,8 @@ function DayZ:StartActivity()
 	--------------------
 	--Global DayZ Human Wound Table, reset/created on mission start just in case
 	DayZHumanWoundTable = {};
+	--Global reference to the currently running modular activity, for use in module scripts
+	ModularActivity = self;
 	
 	---------
 	--AREAS--
@@ -45,6 +47,8 @@ function DayZ:StartActivity()
 	self.MOIDLimit = 175;
 	--Gold is not allowed or applicable
 	self:SetTeamFunds(0 , 0);
+	--The rte to spawn things from, set as a variable for easy modification
+	self.RTE = "DayZ.rte";
 	--Tracker for zombies killed
 	self.ZombiesKilled = 0;
 	--Tracker for nights survived
@@ -114,11 +118,15 @@ function DayZ:DoModuleEnforcement()
 end
 --Include modules we want
 function DayZ:DoModuleInclusion()
+	--Required Modules
 	dofile(self.ModulePath.."Communication Module.lua"); --Communication always included
+	dofile(self.ModulePath.."Util Module.lua"); --Util always included
 	dofile(self.ModulePath.."Scene Loading and Transitions Module.lua"); --Scene Loading and Transitions always included
 	self:StartSceneLoading();
 	dofile(self.ModulePath.."Save Load Module.lua"); --Game Saving and Loading always included
 	self:StartSaveLoad();
+	
+	--Non-Required Modules
 	if self.LootIncludable then
 		dofile(self.ModulePath.."Loot Spawn Module.lua");
 	end
@@ -334,6 +342,7 @@ function DayZ:DoActorChecksAndCleanup()
 	for _, humantable in pairs(self.HumanTable) do
 		for k, v in pairs(humantable) do
 			if v.actor.Health <= 0 or not MovableMan:IsActor(v.actor) or v.actor.ToDelete == true then
+				print ("Removing dead "..k.." from table in Main Script");
 				self:NotifySust_DeadPlayer(k);
 				self:NotifyIcons_DeadPlayer(k);
 				self:NotifyAlerts_DeadHuman(v.alert);
@@ -354,100 +363,4 @@ function DayZ:DoActorChecksAndCleanup()
 			self.ZombiesKilled = self.ZombiesKilled + 1;
 		end
 	end
-end
---TODO Put all the nearest check stuff and maybe the table adding stuff into a separate util script
---Split and trim functions to be moved to util
-function string:split(sep)
-	local sep, fields = sep or ":", {}
-	local pattern = string.format("([^%s]+)", sep)
-	self:gsub(pattern, function(c) fields[#fields+1] = c end)
-	return fields
-end
-function string:trim()
-	self = self:gsub("^%s+", ""):gsub("%s+$", "");
-	return self;
-end
-function DayZ:TrimTable(tab)
-	for k, v in pairs(tab) do
-		if type(v) == "string" then
-			tab[k] = v:trim();
-		end
-	end
-	return tab;
-end
------------------------------------------------------------------------------------------
--- Sort maxdist and mindist inputs so they parse correctly even if the order is mixed up
------------------------------------------------------------------------------------------
-function DayZ:SortMaxAndMinArguments(dists)
-	local mindist = dists[1];
-	local maxdist = dists[2];
-	--If we have both max and min dists, make sure they're set right
-	if maxdist ~= nil then
-		mindist = math.min(dists[1], dists[2]);
-		maxdist = math.max(dists[1], dists[2]);
-	--Otherwise, the mindist is already set so set the maxdist to a large number
-	else
-		maxdist = SceneMan.SceneWidth*10;
-	end
-	return mindist, maxdist;
-end
------------------------------------------------------------------------------------------
--- Find the nearest human to a point TODO move this to spawn??? Make human and zombie management modules???
------------------------------------------------------------------------------------------
-function DayZ:NearestHuman(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
-	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
-	local dist, target;
-	for _, humantable in pairs(self.HumanTable) do
-		for __, v in pairs(humantable) do
-			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, true).Magnitude;
-			if dist >= mindist and dist <= maxdist then
-				maxdist = dist;
-				target = v.actor;
-			end
-		end
-	end
-	return target;
-end
------------------------------------------------------------------------------------------
--- Find whether or not there are humans less than maxdist away from the passed in pos
------------------------------------------------------------------------------------------
-function DayZ:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
-	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
-	local dist;
-	for _, humantable in pairs(self.HumanTable) do
-		for __, v in pairs(humantable) do
-			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, true).Magnitude;
-			if dist >= mindist and dist <= maxdist then
-				return true;
-			end
-		end
-	end
-	return false;
-end
------------------------------------------------------------------------------------------
--- Functions for adding actors to mission tables, for convenient updating
------------------------------------------------------------------------------------------
-function DayZ:AddToPlayerTable(actor)
-	self.HumanTable.Players[actor.UniqueID] = {
-		actor = actor, lightOn = false, alert = false, rounds = 0,
-		activity = {
-			sound = {current = 0, total = 0, timer = Timer()},
-			light = {current = 0, total = 0, timer = Timer()}
-		}
-	};
-	self:RequestSustenance_AddToSustenanceTable(actor);
-	self:RequestIcons_AddToMeterTable(actor);
-end
-function DayZ:AddToNPCTable(actor)
-	self.HumanTable.NPCs[actor.UniqueID] = {
-		actor = actor, lightOn = false, alert = false, rounds = 0,
-		activity = {
-			sound = {current = 0, total = 0, timer = Timer()},
-			light = {current = 0, total = 0, timer = Timer()},
-		}
-	};
-	self:RequestSustenance_AddToSustenanceTable(actor);
-end
-function DayZ:AddToZombieTable(actor, target, targettype, startdist)
-	self.ZombieTable[actor.UniqueID] = {actor = actor, target = {val = target, ttype = targettype, startdist = startdist}};
 end

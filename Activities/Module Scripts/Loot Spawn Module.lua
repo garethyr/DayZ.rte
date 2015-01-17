@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------
 -- Everything for loot
 -----------------------------------------------------------------------------------------
-function DayZ:StartLoot()
+function ModularActivity:StartLoot()
 	------------------
 	--LOOT CONSTANTS--
 	------------------
@@ -78,24 +78,24 @@ end
 --CREATION FUNCTIONS--
 ----------------------
 --The actual loot spawning
-function DayZ:SpawnLoot(area, areanum, set)
+function ModularActivity:SpawnLoot(area, areanum, set)
 	if MovableMan:GetMOIDCount() <= self.MOIDLimit+30 then
 		local loot;
 		local chance = self.LootSpawnChances[set];
 		if math.random() < chance.junk then
-			loot = CreateTDExplosive(self.LootJunkTable[math.random(#self.LootJunkTable)], "DayZ.rte");
+			loot = CreateTDExplosive(self.LootJunkTable[math.random(#self.LootJunkTable)], self.RTE);
 		elseif math.random() < chance.food then
-			loot = CreateHDFirearm(self.LootFoodTable[math.random(#self.LootFoodTable)], "DayZ.rte");
+			loot = CreateHDFirearm(self.LootFoodTable[math.random(#self.LootFoodTable)], self.RTE);
 		elseif math.random() < chance.drink then
-			loot = CreateHDFirearm(self.LootDrinkTable[math.random(#self.LootDrinkTable)], "DayZ.rte");
+			loot = CreateHDFirearm(self.LootDrinkTable[math.random(#self.LootDrinkTable)], self.RTE);
 		elseif math.random() < chance.light then
-			loot = CreateTDExplosive(self.LootLightTable[math.random(#self.LootLightTable)], "DayZ.rte");
+			loot = CreateTDExplosive(self.LootLightTable[math.random(#self.LootLightTable)], self.RTE);
 		elseif math.random() < chance.medicine then
-			loot = CreateHDFirearm(self.LootMedicineTable[math.random(#self.LootMedicineTable)], "DayZ.rte");
+			loot = CreateHDFirearm(self.LootMedicineTable[math.random(#self.LootMedicineTable)], self.RTE);
 		elseif math.random() < chance.ammo then
-			loot = CreateHeldDevice(self.LootAmmoTable[math.random(#self.LootAmmoTable)], "DayZ.rte");
+			loot = CreateHeldDevice(self.LootAmmoTable[math.random(#self.LootAmmoTable)], self.RTE);
 		elseif math.random() < chance.weapon then
-			loot = CreateHDFirearm(self.LootCWeaponTable[math.random(#self.LootCWeaponTable)], "DayZ.rte");
+			loot = CreateHDFirearm(self.LootCWeaponTable[math.random(#self.LootCWeaponTable)], self.RTE);
 		end
 		loot.Pos = Vector(area:GetRandomPoint().X + math.random(-5,5), area:GetCenterPoint().Y);
 		MovableMan:AddParticle(loot);
@@ -113,7 +113,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Run the loot update functions, cleanup first then check for spawning
-function DayZ:DoLoot()
+function ModularActivity:DoLoot()
 	self:DoLootDespawns();
 	self:DoLootCleanup();
 	self:DoLootSpawning();
@@ -122,7 +122,7 @@ end
 --DELETE FUNCTIONS--
 --------------------
 --Kill loot that's been sitting around past the loot lifetime
-function DayZ:DoLootDespawns()
+function ModularActivity:DoLootDespawns()
 	for areanum, tab in ipairs(self.LootTable) do
 		for _, item in ipairs(tab) do
 			if item.Age > self.LootLifetime and not self:CheckForNearbyHumans(item.Pos, 0, LootSpawnMaxDistance) then
@@ -132,7 +132,7 @@ function DayZ:DoLootDespawns()
 	end
 end
 --Remove loot from table when picked up or destroyed
-function DayZ:DoLootCleanup()
+function ModularActivity:DoLootCleanup()
 	local v;
 	--Iterate through each area section of the loot table
 	for areanum, tab in ipairs(self.LootTable) do
@@ -154,7 +154,7 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Pick where to spawn loot based on nearby humans (players or NPCs)
-function DayZ:DoLootSpawning()
+function ModularActivity:DoLootSpawning()
 	for i, v in ipairs(self.LootAreas) do
 		--If there's no loot in the area, a player nearby but not too close and the timer's ready, spawn loot
 		if v.filled == false and self.LootTimer[i]:IsPastSimMS(self.LootInterval) then

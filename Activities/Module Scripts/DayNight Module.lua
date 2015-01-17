@@ -2,7 +2,7 @@
 -- Use FOW to fake night
 -----------------------------------------------------------------------------------------
 --Setup
-function DayZ:StartDayNight()
+function ModularActivity:StartDayNight()
 	----------------------
 	--DAYNIGHT CONSTANTS--
 	----------------------
@@ -35,7 +35,7 @@ end
 --CREATE FUNCTIONS--
 --------------------
 --Add a light item so we can reveal it
-function DayZ:AddDayNightLightItem(item)  --TODO Decide if I want daynight to handle this and flashlight, or let the items do it by themselves
+function ModularActivity:AddDayNightLightItem(item)  --TODO Decide if I want daynight to handle this and flashlight, or let the items do it by themselves
 	if self.DayNightLightItemTable[item.UniqueID] == nil then
 		local str = string.find(item.PresetName,"Chemlight") and "Chemlight" or item.PresetName;
 		self.DayNightLightItemTable[item.UniqueID] = {item = item, reveal = self.DayNightLightItemBaseRevealSize[str]};
@@ -45,7 +45,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Swap day and night and act accordingly
-function DayZ:DoDayNight()
+function ModularActivity:DoDayNight()
 	self:DoDayNightCleanup();
 	--Swap from day to night after a certain amount of time
 	--TODO Have a more smooth swapping, gradual darkness etc. Use numbers instead of booleans to determine when alerts will have effects/how effective they'll be?
@@ -79,7 +79,7 @@ end
 --DELETE FUNCTIONS--
 --------------------
 --Cleanup any dead items
-function DayZ:DoDayNightCleanup()
+function ModularActivity:DoDayNightCleanup()
 	for k, v in pairs(self.DayNightLightItemTable) do
 		if v.item.RootID == 255 or (v.item.RootID ~= 255 and v.item.RootID ~= v.item.ID and ToAHuman(MovableMan:GetMOFromID(v.item.RootID)).EquippedItem.UniqueID ~= v.item.UniqueID) then
 			print ("REMOVING ITEM FROM DAYNIGHT ITEM TABLE: "..v.item.UniqueID);
@@ -91,14 +91,14 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Cycle the day and night
-function DayZ:CycleDayNight()
+function ModularActivity:CycleDayNight()
 	self.DayNightIsNight = not self.DayNightIsNight;
 	self.BackgroundCurrentNumber = 0; --Reset the background number
 	self:DayNightNotifyMany_DayNightCycle();
 	self.DayNightCheck = false;
 end
 --Actions performed once whenever the game changes from night to day
-function DayZ:DoDayNightChangeActions()
+function ModularActivity:DoDayNightChangeActions()
 	if self.DayNightIsNight == true then --During the night
 	else --During the day
 		--Reveal the map (only for Players and NPCs)
@@ -107,12 +107,12 @@ function DayZ:DoDayNightChangeActions()
 	end
 end
 --Change the map background based on time of day/night
-function DayZ:DoDayNightBackgroundChanges()
+function ModularActivity:DoDayNightBackgroundChanges()
 	local curtime = self.DayNightTimer.ElapsedSimTimeS;
 	if curtime/self.DayNightInterval > self.BackgroundCurrentNumber/self.BackgroundTotalNumber then
 		print (tostring(curtime/self.DayNightInterval).." > "..tostring(self.BackgroundCurrentNumber/self.BackgroundTotalNumber));
 		self.BackgroundCurrentNumber = self.BackgroundCurrentNumber + 1;
-        local obj = CreateTerrainObject(self.BackgroundNames[self.DayNightIsNight]..tostring(self.BackgroundCurrentNumber), "DayZ.rte");
+        local obj = CreateTerrainObject(self.BackgroundNames[self.DayNightIsNight]..tostring(self.BackgroundCurrentNumber), self.RTE);
         if obj then
             obj.Pos = self.BackgroundPos;
             obj.Team = -1;
@@ -121,7 +121,7 @@ function DayZ:DoDayNightBackgroundChanges()
 	end
 end
 --Actions performed continuously during day or night
-function DayZ:DoDayNightContinuousActions()
+function ModularActivity:DoDayNightContinuousActions()
 	if self.DayNightIsNight == true then --During the night
 		--Make everything invisible for humans
 		SceneMan:MakeAllUnseen(Vector(24, 24), self.PlayerTeam);

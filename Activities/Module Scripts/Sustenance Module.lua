@@ -2,7 +2,7 @@
 -- Drain actor sustenance, add to it on item use and injure/kill them if they run out
 -----------------------------------------------------------------------------------------
 --Setup
-function DayZ:StartSustenance()
+function ModularActivity:StartSustenance()
 	----------------------------
 	--DYNAMIC SUSTENANCE TABLE--
 	----------------------------
@@ -38,7 +38,7 @@ end
 --CREATION FUNCTIONS--
 ---------------------
 --Adding an actor to the table
-function DayZ:AddToSustenanceTable(actor)
+function ModularActivity:AddToSustenanceTable(actor)
 	self.SustTable[actor.UniqueID] = {actor = ToActor(actor), hunger = self.InitialSust.hunger, thirst = self.InitialSust.thirst, htimer = Timer(), ttimer = Timer(), drainMult = 1};
 	self.SustTable[actor.UniqueID].htimer:Reset();
 	self.SustTable[actor.UniqueID].ttimer:Reset();
@@ -47,7 +47,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Track stuff for killing
-function DayZ:DoSustenance() --TODO refactor this, cleaner update function and make the notification for dead players apply to all humans and call a deletion function in Sust
+function ModularActivity:DoSustenance() --TODO refactor this, cleaner update function and make the notification for dead players apply to all humans and call a deletion function in Sust
 	for k, v in pairs (self.SustTable) do
 		--Do movement multipliers, base is 1, the rest are defined in create
 		v.drainMult = 1;
@@ -87,7 +87,7 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --The actual killing
-function DayZ:NoSustenanceKill(actor, susttype)
+function ModularActivity:NoSustenanceKill(actor, susttype)
 	local damage = 1;
 	if actor.Health <= 25 or actor.Health >= 90 then
 		damage = 1;
@@ -111,7 +111,7 @@ function DayZ:NoSustenanceKill(actor, susttype)
 end
 --Makes the sust table entry's actor vomit and decreases all of his susts
 --TODO make this act over time - either use htimer/ttimer or add a new vomit timer and make the actor keep vomitting til the timer's done
-function DayZ:DoSustenanceVomiting(sust)
+function ModularActivity:DoSustenanceVomiting(sust)
 	sust.actor:GetController():SetState(Controller.BODY_CROUCH, true);
 	sust.actor:GetController():SetState(Controller.BODY_JUMP, false);
 	sust.actor:GetController():SetState(Controller.BODY_JUMPSTART, false);

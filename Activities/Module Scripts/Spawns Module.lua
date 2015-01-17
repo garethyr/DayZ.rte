@@ -2,7 +2,7 @@
 -- Spawn zombies and NPCs for a variety of reasons and purposes
 -----------------------------------------------------------------------------------------
 --Setup
-function DayZ:StartSpawns()
+function ModularActivity:StartSpawns()
 	--------------------------
 	--ZOMBIE SPAWN CONSTANTS--
 	--------------------------
@@ -38,7 +38,7 @@ end
 --Spawn 3 zombies in the area
 --SpawnTypes: alert, loot - the former is only for alert zombies
 --TargetTypes: alert, actor, pos - the first is for any alert triggered spawn, the second for actor and the third for static position --TODO is pos never used???
-function DayZ:SpawnZombie(spawnpoint, target, targettype, spawntype)
+function ModularActivity:SpawnZombie(spawnpoint, target, targettype, spawntype)
 	if MovableMan:GetMOIDCount() <= self.MOIDLimit then
 		local targetpos;
 		--Get the target's position to calculate startdist and use for waypoints
@@ -48,9 +48,9 @@ function DayZ:SpawnZombie(spawnpoint, target, targettype, spawntype)
 			targetpos = targettype == "actor" and target.Pos or target;
 		end
 	
-		local actor = CreateAHuman("[DZ] Zombie 1", "DayZ.rte");
-		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack BG", "DayZ.rte"));
-		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack", "DayZ.rte"));
+		local actor = CreateAHuman("[DZ] Zombie 1", self.RTE);
+		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack BG", self.RTE));
+		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack", self.RTE));
 		actor.Team = self.ZombieTeam;
 		
 		--Alert zombies have to be positioned differently than loot zombies
@@ -74,14 +74,14 @@ end
 --------------------
 --UPDATE FUNCTIONS--
 --------------------
-function DayZ:DoSpawns()
+function ModularActivity:DoSpawns()
 	self:DoLootZombieSpawning();
 end
 --------------------
 --ACTION FUNCTIONS--
 --------------------
 --Pick where to spawn the zombies based on player position
-function DayZ:DoLootZombieSpawning()
+function ModularActivity:DoLootZombieSpawning()
 	--If we have a human in one of the loot zombie spawn areas and haven't spawned recently, spawn zombies for the area.
 	local target, nearhumans, nearalerts;
 	for i, v in ipairs(self.SpawnLootZombieArea) do

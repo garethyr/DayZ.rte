@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------------------
--- Load scenes from their datafiles
+-- NECESSARY MODULE: Load scenes from their datafiles
 -----------------------------------------------------------------------------------------
 --Setup
-function DayZ:StartSceneLoading()
+function ModularActivity:StartSceneLoading()
 	--------------------------
 	--SCENELOADING CONSTANTS--
 	--------------------------
@@ -70,7 +70,7 @@ end
 ----------------------
 --CREATION FUNCTIONS--
 ----------------------
-function DayZ:LoadScene(scenename)
+function ModularActivity:LoadScene(scenename)
 	local file = LuaMan:FileOpen(self.DataPath..scenename..self.DataFileExtension, "rt");
 	local stage = 0;
 	while not LuaMan:FileEOF(file) do
@@ -95,13 +95,13 @@ function DayZ:LoadScene(scenename)
 	end
 	LuaMan:FileClose(file)
 end
-function DayZ:AddAreaNumberFromData(data)
+function ModularActivity:AddAreaNumberFromData(data)
 	local fields = self:TrimTable(data:split("="));
 	if self.AreaNumberData[fields[1]] ~= nil then
 		self.AreaNumberData[fields[1]](self, tonumber(fields[2]));
 	end
 end
-function DayZ:AddTransitionAreaFromData(data)
+function ModularActivity:AddTransitionAreaFromData(data)
 	local fields = self:TrimTable(data:split("="));
 	if data:find("\t") == nil then
 		self.TransitionAreas[#self.TransitionAreas+1] = {area = SceneMan.Scene:GetArea("Transition Area "..tostring(#self.TransitionAreas+1)), target = fields[2], constraints = {}};
@@ -112,7 +112,7 @@ function DayZ:AddTransitionAreaFromData(data)
 		--print ("Added constraint to transition area "..tostring(#self.TransitionAreas)..": "..tostring(self.TransitionAreas[#self.TransitionAreas].constraints[1]));
 	end
 end
-function DayZ:AddModuleInclusionFromData(data)
+function ModularActivity:AddModuleInclusionFromData(data)
 	local fields = self:TrimTable(data:split("="));
 	local included = tonumber(fields[2]) == 1;
 	if self.ModuleData[fields[1]] ~= nil then
@@ -123,7 +123,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Check for any transitions that should be happening
-function DayZ:RunTransitions()
+function ModularActivity:RunTransitions()
 	local possibletransitioncount = 0; --A counter for possible transitions, i.e. there's at least one player in the area and constraints are met
 	for _, transition in pairs(self.TransitionAreas) do
 		for __, player in pairs(self.HumanTable.Players) do
@@ -157,7 +157,7 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Check if a transitions area's constraints are met (also returns true if they're invalid)
-function DayZ:CheckTransitionConstraints(constraints)
+function ModularActivity:CheckTransitionConstraints(constraints)
 	for _, data in pairs(constraints) do
 		if self.TransitionConstraintData[data] == false then
 			return false;
@@ -166,7 +166,7 @@ function DayZ:CheckTransitionConstraints(constraints)
 	return true;
 end
 --Transition scenes
-function DayZ:DoSceneTransition(target)
+function ModularActivity:DoSceneTransition(target)
 	SceneMan:LoadScene(target, true);
 	self:LoadScene(target);
 	if self.ModulesInitialized then
@@ -174,22 +174,22 @@ function DayZ:DoSceneTransition(target)
 	end
 end
 --Add starting player actors
-function DayZ:AddStartingPlayerActors()
+function ModularActivity:AddStartingPlayerActors()
 	--The player actors
 	for i = 0 , self.PlayerCount do
 		if self:PlayerHuman(i) then
-			local player = CreateAHuman("Survivor Black Reticle Actor" , "DayZ.rte");
-			player:AddInventoryItem(CreateHDFirearm("[DZ] MR43" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHDFirearm("Crowbar" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHDFirearm("Baked Beans" , "DayZ.rte"));
-			player:AddInventoryItem(CreateHDFirearm("Coke" , "DayZ.rte"));
+			local player = CreateAHuman("Survivor Black Reticle Actor" , self.RTE);
+			player:AddInventoryItem(CreateHDFirearm("[DZ] MR43" , self.RTE));
+			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , self.RTE));
+			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , self.RTE));
+			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , self.RTE));
+			player:AddInventoryItem(CreateHDFirearm("Crowbar" , self.RTE));
+			player:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
+			player:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
 			if self.IncludeFlashlight then
-				player:AddInventoryItem(CreateHDFirearm("Flashlight" , "DayZ.rte"));
+				player:AddInventoryItem(CreateHDFirearm("Flashlight" , self.RTE));
 			end
-			player:AddInventoryItem(CreateTDExplosive("Flare" , "DayZ.rte"));
+			player:AddInventoryItem(CreateTDExplosive("Flare" , self.RTE));
 			player.Sharpness = 0;
 			player.Pos = Vector(995, 545)--(350, 550);
 			player.Team = self.PlayerTeam;
@@ -201,11 +201,11 @@ function DayZ:AddStartingPlayerActors()
 		end
 	end
 	--TODO Test NPC, Remove Me!
-	--[[self.TestNPC = CreateAHuman("Survivor Black" , "DayZ.rte");
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Hatchet" , "DayZ.rte"));
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Baked Beans" , "DayZ.rte"));
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Coke" , "DayZ.rte"));
-	self.TestNPC:AddInventoryItem(CreateTDExplosive("M67" , "DayZ.rte"));
+	--[[self.TestNPC = CreateAHuman("Survivor Black" , self.RTE);
+	self.TestNPC:AddInventoryItem(CreateHDFirearm("Hatchet" , self.RTE));
+	self.TestNPC:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
+	self.TestNPC:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
+	self.TestNPC:AddInventoryItem(CreateTDExplosive("M67" , self.RTE));
 	self.TestNPC.Pos = Vector(1250, 400);
 	self.TestNPC.Team = self.PlayerTeam;
 	self.TestNPC.AIMode = Actor.AIMODE_SENTRY;

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------------------
 -- Stuff for alerting zombies and NPCs
 -----------------------------------------------------------------------------------------
-function DayZ:StartAlerts()
+function ModularActivity:StartAlerts()
 	-------------------
 	--ALERT CONSTANTS--
 	-------------------
@@ -89,7 +89,7 @@ end
 --CREATION FUNCTIONS--
 ----------------------
 --Add an alert based on parameter values or merge with any alerts on this target.
-function DayZ:AddAlert(pos, target, light, sound)
+function ModularActivity:AddAlert(pos, target, light, sound)
 	--If we have an alert with this target, merge this into it
 	if target ~= nil and self.AlertTable[target.UniqueID] ~= nil then
 		--Trick self:MergeAlert by making a temporary table with correctly named variables and merge it
@@ -133,7 +133,7 @@ function DayZ:AddAlert(pos, target, light, sound)
 	end
 end
 --Add a thrown item based on parameter values
-function DayZ:AddAlertItem(item, ismobile, light, sound)
+function ModularActivity:AddAlertItem(item, ismobile, light, sound)
 	print ("ADD "..(ismobile and "MOBILE" or "").." THROWN ITEM (Key: "..tostring(item.UniqueID)..") - "..item.PresetName..", light: "..tostring(light.strength)..", sound: "..tostring(sound.strength));
 	self.AlertItemTable[item.UniqueID] = {item = item, ismobile = ismobile, light = light, sound = sound};
 end
@@ -141,7 +141,7 @@ end
 --UTILITY FUNCTIONS--
 ---------------------
 --Merge two alerts and remove the second (fromalert), does not check if the alerts are be mergeable
-function DayZ:MergeAlerts(toalert, fromalert, fromindex)
+function ModularActivity:MergeAlerts(toalert, fromalert, fromindex)
 	print ("MERGING ALERT AT "..tostring(fromalert.pos).." INTO ALERT AT "..tostring(toalert.pos));
 	--Do light merging, only necessary if the alert we merge from has light
 	if fromalert.light.strength > 0 then
@@ -169,28 +169,28 @@ function DayZ:MergeAlerts(toalert, fromalert, fromindex)
 	end
 end
 --Check if two alerts have the same target (or no target)
-function DayZ:AlertsHaveSameTarget(alert1, alert2)
+function ModularActivity:AlertsHaveSameTarget(alert1, alert2)
 	return (alert1.target == nil and alert2.target == nil) or (alert1.target ~= nil and alert2.target ~= nil and alert1.target.UniqueID == alert2.target.UniqueID)
 end
 --Safely update the total strength of an alert
-function DayZ:SetAlertStrength(alert)
+function ModularActivity:SetAlertStrength(alert)
 	alert.strength = self:GetAlertStrength(alert.light.strength, alert.sound.strength);
 end
 --Return the safe total strength given input light and sound strength
-function DayZ:GetAlertStrength(lstr, sstr)
+function ModularActivity:GetAlertStrength(lstr, sstr)
 	return math.max(lstr, sstr);
 end
 --Return the safe strength for a weapon alert given the weapon's sound level
-function DayZ:GetWeaponAlertStrength(soundlevel)
+function ModularActivity:GetWeaponAlertStrength(soundlevel)
 	return math.min(self.AlertStrengthLimit, self.AlertValue*soundlevel/self.WeaponAlertValues[self.WeaponAlertStrengthComparator]);
 end
 
-function DayZ:AlertVisibilityDistance(alertstrength)
+function ModularActivity:AlertVisibilityDistance(alertstrength)
 	return alertstrength/self.AlertAwareness;
 end
 --TODO make this also take a maxdist so alerts can trigger things like zombie spawns by being visible within the max spawndist???
 --Return true if there are any visible alerts more than mindist away from the visible position, based on awarenessmod*self:AlertDistance
-function DayZ:CheckForVisibleAlerts(pos, awarenessmod, mindist)
+function ModularActivity:CheckForVisibleAlerts(pos, awarenessmod, mindist)
 	local dist, maxdist, visdist;
 	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
 	
@@ -203,7 +203,7 @@ function DayZ:CheckForVisibleAlerts(pos, awarenessmod, mindist)
 	end
 	return false;
 end
-function DayZ:NearestVisibleAlert(pos, awarenessmod, mindist)
+function ModularActivity:NearestVisibleAlert(pos, awarenessmod, mindist)
 	local dist, maxdist, visdist, target = nil;
 	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
 	
@@ -217,7 +217,7 @@ function DayZ:NearestVisibleAlert(pos, awarenessmod, mindist)
 	end
 	return target;
 end
-function DayZ:VisibleAlerts(pos, awarenessmod, mindist)
+function ModularActivity:VisibleAlerts(pos, awarenessmod, mindist)
 	local dist, maxdist, visdist, alerts = {};
 	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
 	
@@ -234,7 +234,7 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Main alert function, increases sound upon firing, transfers alert to locations, runs everything else
-function DayZ:DoAlerts()
+function ModularActivity:DoAlerts()
 	--Clean the table before doing any alert stuff
 	self:DoAlertCleanup();
 	
@@ -267,7 +267,7 @@ end
 --DELETE FUNCTIONS--
 --------------------
 --Clean up the alert table for a variety of reasons
-function DayZ:DoAlertCleanup()
+function ModularActivity:DoAlertCleanup()
 	for k, v in pairs(self.AlertTable) do
 		local canremove = true;
 		
@@ -332,12 +332,12 @@ function DayZ:DoAlertCleanup()
 	end
 end
 --Set the alert to be static if its actor is dead
-function DayZ:MoveAlertFromDeadActor(alert)
+function ModularActivity:MoveAlertFromDeadActor(alert)
 	alert.target = nil;
 	print("MOVE ALERT FROM DEAD ACTOR");
 end
 --Set alerts for actors whose activity timers have reset to be static and, if necessary, switch their type
-function DayZ:RemoveNonActiveActorAlert(alert, atype, actorID, actortype)
+function ModularActivity:RemoveNonActiveActorAlert(alert, atype, actorID, actortype)
 	print ("REMOVE NON ACTIVE ALERT FROM TARGET "..(tostring(alert.target)..", PARENT "..tostring(alert[atype].parent)));
 	local removealert = alert;
 	--If the alert has both sound and light, it has to be split
@@ -367,7 +367,7 @@ function DayZ:RemoveNonActiveActorAlert(alert, atype, actorID, actortype)
 	end
 end
 --Kill any dead held light items so they can't last forever
-function DayZ:RemoveDeadHeldAlertItem(item, atype, actor)
+function ModularActivity:RemoveDeadHeldAlertItem(item, atype, actor)
 	--Remove the light parent for the alert attached to the actor
 	if item.Age > item.Lifetime then
 		if (self.AlertTable[actor.UniqueID] ~= nil) then
@@ -382,13 +382,13 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Deal with adding to humans' activity levels
-function DayZ:DoAlertHumanAddActivity()
+function ModularActivity:DoAlertHumanAddActivity()
 	for humankey, tab in pairs(self.HumanTable) do
 		for __, v in pairs(tab) do
 			local acttype = self:DoAlertHumanCheckCurrentActivity(v); --Check and update the actor's current activity levels
+			--If the human has an activity causing item, add to his activity value (as long as it's not at the limit) and reset its calm down timer
 			if acttype ~= false then
 				local item = ToHeldDevice(v.actor.EquippedItem);
-				--Add to the relevant activity type's total value (as long as it's not at the limit) and reset its calm down timer
 				if (acttype == "sound" and item:IsActivated() and v.rounds ~= ToHDFirearm(item).RoundInMagCount and not item:IsReloading()) or acttype == "light" then
 					v.activity[acttype].total = math.min(v.activity[acttype].total + v.activity[acttype].current, self.AlertValue);
 					v.activity[acttype].timer:Reset();
@@ -411,7 +411,7 @@ function DayZ:DoAlertHumanAddActivity()
 	end
 end
 --Check for activity causing items/weapons to update activity current value
-function DayZ:DoAlertHumanCheckCurrentActivity(tab)
+function ModularActivity:DoAlertHumanCheckCurrentActivity(tab)
 	local item = tab.actor.EquippedItem;
 	if item ~= nil then
 		--Set the sound activity level for the actor if applicable
@@ -439,7 +439,7 @@ function DayZ:DoAlertHumanCheckCurrentActivity(tab)
 end
 
 --Make alerts for actor alerts and thrown entries for thrown alerting items
-function DayZ:DoAlertCreations()
+function ModularActivity:DoAlertCreations()
 	--Do various alert creation things 
 	for _, tab in pairs(self.HumanTable) do
 		for __, v in pairs(tab) do
@@ -487,7 +487,7 @@ function DayZ:DoAlertCreations()
 	end
 end
 --Do all management for thrown items to turn them into alerts
-function DayZ:ManageAlertItems()
+function ModularActivity:ManageAlertItems()
 	for k, v in pairs(self.AlertItemTable) do
 		--If the item is turned on and should add an alert(set in the item's script)
 		if v.item.Sharpness > 0 then
@@ -502,7 +502,7 @@ function DayZ:ManageAlertItems()
 	end
 end
 --Count down all alerts, merge alerts that are close to each other
-function DayZ:ManageAlertPoints()
+function ModularActivity:ManageAlertPoints()
 	--General update loop
 	for k, v in pairs(self.AlertTable) do
 		--Reset lifetimer on emitting items
@@ -535,7 +535,7 @@ function DayZ:ManageAlertPoints()
 end				
 				
 --Add objective points for alert positions
-function DayZ:MakeAlertArrows()
+function ModularActivity:MakeAlertArrows()
 	for _, players in pairs(self.HumanTable.Players) do
 		for __, alert in pairs(self.AlertTable) do
 			--Only add the points if the player is closer than the alert's strength divided by the awareness constant

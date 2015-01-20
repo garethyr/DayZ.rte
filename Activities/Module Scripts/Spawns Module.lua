@@ -49,7 +49,7 @@ function ModularActivity:SpawnZombie(spawnpoint, target, targettype, spawntype)
 		end
 	
 		local actor = CreateAHuman("[DZ] Zombie 1", self.RTE);
-		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack BG", self.RTE));
+--		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack BG", self.RTE));
 		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack", self.RTE));
 		actor.Team = self.ZombieTeam;
 		

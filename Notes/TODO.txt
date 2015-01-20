@@ -12,48 +12,54 @@
 6) Weather?
 7) Separate military loot areas
 	(at this point, only the ATC, two hangars, and last building on the map, but not the firehouse)
-8) BG spawning for day/night backgrounds?
-9) Sharpaim shenanigans for weapons
-10) X amt of damage in X time - zombie ragdolls for a second to simulate stumbling --WILL COME WITH ZOMBIE AI
+8) Sharpaim shenanigans for weapons
+9) X amt of damage in X time - zombie ragdolls for a second to simulate stumbling --WILL COME WITH ZOMBIE AI
 	(player too?)
-11) NPCs?
-12) Helicopter? (flyby along preset path until offscreen with mounted MG, shooting at player if spotted? possible?)
-13) "Dodge" system
-14) Beartrap
-15) Fix medical box -- NEED [DZ] VERSION OF MEDICAL BOX WITH NO SCRIPT
-16) Random events? (NPCs, bandit ambush, zombie hordes, etc?)
-17) Bandit sprites/actor
-18) Clock (days survived and/or current time?)
-19) Rethink stairs?
-20) Zombie climbing? (next build possible?)
-21) Vomit emitter fx
-22) New player condition - shaking?
+10) NPCs?
+11.) Helicopter? (flyby along preset path until offscreen with mounted MG, shooting at player if spotted? possible?)
+12) "Dodge" system
+13) Beartrap
+14) Fix medical box -- NEED [DZ] VERSION OF MEDICAL BOX WITH NO SCRIPT
+15) Random events? (NPCs, bandit ambush, zombie hordes, etc?)
+16) Bandit sprites/actor
+17) Clock (days survived and/or current time?)
+18) Rethink stairs?
+19) Zombie climbing? (next build possible?)
+20) Vomit emitter fx
+21) New player condition - shaking?
 	(after receiving x amt heavy damage; will throw off sharpaim when implemented; cured by (26...
-23) ... Painkillers?
-24) New player condition - unconsciousness?
+22) ... Painkillers?
+23) New player condition - unconsciousness?
 	(after significant bloodloss or by random zombie hit; unable to move and complete fog of war for x seconds; cured by (28...
-25) ... Epi-pen? (adrenaline shot) - for player, will need NPC to administer
+24) ... Epi-pen? (adrenaline shot) - for player, will need NPC to administer
 	(could be incentive to group up w/NPCs
-26) Implement more DayZ player sounds (mostly damage sounds)
-27) Create other scenes for transitions (Skalisty Island; shipwreck; bandit hideout; Green Mountain)
-28) Saving and loading games
+25) Implement more DayZ player sounds (mostly damage sounds)
+26) Create other scenes for transitions (Skalisty Island; shipwreck; bandit hideout; Green Mountain)
+27) Saving and loading games
+28) Remove civilization area from military base (it's open-air enough for nature sounds)
+29) Add flashlight, matches, jerry can to spawn
+30) Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
 
 ----------------
 --Lua Specific--
 ----------------
-1) Make custom zombie AI (bleh)
-2) Make vomit act over time
-3) Fix alert bugs where they place late or in strange locations
-4) Completely properly fix all crashes on death
-5) Smooth out day/night transition
-6) Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
-7) Flesh out transitions more, determine extent of information in scene datafiles
-8) Organize/Reorganize datafile parsing, allow the datafiles to use either short form names or full variable names (i.e. self.Whatever) as keys
-9) Add to scene datafiles variables:
+1) Fix bug with setting day/night longer than 60 seconds
+2) Make custom zombie AI (bleh)
+3) Make vomit act over time
+4) Fix alert bugs where they place late or in strange locations
+5) Completely properly fix all crashes on death
+6) Smooth out day/night transition
+7) Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
+8) Flesh out transitions more, determine extent of information in scene datafiles
+9) Organize/Reorganize datafile parsing, allow the datafiles to use either short form names or full variable names (i.e. self.Whatever) as keys
+10) Add to scene datafiles variables:
 	Need section for backgrounds: self.BackgroundChanges = true/false, self.BackgroundsTotalNumber, self.BackgroundPosition must be reset on map change
 	Need section for other: self.AlwaysDark = true/false
-10) Add ability for comments to datafiles
-11) Make fog of war change with level of night, so evening will be brighter than midnight, etc.
+11) Add ability for comments to datafiles
+12) Make fog of war change with level of night, so evening will be brighter than midnight, etc.
+13) Allow "Drop Ammo" pie menu icon to work with any amount of ammo, not just ammo over a minimum of a full load (you come across a weapon you already have; take ammo instead of a slightly "fuller" gun) Right now you can only take ammo if you have more than the default full magazine/load for each weapon.
+14) Implement MOSRotating Sun, Moon, Day/Night Clouds
+	(indicate time of day by position of 	sun/moon?)
 
 -------------
 --Completed--
@@ -62,3 +68,5 @@
 2) Added "Zombies killed" counter
 3) Added "Nights survived" counter
 4) Added ability for transitions to other scenes
+5) Added BG spawning
+5) Added smooth gradient to day BGs

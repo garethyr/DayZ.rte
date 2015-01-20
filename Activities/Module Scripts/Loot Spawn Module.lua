@@ -48,23 +48,22 @@ function ModularActivity:StartLoot()
 	--This table stores all light making throwables
 	self.LootLightTable = {"Red Chemlight", "Green Chemlight", "Blue Chemlight", "Flare"};
 	
-	--This table stores all ammo
-	self.LootAmmoTable = {}
+	--These tables store all ammo
+	self.LootCAmmoTable = {"Makarov PM Magazine", ".45 ACP Speedloader", "M1911A1 Magazine", "Metal Bolts", "12 Gauge Buckshot (2)", ".44 Henry Rounds", "Lee Enfield Stripper Clip", "9.3x62 Mauser Rounds"};
+	
+	self.LootMAmmoTable = {"G17 Magazine", "AKM Magazine", "STANAG Magazine", "STANAG SD Magazine", "MP5SD6 Magazine", "M240 Belt", "DMR Magazine", "M107 Magazine"};
 	
 	--This table stores all civilian weapons
 	self.LootCWeaponTable = {"Hunting Knife", "Crowbar", "Hatchet", "[DZ] Makarov PM", "[DZ] .45 Revolver", "[DZ] M1911A1", "[DZ] Compound Crossbow", "[DZ] MR43", "[DZ] Winchester 1866", "[DZ] Lee Enfield", "[DZ] CZ 550"};
 	
 	--This table stores all military weapons
 	self.LootMWeaponTable = {"[DZ] G17", "[DZ] AKM", "[DZ] M16A2", "[DZ] MP5SD6", "[DZ] M4A1 CCO SD", "[DZ] Mk 48 Mod 0", "[DZ] M14 AIM", "[DZ] M107"};
-	
-	--This table stores all ammo (civ only currently)
-	self.LootAmmoTable = {"Makarov PM Magazine", ".45 ACP Speedloader", "M1911A1 Magazine", "Metal Bolts", "12 Gauge Buckshot (2)", ".44 Henry Rounds", "Lee Enfield Stripper Clip", "9.3x62 Mauser Rounds"};
 
 	--These tables store the spawn chances for each type of loot item, based on the lootset of the area
 	self.LootSpawnChances = { --IMPORTANT NOTE: Leave the last value as 1 so something will always spawn when loot is supposed to spawn
 		civilian = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, ammo = 0.15, weapon = 1},
-		hospital = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, ammo = 0.15, weapon = 1},
-		military = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, ammo = 0.15, weapon = 1}
+		hospital = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.45, ammo = 0.05, weapon = 1},
+		military = {junk = 0.3, food = 0.2, drink = 0.2, light = 0.3, medicine = 0.15, ammo = 0.45, weapon = 1}
 	}
 	
 	----------------------
@@ -93,7 +92,7 @@ function ModularActivity:SpawnLoot(area, areanum, set)
 		elseif math.random() < chance.medicine then
 			loot = CreateHDFirearm(self.LootMedicineTable[math.random(#self.LootMedicineTable)], self.RTE);
 		elseif math.random() < chance.ammo then
-			loot = CreateHeldDevice(self.LootAmmoTable[math.random(#self.LootAmmoTable)], self.RTE);
+			loot = CreateHeldDevice(self.LootCAmmoTable[math.random(#self.LootCAmmoTable)], self.RTE);
 		elseif math.random() < chance.weapon then
 			loot = CreateHDFirearm(self.LootCWeaponTable[math.random(#self.LootCWeaponTable)], self.RTE);
 		end

@@ -16,7 +16,7 @@ function ModularActivity:StartDayNight()
 
 	--Day/Night
 	self.DayNightTimer = Timer(); --Don't change
-	self.DayNightInterval = 180000; --180 seconds for every day/night change
+	self.DayNightInterval = 60000; --60 seconds for every day/night change
 	self.DayNightTimer.ElapsedSimTimeMS = self.DayNightInterval*0.5; --Initial start time for the game, best defined as some < 1 multiplier of the interval
 	self.DayNightCheckDone = false; --A flag for whether the various once-off things that need checking on day/night change have been checked
 	self.DayNightIsNight = false; --Flag for whether it's night, true starts the game off during the night, false starts it off during the day

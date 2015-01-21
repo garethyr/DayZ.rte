@@ -34,7 +34,7 @@ function ModularActivity:StartLoot()
 	--STATIC LOOT TABLES--
 	----------------------
 	--This table stores all the medical supplies
-	self.LootMedicineTable = {"Bandage", "Blood Bag", "Medical Box"};
+	self.LootMedicineTable = {"Bandage", "Blood Bag", "[DZ] Medical Box"};
 	
 	--This table stores all junk items
 	self.LootJunkTable = {"Empty Tin Can", "Empty Whiskey Bottle", "Empty Coke", "Empty Pepsi", "Empty Mountain Dew"};

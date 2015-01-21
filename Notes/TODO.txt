@@ -54,12 +54,12 @@
 9) Organize/Reorganize datafile parsing, allow the datafiles to use either short form names or full variable names (i.e. self.Whatever) as keys
 10) Add to scene datafiles variables:
 	Need section for backgrounds: self.BackgroundChanges = true/false, self.BackgroundsTotalNumber, self.BackgroundPosition must be reset on map change
-	Need section for other: self.AlwaysDark = true/false
+	Need section for other: self.IsOutside = true/false -- This will cause day/night vs. always dark, celestial bodies, weather
 11) Add ability for comments to datafiles
 12) Make fog of war change with level of night, so evening will be brighter than midnight, etc.
 13) Allow "Drop Ammo" pie menu icon to work with any amount of ammo, not just ammo over a minimum of a full load (you come across a weapon you already have; take ammo instead of a slightly "fuller" gun) Right now you can only take ammo if you have more than the default full magazine/load for each weapon.
-14) Implement MOSRotating Sun, Moon, Day/Night Clouds
-	(indicate time of day by position of 	sun/moon?)
+			PLEASE CLARIFY - If I'm understanding right, you want to be able to pick up a gun, unload it and have that ammo as a separate item? What's happening now?
+14) Add scudding clouds (will go in weather module as they'll be affected by that)
 
 -------------
 --Completed--
@@ -69,4 +69,5 @@
 3) Added "Nights survived" counter
 4) Added ability for transitions to other scenes
 5) Added BG spawning
-5) Added smooth gradient to day BGs
+6) Added smooth gradient to day BGs
+7) Added working sun and moon

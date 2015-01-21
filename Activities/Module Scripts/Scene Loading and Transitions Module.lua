@@ -191,7 +191,7 @@ function ModularActivity:AddStartingPlayerActors()
 			end
 			player:AddInventoryItem(CreateTDExplosive("Flare" , self.RTE));
 			player.Sharpness = 0;
-			player.Pos = Vector(995, 545)--(350, 550);
+			player.Pos = Vector(350, 550);
 			player.Team = self.PlayerTeam;
 			player.AIMode = Actor.AIMODE_SENTRY;
 			player.HUDVisible = false;

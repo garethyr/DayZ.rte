@@ -61,9 +61,9 @@ function ModularActivity:StartLoot()
 
 	--These tables store the spawn chances for each type of loot item, based on the lootset of the area
 	self.LootSpawnChances = { --IMPORTANT NOTE: Leave the last value as 1 so something will always spawn when loot is supposed to spawn
-		civilian = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, ammo = 0.15, weapon = 1},
-		hospital = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.45, ammo = 0.05, weapon = 1},
-		military = {junk = 0.3, food = 0.2, drink = 0.2, light = 0.3, medicine = 0.15, ammo = 0.45, weapon = 1}
+		civilian = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, cammo = 0.15, mammo = 0.15, weapon = 1},
+		hospital = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.45, ammo = 0.05, mammo = 0.05, weapon = 1},
+		military = {junk = 0.3, food = 0.2, drink = 0.2, light = 0.3, medicine = 0.15, ammo = 0.15, mammo = 0.45, weapon = 1}
 	}
 	
 	----------------------
@@ -91,8 +91,10 @@ function ModularActivity:SpawnLoot(area, areanum, set)
 			loot = CreateTDExplosive(self.LootLightTable[math.random(#self.LootLightTable)], self.RTE);
 		elseif math.random() < chance.medicine then
 			loot = CreateHDFirearm(self.LootMedicineTable[math.random(#self.LootMedicineTable)], self.RTE);
-		elseif math.random() < chance.ammo then
+		elseif math.random() < chance.cammo then
 			loot = CreateHeldDevice(self.LootCAmmoTable[math.random(#self.LootCAmmoTable)], self.RTE);
+		elseif math.random() < chance.mammo then
+			loot = CreateHeldDevice(self.LootMAmmoTable[math.random(#self.LootMAmmoTable)], self.RTE);
 		elseif math.random() < chance.weapon then
 			loot = CreateHDFirearm(self.LootCWeaponTable[math.random(#self.LootCWeaponTable)], self.RTE);
 		end

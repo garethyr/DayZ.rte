@@ -1,19 +1,32 @@
-||AREA NUMBERS||
-LootAreas = 0
+||MODULE INCLUSIONS
+Loot = false
+Sustenance = true
+Spawns = true
+DayNight = true
+Flashlight = true
+Icons = true
+Behaviours = true
+Audio = true
+Alerts = true
+
+||GENERAL
+IsOutside = false
+
+||AREA NUMBERS
+CivilianLootAreas = 0
+HospitalLootAreas = 0
+MilitaryLootAreas = 0
 LootZombieSpawnAreas = 0
 ShelterAreas = 0
 AudioCivilizationAreas = 0
 AudioBeachAreas = 0
+SpawnAreas = 2
 
-||TRANSITION AREAS||
+||DAYNIGHT
+--Entirely unnecessary for this scene
 
-||MODULE INCLUSIONS||
-Loot = 0
-Sustenance = 1
-Spawns = 1
-DayNight = 1
-Flashlight = 1
-Icons = 1
-Behaviours = 1
-Audio = 1
-Alerts = 1
+||TRANSITION AREAS
+Transition Area 1 = Chernarus
+	Spawn Area = 1
+Transition Area 2 = Chernarus
+	Spawn Area = 2

@@ -51,7 +51,9 @@ end
 --Update frame and position for all icons
 function ModularActivity:DoIcons()
 	self:DoMeters();
-	self:DoScoreDisplay();
+	--Show the score in screentext
+	self:AddScreenText("Total Zombies Killed: "..tostring(self.ZombiesKilled));
+	self:AddScreenText("Nights Survived: "..tostring(self.NightsSurvived));
 end
 --------------------
 --DELETE FUNCTIONS--
@@ -95,11 +97,5 @@ function ModularActivity:DoMeters()
 																	--To get screen of player, use Activity.ScreenOfPlayer(player)
 		end
 		self:IconsNotifyDayNight_RevealIcons(SceneMan:GetOffset(meters.screen));
-	end
-end
---Write screentext displaying number of zombie kills days survived
-function ModularActivity:DoScoreDisplay()
-	for i = 0, 3 do
-		FrameMan:SetScreenText(string.format("Total Zombies Killed: %d\nTotal Nights Survived: %d", self.ZombiesKilled, self.NightsSurvived), i, 0, 0, false);
 	end
 end

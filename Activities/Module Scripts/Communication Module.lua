@@ -110,6 +110,9 @@ function ModularActivity:NotifyAlerts_DeadHuman(alert)
 		self:MoveAlertFromDeadActor(alert);
 	end
 end
+function ModularActivity:NotifyDayNight_ResetBackgroundPosition()
+	self:DayNightResetBackgroundPosition();
+end
 
 --Loot
 

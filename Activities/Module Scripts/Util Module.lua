@@ -30,6 +30,28 @@ function ModularActivity:TrimTable(tab)
 	return tab;
 end
 -----------------------------------------------------------------------------------------
+-- Add to screentext for all players OR optional player(s)
+-----------------------------------------------------------------------------------------
+function ModularActivity:AddScreenText(text, ...)
+	if #arg == 0 then
+		for i = 0, self.PlayerCount do
+			if self.ScreenText[i+1] == nil or self.ScreenText[i+1] == "" then
+				self.ScreenText[i+1] = text;
+			else
+				self.ScreenText[i+1] = self.ScreenText[i+1].."\n"..text;
+			end
+		end
+	else
+		for i = 1, #arg do
+			if self.ScreenText[arg[i]+1] == nil or self.ScreenText[arg[i]+1] == "" then
+				self.ScreenText[arg[i]+1] = text;
+			else
+				self.ScreenText[arg[i]+1] = self.ScreenText[arg[i]+1].."\n"..text;
+			end
+		end
+	end
+end
+-----------------------------------------------------------------------------------------
 -- Sort maxdist and mindist inputs so they parse correctly even if the order is mixed up
 -----------------------------------------------------------------------------------------
 function ModularActivity:SortMaxAndMinArguments(dists)

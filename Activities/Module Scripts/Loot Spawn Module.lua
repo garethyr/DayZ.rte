@@ -19,15 +19,14 @@ function ModularActivity:StartLoot()
 	--------------
 	self.LootAreas = {};
 	self.LootTimer = {};
-	for i = 1, self.NumberOfLootAreas do
-		self.LootAreas[i] = {};
-		local s = "Loot Area "..tostring(i);
-		self.LootAreas[i].area = SceneMan.Scene:GetArea(s);
-		self.LootAreas[i].filled = false; --A value for whether the area has loot or not
-		self.LootAreas[i].lootSet = "civilian"; --The loot set, 1 = basic
-		
-		self.LootTimer[i] = Timer();
-		self.LootTimer[i].ElapsedSimTimeMS =  self.LootInterval; --Make sure first wave of loot always spawns
+	for i = 1, self.NumberOfCivilianLootAreas do
+		self:LoadLootArea("Civilian", i);
+	end
+	for i = 1, self.NumberOfHospitalLootAreas do
+		self:LoadLootArea("Hospital", i);
+	end
+	for i = 1, self.NumberOfMilitaryLootAreas do
+		self:LoadLootArea("Military", i);
 	end
 
 	----------------------
@@ -61,17 +60,27 @@ function ModularActivity:StartLoot()
 
 	--These tables store the spawn chances for each type of loot item, based on the lootset of the area
 	self.LootSpawnChances = { --IMPORTANT NOTE: Leave the last value as 1 so something will always spawn when loot is supposed to spawn
-		civilian = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, cammo = 0.15, mammo = 0.15, weapon = 1},
-		hospital = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.45, ammo = 0.05, mammo = 0.05, weapon = 1},
-		military = {junk = 0.3, food = 0.2, drink = 0.2, light = 0.3, medicine = 0.15, ammo = 0.15, mammo = 0.45, weapon = 1}
+		Civilian = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.15, cammo = 0.15, mammo = 0.15, weapon = 1},
+		Hospital = {junk = 0.4, food = 0.3, drink = 0.3, light = 0.3, medicine = 0.45, ammo = 0.05, mammo = 0.05, weapon = 1},
+		Military = {junk = 0.3, food = 0.2, drink = 0.2, light = 0.3, medicine = 0.15, ammo = 0.15, mammo = 0.45, weapon = 1}
 	}
 	
+	-----------------------
+	--DYNAMIC LOOT TABLES--
 	----------------------
-	--DYNAMIC LOOT TABLE--
-	---------------------
 	--A table of all unclaimed loot, organized by the area they belong to
 	self.LootTable = {{}}; --Key based on areanum then number - self.LootTable[areanum][index] = loot item
 	
+end
+--Load a loot area, given input to specify naming scheme and loot set
+function ModularActivity:LoadLootArea(areaset, currentiteration)
+	local tablenum = #self.LootAreas+1;
+	self.LootAreas[tablenum] = {};
+	self.LootAreas[tablenum].area = SceneMan.Scene:GetArea(areaset.." Loot Area "..tostring(currentiteration));
+	self.LootAreas[tablenum].filled = false; --A value for whether the area has loot or not
+	self.LootAreas[tablenum].lootSet = areaset; --The loot set, 1 = basic
+	self.LootTimer[tablenum] = Timer();
+	self.LootTimer[tablenum].ElapsedSimTimeMS = self.LootInterval; --Make sure first wave of loot always spawns
 end
 ----------------------
 --CREATION FUNCTIONS--

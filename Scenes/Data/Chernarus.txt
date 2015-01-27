@@ -1,25 +1,42 @@
-||AREA NUMBERS||
-LootAreas = 58
+||MODULE INCLUSIONS
+Loot = true
+Sustenance = true
+Spawns = true
+DayNight = true
+Flashlight = true
+Icons = true
+Behaviours = true
+Audio = true
+Alerts = true
+
+||GENERAL
+IsOutside = true
+
+||AREA NUMBERS
+CivilianLootAreas = 33
+HospitalLootAreas = 8
+MilitaryLootAreas = 17
 LootZombieSpawnAreas = 26
 ShelterAreas = 20
 AudioCivilizationAreas = 5
 AudioBeachAreas = 2
+SpawnAreas = 4
 
-||TRANSITION AREAS||
+||DAYNIGHT
+BackgroundChanges = true
+BackgroundTotal = 3
+CelestialBodies = true
+SunFrameTotal = 1
+MoonFrameTotal = 1
+
+||TRANSITION AREAS
 Transition Area 1 = Chernarus Tunnels 1
+	Spawn Area = 1
 Transition Area 2 = Chernarus Tunnels 1
+	Spawn Area = 2
 Transition Area 3 = Ocean
+	Spawn Area = 1
 	Constraints = HAS BOAT
-Transition Area 4 = Chernarus Tunnels 1
+Transition Area 4 = Helicopter
+	Spawn Area = 1
 	Constraints = IN HELICOPTER
-
-||MODULE INCLUSIONS||
-Loot = 1
-Sustenance = 1
-Spawns = 1
-DayNight = 1
-Flashlight = 1
-Icons = 1
-Behaviours = 1
-Audio = 1
-Alerts = 1

@@ -21,7 +21,7 @@ function ModularActivity:StartSpawns()
 	self.SpawnLootZombieTimer = {};
 	self.SpawnLootZombieInterval = self.ZombieSpawnInterval; 
 	for i = 1, self.NumberOfLootZombieSpawnAreas do
-		self.SpawnLootZombieArea[i] = SceneMan.Scene:GetArea(("Spawn Area "..tostring(i)));
+		self.SpawnLootZombieArea[i] = SceneMan.Scene:GetArea(("Loot Zombie Spawn Area "..tostring(i)));
 		self.SpawnLootZombieTimer[i] = Timer();
 		self.SpawnLootZombieTimer[i].ElapsedSimTimeMS = self.SpawnLootZombieInterval; --Make sure first wave of zombies always spawns
 	end

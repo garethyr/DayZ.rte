@@ -10,8 +10,8 @@ function ModularActivity:StartDayNight()
 	self.IsOutdoors = true; --If it's not outdoors (i.e. indoors/underground) no BG transitions will occur and no celestial bodies will be placed
 	
 	--Fog of war
-	self.DayNightNumRevealBoxes = 2;
-	self.DayNightRevealBoxSize = 72;
+	self.DayNightNumRevealBoxes = 2; --Number of reveal boxes an unassisted human will make
+	self.DayNightRevealBoxSize = 72; --Size of the reveal boxes an unassisted human will make
 	self.DayNightLightItemBaseRevealSize = {["Chemlight"] = 300, ["Flare"] = 600};
 
 	--Day/Night
@@ -22,14 +22,14 @@ function ModularActivity:StartDayNight()
 	self.DayNightIsNight = false; --Flag for whether it's night, true starts the game off during the night, false starts it off during the day
 	
 	--Changing background
-	self.BackgroundChanges = true and self.IsOutdoors; --Whether or not the background should change, as defined by the scene's datafile
-	self.BackgroundTotalNumber = 3; --The total number of backgrounds per day/night, as defined by the scene's datafile
+	self.BackgroundChanges = self.BackgroundChanges and self.IsOutdoors; --Whether or not the background should change, as defined by the scene's datafile
+	self.BackgroundTotalNumber = self.BackgroundTotalNumber; --The total number of backgrounds per day/night, as defined by the scene's datafile
 	self.BackgroundCurrentNumber = 0; --The current background, must start at 0 to load the first background
 	self.BackgroundNames = {[false] = "DayBG", [true] = "NightBG"} --The naming scheme for backgrounds; day is false, night is true
-	self.BackgroundPos = Vector(SceneMan.SceneWidth/2, SceneMan.SceneHeight/2); --The position to place backgrounds at (presumably the centre of the scene)
+	self.BackgroundPos = self.BackgroundPos; --The position to place backgrounds at (presumably the centre of the scene)
 	
 	--Sun and moon
-	self.CelestialBodies = true and self.IsOutdoors; --Whether or not to have celestial bodies, as defined by the scene's datafile
+	self.CelestialBodies = self.CelestialBodies and self.IsOutdoors; --Whether or not to have celestial bodies, as defined by the scene's datafile
 	self.CelestialBodyName = {[false] = "Sun", [true] = "Moon"} --The naming scheme for mobile celestial bodies; day is false, night is true
 	self.CelestialBody = nil; --The actual celestial body object, do not edit this
 	self.CelestialBodyWidthVariance = FrameMan.PlayerScreenWidth + 64; --The x distance the celestial body will travel throughout the day, best left as FrameMan.PlayerScreenWidth + CelestialBody's Size*2 so it travels the full screen
@@ -37,6 +37,8 @@ function ModularActivity:StartDayNight()
 	self.CelestialBodyHeightVariance = 75 --The maximum height the celestial body rises, the peak of its arc (making it greater than self.CelestialBodyHeight will send it off the screen)
 	self.CelestialBodyPathSmoothness = 0.1; --The smoothness/flatness of the path the celestial body travels, any number above 1 will have no effect
 	self.CelestialBodyRevealSize = 96; --The width and height of the box of fog the moon will reveal, must be bigger than the moon to work well
+	self.CelestialBodySunFrameTotal = self.CelestialBodySunFrameTotal; --The number of frames the sun goes through
+	self.CelestialBodyMoonFrameTotal = self.CelestialBodyMoonFrameTotal; --The number of frames the moon goes through
 	
 	---------------------------
 	--DYNAMIC DAYNIGHT TABLES--
@@ -57,7 +59,7 @@ end
 --Add the correct celestial body
 function ModularActivity:AddCelestialBody()
 	self.CelestialBody = CreateMOSRotating(self.CelestialBodyName[self.DayNightIsNight], self.RTE);
-	self.CelestialBody.Pos = self:GetCelestialBodyOffset(self:GetControlledActor(0).Pos);
+	self.CelestialBody.Pos = self:GetCelestialBodyOffset(self:GetControlledActor(0).Pos); --TODO this breaks when the player is dead
 	MovableMan:AddParticle(self.CelestialBody);
 end
 --------------------
@@ -86,11 +88,13 @@ function ModularActivity:DoDayNight()
 		if self.CelestialBody == nil or not MovableMan:IsParticle(self.CelestialBody) then
 			self:AddCelestialBody();
 		end
+		--Move the celestial body (accounting for gravity), stopping its rotationg and changing its frame
 		self.CelestialBody.Pos = self:GetCelestialBodyOffset(self:GetControlledActor(0).Pos);
 		self.CelestialBody.Pos.Y = self.CelestialBody.Pos.Y-((SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs)/3);
 		self.CelestialBody.Vel.Y = self.CelestialBody.Vel.Y - SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs;
 		self.CelestialBody.RotAngle = 0;
 		self.CelestialBody.AngularVel = 0;
+		self.CelestialBody.Frame = self:GetCelestialBodyFrame();
 	end
 	
 	--Non-decorative day/night stuff
@@ -121,6 +125,9 @@ end
 --------------------
 --ACTION FUNCTIONS--
 --------------------
+function ModularActivity:DayNightResetBackgroundPosition()
+	self.BackgroundPos = Vector(SceneMan.SceneWidth/2, SceneMan.SceneHeight/2);
+end
 --Cycle the day and night
 function ModularActivity:CycleDayNight()
 	self.DayNightIsNight = not self.DayNightIsNight;
@@ -215,4 +222,9 @@ function ModularActivity:GetCelestialBodyOffset(pos)
 		
 	local posy = self.CelestialBodyHeight - offsety;
 	return Vector(posx, posy);
+end
+--Return the correct frame for the celestial body, based on the time of day/night
+function ModularActivity:GetCelestialBodyFrame()
+	local framevalues = {[false] = self.CelestialBodySunFrameTotal, [true] = self.CelestialBodyMoonFrameTotal}
+	return math.floor(framevalues[self.DayNightIsNight]*self.DayNightTimer.ElapsedSimTimeMS/self.DayNightInterval);
 end

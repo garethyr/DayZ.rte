@@ -24,7 +24,7 @@ end
 --CREATION FUNCTIONS--
 ----------------------
 function DayZ:StartNewGame()
-	self:DoSceneTransition("Chernarus");
+	self:DoSceneTransition("Chernarus", "1");
 end
 --------------------
 --UPDATE FUNCTIONS--

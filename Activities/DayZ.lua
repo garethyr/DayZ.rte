@@ -54,6 +54,9 @@ function DayZ:StartActivity()
 	--Tracker for nights survived
 	self.NightsSurvived = -1; --Note: This count will be 1 less than it should if the game begins during night instead of day. This can be fixed if we keep these counters forever
 	
+	--Screentext for all players
+	self.ScreenText = {};
+	
 	--Teams
 	self.PlayerTeam = Activity.TEAM_1;
 	self.NPCTeam = Activity.TEAM_2;
@@ -89,8 +92,10 @@ function DayZ:StartActivity()
 	
 	self:DoModuleInitialization();
 	self.ModulesInitialized = true;
-	self:AddStartingPlayerActors();
 	--^ DO NOT TOUCH FOR MODULE CHANGES ^--
+	
+	--TODO right now this is also buggy like startnewgame, it shouldn't have to be added here as it should happen automatically with scene transition
+	self:AddStartingPlayerActors(self.SpawnAreas[1]);
 end
 -----------------------------------------------------------------------------------------
 -- Module Stuff
@@ -280,17 +285,9 @@ function DayZ:UpdateActivity()
 	--Clean tables, must be done first as it's important to prevent crashes
 	self:DoActorChecksAndCleanup();
 	
-	--Run transitions to other scenes
-	self:RunTransitions();
-	
 	--Deal with food and drink, called every frame for dynamic decreasing by actions
 	if self.IncludeSustenance then
 		self:DoSustenance();
-	end
-	
-	--Deal with icons, called every frame so they don't lag behind in their position
-	if self.IncludeIcons then
-		self:DoIcons();
 	end
 	
 	--Deal with the day/night cycle and alerts for it
@@ -298,14 +295,19 @@ function DayZ:UpdateActivity()
 		self:DoDayNight();
 	end
 	
-	--Deal with ambient audio 
-	if self.IncludeAudio then
-		self:DoAudio();
-	end
-	
 	--Deal with flashlights
 	if self.IncludeFlashlight then
 		self:DoFlashlights();
+	end
+	
+	--Deal with icons, called every frame so they don't lag behind in their position
+	if self.IncludeIcons then
+		self:DoIcons();
+	end
+	
+	--Deal with ambient audio 
+	if self.IncludeAudio then
+		self:DoAudio();
 	end
 	
 	--Deal with alert stuff, delays for delagging are done internally
@@ -331,6 +333,17 @@ function DayZ:UpdateActivity()
 		end
 			
 		self.GeneralLagTimer:Reset();
+	end
+	
+	--Run transitions to other scenes
+	self:RunTransitions();
+	
+	--Display text for all players
+	for i = 0, self.PlayerCount do
+		if self.ScreenText[i+1] ~= nil then
+			FrameMan:SetScreenText(tostring(self.ScreenText[i+1]), i, 0, 0, false);
+			self.ScreenText[i+1] = nil;
+		end
 	end
 		
 	self:YSortObjectivePoints();

@@ -1,76 +1,83 @@
 -----------------------------------------------------------------------------------------
 --TODO List (in no particular order unless otherwise stated)
 -----------------------------------------------------------------------------------------
------------
---General--
------------
-1) More food/ drink items
-2) Well areas/ refillable canteen
-3) Zombie sprites - at least several more sets; is randomization possible (like Ronin)? --RANDOMIZATION IS DEFINITELY DOABLE
-4) Remove suspense sounds (reimplement after new build's sound update?) --THEY WORK FINE AS IS?
-5) Weather
-6) Sharpaim shenanigans for weapons
-7) X amt of damage in X time - zombie ragdolls for a second to simulate stumbling --WILL COME WITH ZOMBIE AI
+
+
+
+----------------------------------------------------------------------
+------------------------------General---------------------------------
+----------------------------------------------------------------------
+• More food/ drink items
+• Well areas/ refillable canteen
+• Zombie sprites - at least several more sets; is randomization possible (like Ronin)? --RANDOMIZATION IS DEFINITELY DOABLE
+• Weather
+• Sharpaim shenanigans for weapons
+• X amt of damage in X time - zombie ragdolls for a second to simulate stumbling --WILL COME WITH ZOMBIE AI
 	(player too?)
-8) NPCs
-9) Helicopter (flyby along preset path until offscreen with mounted MG, shooting at player if spotted? possible?)
-10) "Dodge" system
-11) Beartrap
-12) Random events? (NPCs, bandit ambush, zombie hordes, etc?)
-13) Bandit sprites/actor
-14) Clock (days survived and/or current time?)
-15) Rethink stairs
-16) Zombie climbing? (next build possible?)
-17) Vomit emitter fx
-18) New player condition - shaking?
+• NPCs
+• Helicopter (flyby along preset path until offscreen with mounted MG, shooting at player if spotted? possible?)
+• "Dodge" system
+• Beartrap
+• Random events? (NPCs, bandit ambush, zombie hordes, etc?)
+• Bandit sprites/actor
+• Clock (days survived and/or current time?)
+• Rethink stairs
+• Zombie climbing? (next build possible?)
+• Vomit emitter fx
+• New player condition - shaking?
 	(after receiving x amt heavy damage; will throw off sharpaim when implemented; cured by (next entry...
-19) ... Painkillers?
-20) New player condition - unconsciousness?
+• ... Painkillers?
+• New player condition - unconsciousness?
 	(after significant bloodloss or by random zombie hit; unable to move and complete fog of war for x seconds; cured by (next entry...
-21) ... Epi-pen? (adrenaline shot) - for player, will need NPC to administer
+• ... Epi-pen? (adrenaline shot) - for player, will need NPC to administer
 	(could be incentive to group up w/NPCs
-22) Implement more DayZ player sounds (mostly damage sounds)
-23) Create other scenes for transitions (Skalisty Island; shipwreck; bandit hideout; Green Mountain)
-24) Saving and loading games
-25) Remove civilization area from military base (it's open-air enough for nature sounds)
-26) Add flashlight, matches, jerry can to spawn
-27) Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
-28) Add backpacks and inventory limit?
+• Implement more DayZ player sounds (mostly damage sounds)
+• Create other scenes for transitions (Skalisty Island; shipwreck; bandit hideout; Green Mountain)
+• Saving and loading games
+• Remove civilization area from military base (it's open-air enough for nature sounds)
+• Add flashlight, matches, jerry can to spawn
+• Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
+• Add backpacks and inventory limit?
 	Just a potential idea, I'm thinking we can make it so aside from the transitions on the far sides of the map needing a boat and heli, we can also have it so the friendly camp has left side transition back to chernarus and right side transition to one of the other locations, but there's a lengthy forest area which requires more supplies than one can carry without a backpack or something?
 
-29) Fix the issues about being unable to find missing presets. Apparently it's that the presets aren't defined but it somehow still works???
+• Fix the issues about being unable to find missing presets. Apparently it's that the presets aren't defined but it somehow still works???
 
-----------------
---Lua Specific--
-----------------
-1) Fix bug with setting day/night longer than 60 seconds
-2) Make custom zombie AI (bleh)
-3) Make vomit act over time
-4) Fix alert bugs where they place late or in strange locations
-5) Completely properly fix all crashes on death
-6) Smooth out day/night transition
-7) Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
-8) Flesh out transitions more, determine extent of information in scene datafiles
-9) Make fog of war change with level of night, so evening will be brighter than midnight, etc.
-10) Allow "Drop Ammo" pie menu icon to work with any amount of ammo, not just ammo over a minimum of a full load (you come across a weapon you already have; take ammo instead of a slightly "fuller" gun) Right now you can only take ammo if you have more than the default full magazine/load for each weapon.
+
+
+----------------------------------------------------------------------
+------------------------------Lua Specific----------------------------
+----------------------------------------------------------------------
+• Fix bug with setting day/night longer than 60 seconds
+• Make custom zombie AI (bleh)
+• Make vomit act over time
+• Fix alert bugs where they place late or in strange locations
+• Completely properly fix all crashes on death
+• Smooth out day/night transition
+• Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
+• Flesh out transitions more, determine extent of information in scene datafiles
+• Make fog of war change with level of night, so evening will be brighter than midnight, etc.
+• Allow "Drop Ammo" pie menu icon to work with any amount of ammo, not just ammo over a minimum of a full load (you come across a weapon you already have; take ammo instead of a slightly "fuller" gun) Right now you can only take ammo if you have more than the default full magazine/load for each weapon.
 			PLEASE CLARIFY - If I'm understanding right, you want to be able to pick up a gun, unload it and have that ammo as a separate item? What's happening now?
-11) Add scudding clouds (will go in weather module as they'll be affected by that)
-12) BUGS - Light items being held without being activated die after a while. Using ammo adds noise (perhaps equivalent to the gun it's for??)
-13) Fix medical box
-14) Think about datafile vs script order - maybe can initialize all modules then read datafile for scene specific stuff? This would probably make more sense
-15) Fix buggy text on waiting for transition (it seems to disappear a lot)
+• Add scudding clouds (will go in weather module as they'll be affected by that)
+• BUGS - Light items being held without being activated die after a while. Using ammo adds noise (perhaps equivalent to the gun it's for??)
+• Fix medical box
+• Think about datafile vs script order - maybe can initialize all modules then read datafile for scene specific stuff? This would probably make more sense
+• Fix buggy text on waiting for transition (it seems to disappear a lot)
+• Item-specific loot weights (ex defib, barrett, rare items)
 
--------------
---Completed--
--------------
-1) Added ammo to loot spawn
-2) Added "Zombies killed" counter
-3) Added "Nights survived" counter
-4) Added ability for transitions to other scenes
-5) Added BG spawning
-6) Added smooth gradient to day BGs
-7) Added working sun and moon
-8) Added separate loot areas and loot sets for hospital and military areas
-9) Reworked transition scripts for neatness and to allow comments
-10) Reworked screen text display scripts for better access and handling
-11) Reworked spawning so it can work dynamically based on scene areas
+
+
+----------------------------------------------------------------------
+------------------------------Completed-------------------------------
+----------------------------------------------------------------------
+• Added ammo to loot spawn
+• Added "Zombies killed" counter
+• Added "Nights survived" counter
+• Added ability for transitions to other scenes
+• Added BG spawning
+• Added smooth gradient to day BGs
+• Added working sun and moon
+• Added separate loot areas and loot sets for hospital and military areas
+• Reworked transition scripts for neatness and to allow comments
+• Reworked screen text display scripts for better access and handling
+• Reworked spawning so it can work dynamically based on scene areas

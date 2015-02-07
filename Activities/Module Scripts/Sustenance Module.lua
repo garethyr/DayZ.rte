@@ -26,9 +26,9 @@ function ModularActivity:StartSustenance()
 	self.SustTypes = {"hunger", "thirst"}; --The different sustenance types. Must be updated
 	self.InitialSust = {hunger = 10000, thirst = 10000}; --Initial hunger and thirst values
 	self.MaxSust = {hunger = 15000, thirst = 15000}; --Maximum hunger and thirst values
-	self.SustDrainMult = {hunger = .35, thirst = .35}; --Hunger and thirst extra drain multiplier
+	self.SustDrainMult = {hunger = .30, thirst = .30}; --Hunger and thirst extra drain multiplier
 	self.SustDamageDelay = {hunger = 1000, thirst = 500}; --Hunger and thirst damage delay
-	self.SustDrainMultAct = {move = 1.75, jump = 30} --Multipliers for moving and jumping
+	self.SustDrainMultAct = {move = 1.75, jump = 40} --Multipliers for moving and jumping
 	self.SustItemGroups = {hunger = "Food", thirst = "Drink"} --The names of the different item groups for sust types
 	--Vomiting
 	self.SustVomitRequirementMult = {hunger = 1.5, thirst = 2} --The multiple of self.MaxSust required for either sustenance type to cause vomiting.

@@ -248,11 +248,10 @@ function ModularActivity:AddStartingPlayerActors(spawnarea)
 	for i = 0 , self.PlayerCount do
 		if self:PlayerHuman(i) then
 			local player = CreateAHuman("Survivor Black Reticle Actor" , self.RTE);
-			player:AddInventoryItem(CreateHDFirearm("[DZ] MR43" , self.RTE));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , self.RTE));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , self.RTE));
-			player:AddInventoryItem(CreateHeldDevice("12 Gauge Buckshot (2)" , self.RTE));
-			player:AddInventoryItem(CreateHDFirearm("Crowbar" , self.RTE));
+			player:AddInventoryItem(CreateHDFirearm("[DZ] .45 Revolver" , self.RTE));
+			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
+			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
+			player:AddInventoryItem(CreateHDFirearm("Hunting Knife" , self.RTE));
 			player:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
 			player:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
 			if self.IncludeFlashlight then

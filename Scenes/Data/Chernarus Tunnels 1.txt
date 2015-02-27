@@ -25,6 +25,9 @@ SpawnAreas = 2
 ||DAYNIGHT
 --Entirely unnecessary for this scene
 
+||AUDIO
+DefaultAudioType = Underground
+
 ||TRANSITION AREAS
 Transition Area 1 = Chernarus
 	Spawn Area = 1

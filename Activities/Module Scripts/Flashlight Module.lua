@@ -5,6 +5,9 @@
 --CREATE FUNCTIONS--
 --------------------
 function ModularActivity:StartFlashlight()
+	for k, v in pairs(self.HumanTable.Players) do
+		v.actor:AddInventoryItem(CreateHDFirearm("Flashlight" , self.RTE));
+	end
 end
 --------------------
 --UPDATE FUNCTIONS--

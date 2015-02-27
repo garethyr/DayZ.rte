@@ -50,6 +50,7 @@ end
 --------------------
 --Update frame and position for all icons
 function ModularActivity:DoIcons()
+	self:IconsCleanupMeters();
 	self:DoMeters();
 	--Show the score in screentext
 	self:AddScreenText("Total Zombies Killed: "..tostring(self.ZombiesKilled));
@@ -58,6 +59,23 @@ end
 --------------------
 --DELETE FUNCTIONS--
 --------------------
+--Remove any meters whose actor is no longer alive or whose key (UniqueID) does not match their actor's UniqueID
+function ModularActivity:IconsCleanupMeters()
+	for k, v in pairs(self.MeterTable) do
+		if not MovableMan:IsActor(v.actor) then
+			print ("Removing icon from nonexistant actor");
+			self:IconsRemoveMeter(k);
+		elseif MovableMan:IsActor(v.actor) and v.actor.UniqueID ~= k then
+			print ("Removing icon from mismatched actor and ID");
+			self:IconsRemoveMeter(k);
+			if self.MeterTable[v.actor.UniqueID] == nil then
+				print ("Mismatched actor is not in icon table, readding actor");
+				AddToMeterTable(actor);
+			end
+		end
+	end	
+end
+--Remove a given set of meter
 function ModularActivity:IconsRemoveMeter(ID)
 	for k, v in pairs(self.MeterTable[ID]) do
 		if type(k) == "number" then
@@ -71,31 +89,35 @@ end
 --------------------
 --Manage all meters
 function ModularActivity:DoMeters()
-	for _, meters in pairs (self.MeterTable) do
-		--Update meter positions and frames
-		for k, meter in pairs (meters) do
-			if type(k) == "number" then
-				--Update the position so meters keep floating
-				meter.Pos = self.MeterSetupTable[meter.PresetName].pos(meters.screen);
-				meter.Pos.Y = meter.Pos.Y-((SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs)/3);
-				meter.Vel.Y = meter.Vel.Y - SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs;
-				
-				--Update the frame based on parameters
-				local meteractions = {
-					["Sound Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*self:IconsRequestAlerts_ActorActivityPercent("sound", actor)) end,
-					["Light Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*self:IconsRequestAlerts_ActorActivityPercent("light", actor)) end,
-					["Thirst Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*self:IconsRequestSustenance_ActorSustenancePercent("thirst", actor)) end,
-					["Hunger Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*self:IconsRequestSustenance_ActorSustenancePercent("hunger", actor)) end,
-					["Blood Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*(100 - actor.Health)/100) end,
-				}
-				meteractions[meter.PresetName](meter, meters.actor);
+	for _, playermeters in pairs (self.MeterTable) do
+		--Add screens for any meters that don't have them yet
+		if playermeters.screen == -1 then
+			playermeters.screen = self:ScreenOfPlayer(playermeters.actor:GetController().Player);
+			--print ("Set screen for meter on actor "..tostring(playermeters.actor).." as "..tostring(playermeters.screen));
+		end
+		--Update meter positions and frames for meters with screens
+		if playermeters.screen > -1 then
+			for k, meter in pairs (playermeters) do
+				if type(k) == "number" then
+					--Update the position so meters keep floating
+					--print ("Update meter "..meter.PresetName.." for screen "..tostring(playermeters.screen).." to position "..tostring(SceneMan:GetOffset(playermeters.screen)));
+					meter.Pos = self.MeterSetupTable[meter.PresetName].pos(playermeters.screen);
+					meter.Pos.Y = meter.Pos.Y-((SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs)/3);
+					meter.Vel.Y = meter.Vel.Y - SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs;
+					
+					--Update the frame based on parameters
+					local meteractions = {
+						["Sound Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*self:IconsRequestAlerts_ActorActivityPercent("sound", actor)) end,
+						["Light Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*self:IconsRequestAlerts_ActorActivityPercent("light", actor)) end,
+						["Thirst Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*self:IconsRequestSustenance_ActorSustenancePercent("thirst", actor)) end,
+						["Hunger Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*self:IconsRequestSustenance_ActorSustenancePercent("hunger", actor)) end,
+						["Blood Meter"] = function(meter, actor) meter.Frame = math.floor(meter.FrameCount*(100 - actor.Health)/100) end,
+					}
+					meteractions[meter.PresetName](meter, playermeters.actor);
+				end
 			end
 		end
-		--Add screens for any meters that don't have it yet
-		if meters.screen == -1 then
-			meters.screen = meters.actor:GetController().Player; --TODO player might not work, may need to actively get the screen from the player somehow
-																	--To get screen of player, use Activity.ScreenOfPlayer(player)
-		end
-		self:IconsNotifyDayNight_RevealIcons(SceneMan:GetOffset(meters.screen));
+		--Reveal the icons if necessary
+		self:IconsNotifyDayNight_RevealIcons(SceneMan:GetOffset(playermeters.screen));
 	end
 end

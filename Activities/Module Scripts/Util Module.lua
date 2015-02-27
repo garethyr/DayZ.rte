@@ -33,6 +33,7 @@ end
 -- Add to screentext for all players OR optional player(s)
 -----------------------------------------------------------------------------------------
 function ModularActivity:AddScreenText(text, ...)
+	--TODO for lua 5.1 (used in new cc version) arg is no longer useable. Now use select(1, ...) for first arg in ..., select("#", ...) for count of args in ...
 	if #arg == 0 then
 		for i = 0, self.PlayerCount do
 			if self.ScreenText[i+1] == nil or self.ScreenText[i+1] == "" then
@@ -106,7 +107,7 @@ end
 -- Add a player
 function ModularActivity:AddToPlayerTable(actor)
 	self.HumanTable.Players[actor.UniqueID] = {
-		actor = actor, lightOn = false, alert = false, rounds = 0,
+		actor = actor, lightOn = false, alert = false, spawned = false, rounds = 0,
 		activity = {
 			sound = {current = 0, total = 0, timer = Timer()},
 			light = {current = 0, total = 0, timer = Timer()}

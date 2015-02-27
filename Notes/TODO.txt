@@ -18,7 +18,6 @@
 • Helicopter (flyby along preset path until offscreen with mounted MG, shooting at player if spotted? possible?)
 • "Dodge" system
 • Beartrap
-• Random events? (NPCs, bandit ambush, zombie hordes, etc?)
 • Bandit sprites/actor
 • Clock (days survived and/or current time?)
 • Rethink stairs
@@ -33,15 +32,13 @@
 	(could be incentive to group up w/NPCs
 • Implement more DayZ player sounds (mostly damage sounds)
 • Create other scenes for transitions (Skalisty Island; shipwreck; bandit hideout; Green Mountain)
-• Saving and loading games
 • Remove civilization area from military base (it's open-air enough for nature sounds)
 • Add flashlight, matches, jerry can to spawn
-• Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
 • Add backpacks and inventory limit?
 	Just a potential idea, I'm thinking we can make it so aside from the transitions on the far sides of the map needing a boat and heli, we can also have it so the friendly camp has left side transition back to chernarus and right side transition to one of the other locations, but there's a lengthy forest area which requires more supplies than one can carry without a backpack or something?
-
+• Add localized sounds for tunnels, also maybe different global BG and suspense noises?
 • Fix the issues about being unable to find missing presets. Apparently it's that the presets aren't defined but it somehow still works???
-
+• Add thin but very strong borders on the edges of tunnel transitions so player can't fall out the bottom of tunnels on main map or off the sides of the tunnel map
 
 
 ----------------------------------------------------------------------
@@ -50,21 +47,20 @@
 • Fix bug with setting day/night longer than 60 seconds
 • Make custom zombie AI (bleh)
 • Make vomit act over time
-• Fix alert bugs where they place late or in strange locations
+• Fix alert bugs where they place late or in strange locations (alerts may be showing up delayed?)
 • Completely properly fix all crashes on death
-• Smooth out day/night transition
 • Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
-• Flesh out transitions more, determine extent of information in scene datafiles
-• Make fog of war change with level of night, so evening will be brighter than midnight, etc.
 • Allow "Drop Ammo" pie menu icon to work with any amount of ammo, not just ammo over a minimum of a full load (you come across a weapon you already have; take ammo instead of a slightly "fuller" gun) Right now you can only take ammo if you have more than the default full magazine/load for each weapon.
 			PLEASE CLARIFY - If I'm understanding right, you want to be able to pick up a gun, unload it and have that ammo as a separate item? What's happening now?
 • Add scudding clouds (will go in weather module as they'll be affected by that)
 • BUGS - Light items being held without being activated die after a while. Using ammo adds noise (perhaps equivalent to the gun it's for??)
 • Fix medical box
-• Think about datafile vs script order - maybe can initialize all modules then read datafile for scene specific stuff? This would probably make more sense
-• Fix buggy text on waiting for transition (it seems to disappear a lot)
+• Bugs found while playtesting - 	Line 200 of alerts: if dist >= mindist and dist <= maxdist and dist <= visdist then
+									Line 75 of Sustenance: v[susttype] = v[susttype] + self.SustItems[itemgroup][ahuman.EquippedItem.PresetName];
 • Item-specific loot weights (ex defib, barrett, rare items)
-
+• Saving and loading games
+• Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
+• Random events? (NPCs, bandit ambush, zombie hordes, etc?)
 
 
 ----------------------------------------------------------------------
@@ -81,3 +77,6 @@
 • Reworked transition scripts for neatness and to allow comments
 • Reworked screen text display scripts for better access and handling
 • Reworked spawning so it can work dynamically based on scene areas
+• Completely fixed reworked spawning so everything about the actor is saved on scene transition
+• Smoothed out day/night transition so nights grow gradually more dark then less dark over time
+

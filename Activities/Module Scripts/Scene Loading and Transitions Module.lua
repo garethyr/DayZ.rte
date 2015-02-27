@@ -9,6 +9,11 @@ function ModularActivity:StartSceneLoading()
 	self.DataPath = "DayZ.rte/Scenes/Data/"; --The path to all datafiles
 	self.DataFileExtension = ".txt"; --The extension for all datafiles
 	
+	--------------------------------------------
+	--SCENELOADING DATAFILE AFFECTED VARIABLES--
+	--------------------------------------------
+	self.CurrentDataType = "";
+	
 	--NOTE: Scene specific constants are setup here and loaded from the relevant datafile
 	--Module Inclusion - default to false for safety
 	self.IncludeLoot = false;
@@ -47,6 +52,11 @@ function ModularActivity:StartSceneLoading()
 		self.CelestialBodies = nil;
 		self.CelestialBodySunFrameTotal = nil;
 		self.CelestialBodyMoonFrameTotal = nil;
+	end
+	
+	--Audio variables - only used if self.AudioIncludable is true
+	if self.AudioIncludable then
+		self.AudioDefaultLocalizedAreaName = nil;
 	end
 	
 	------------------------------
@@ -94,6 +104,11 @@ function ModularActivity:StartSceneLoading()
 			["MoonFrameTotal"] = function(self, val) self.CelestialBodyMoonFrameTotal = val end
 		},
 		
+		["AUDIO"] = {
+			["LoadData"] = function (self, data, loadtable) self:AddSimpleValueFromData(data, loadtable) end,
+			["DefaultAudioType"] = function(self, val) self.AudioDefaultLocalizedAreaName = val end,
+		},
+		
 		["TRANSITION AREAS"] = {
 			["LoadData"] = function (self, data, loadtable) self:AddTransitionAreasFromData(data) end,
 			["HAS BOAT"] = function(self) return self.HasBoat end,
@@ -101,16 +116,22 @@ function ModularActivity:StartSceneLoading()
 		}
 	}
 	
-	
 	-------------------------------
 	--DYNAMIC SCENELOADING TABLES--
 	-------------------------------
-	self.TransitionAreas = {}
+	--A list of transition areas for the current scene
+	--Contains the relevant spawn area in the transitioned scene, as well as any constraints for transition
+	self.TransitionAreas = {};
 	
-	--------------------------
-	--SCENELOADING VARIABLES--
-	--------------------------
-	self.CurrentDataType = "";
+	--The saved human table, used to transition humans from scene to scene
+	--Keys - Values 
+	--actor = the actor, player = the player controlling the actor,
+	--sust = {table with their values for each susttype}, wounds = all their wounds from the global wound table
+	self.TransitionHumanTable = {};
+	
+	------------------------
+	--TRANSITION VARIABLES--
+	------------------------
 	self.TransitionTimer = Timer();
 	self.TransitionInterval = 1000; --Decrement counter ever second
 	self.TransitionBaseWaitCounter = 5; --The base count-down to scene transitions that the actual counter gets reset to
@@ -150,10 +171,13 @@ function ModularActivity:AddSimpleValueFromData(data, loadtable)
 		if tonumber(fields[2]) ~= nil then
 			loadtable[fields[1]](self, tonumber(fields[2]));
 			--print("Loading Number Data: self."..fields[1].." = "..fields[2]);
-		else
+		elseif fields[2] == "true" or fields[2] == "false" then
 			local istrue = fields[2] == "true";
 			loadtable[fields[1]](self, istrue);
 			--print("Loading Boolean Data: self."..fields[1].." = "..fields[2]);
+		else
+			loadtable[fields[1]](self, fields[2]);
+			--print("Loading String Data: self."..fields[1].." = "..fields[2]);
 		end
 	end
 end
@@ -165,7 +189,7 @@ function ModularActivity:AddTransitionAreasFromData(data, loadtable)
 		--print ("Transition Area "..tostring(#self.TransitionAreas).." Added");
 	else
 		if fields[1]:find("Spawn Area") ~= nil then
-			self.TransitionAreas[#self.TransitionAreas].spawnarea = fields[2]; --Spawn areas stay as text and are located during sceneloading
+			self.TransitionAreas[#self.TransitionAreas].spawnarea = tonumber(fields[2]); --Spawn areas stay as text and are located during sceneloading
 			--print ("Added spawn area to transition area "..tostring(#self.TransitionAreas)..": "..tostring(self.TransitionAreas[#self.TransitionAreas].spawnarea));
 		elseif fields[1]:find("Constraints") ~= nil then
 			local constraints = fields[2]:split(",");
@@ -203,8 +227,8 @@ function ModularActivity:RunTransitions()
 			self.TransitionTimer:Reset();
 		--Start to transition if the transition count is equal to the number of players
 		elseif #possibletransitions == self.HumanCount then
+			self:AddScreenText("Transition in "..tostring(self.TransitionWaitCounter).." seconds.");
 			if self.TransitionWaitCounter > 0 and self.TransitionTimer:IsPastSimMS(self.TransitionInterval) then
-				self:AddScreenText("Transition in "..tostring(self.TransitionWaitCounter).." seconds.");
 				self.TransitionWaitCounter = self.TransitionWaitCounter - 1;
 				self.TransitionTimer:Reset()
 			elseif self.TransitionWaitCounter == 0 then
@@ -232,51 +256,116 @@ function ModularActivity:CheckTransitionConstraints(constraints)
 	return true;
 end
 --Transition scenes
-function ModularActivity:DoSceneTransition(target, spawnarea)
+function ModularActivity:DoSceneTransition(target, spawnareanumber)
+	local stateandtime = self:RequestDayNight_GetCurrentStateAndTime() or {};
 	self.TransitionAreas = {};
-	SceneMan:LoadScene(target, true);
-	self:LoadScene(target);
-	self:LoadSceneSpawnAreas();
-	self:NotifyDayNight_ResetBackgroundPosition();
-	if self.ModulesInitialized then
-		self:AddStartingPlayerActors(self.SpawnAreas[tonumber(spawnarea)]);
+	self:SavePlayersForTransition();
+	SceneMan:LoadScene(target, true); --Load the actual scene
+	self:DoCleanupForTransition();
+	self:LoadScene(target); --Parse the scene datafiles
+	self:LoadSceneSpawnAreas(); --Get as areas the spawn areas for the scene, as defined in the datafile
+	
+	--v DO NOT TOUCH FOR MODULE CHANGES v--
+	self:DoExtraModuleInclusion();
+	self:DoExtraModuleOverwrites(); --Use this function (in the main script) to overwrite scene specific inclusions
+	self:DoExtraModuleEnforcement();
+	self:DoExtraModuleInitialization();
+	--^ DO NOT TOUCH FOR MODULE CHANGES ^--
+
+	self:NotifyDayNight_SceneTransitionOccurred(stateandtime.cstate, stateandtime.ctime);
+	self:AddStartingPlayerActors(self.SpawnAreas[spawnareanumber]);
+end
+--Save players so they keep their stats on scene transitions
+function ModularActivity:SavePlayersForTransition()
+	self.TransitionHumanTable = {};
+	for k, v in pairs(self.HumanTable.Players) do
+		self:SavePlayerForTransition(v.actor);
 	end
 end
---Add starting player actors
-function ModularActivity:AddStartingPlayerActors(spawnarea)
-	--The player actors
-	for i = 0 , self.PlayerCount do
-		if self:PlayerHuman(i) then
-			local player = CreateAHuman("Survivor Black Reticle Actor" , self.RTE);
-			player:AddInventoryItem(CreateHDFirearm("[DZ] .45 Revolver" , self.RTE));
-			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
-			player:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
-			player:AddInventoryItem(CreateHDFirearm("Hunting Knife" , self.RTE));
-			player:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
-			player:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
-			if self.IncludeFlashlight then
-				player:AddInventoryItem(CreateHDFirearm("Flashlight" , self.RTE));
-			end
-			player:AddInventoryItem(CreateTDExplosive("Flare" , self.RTE));
-			player.Sharpness = 0;
-			player.Pos = Vector(spawnarea:GetCenterPoint().X - 25*math.floor(self.PlayerCount*0.5) + 25*i, spawnarea:GetCenterPoint().Y);
-			player.Team = self.PlayerTeam;
-			player.AIMode = Actor.AIMODE_SENTRY;
-			player.HUDVisible = false;
-			MovableMan:AddActor(player);
-			--self:SetPlayerBrain(player, self.PlayerTeam);
-			self:AddToPlayerTable(player);
+--Save a player for transition to keep its stats
+function ModularActivity:SavePlayerForTransition(actor)
+	table.insert(self.TransitionHumanTable, {actor = actor, player = actor:GetController().Player, sust = {}, wounds = {}, inventory = {}});
+	--Add the player's sust
+	for susttype, sustamount in pairs(self:RequestSustenance_GetSustenanceValuesForID(actor.UniqueID)) do
+		self.TransitionHumanTable[#self.TransitionHumanTable].sust[susttype] = sustamount;
+	end
+	--Add the player's wounds
+	if DayZHumanWoundTable[actor.UniqueID] ~= nil then
+		self.TransitionHumanTable[#self.TransitionHumanTable].wounds = DayZHumanWoundTable[actor.UniqueID].wounds;
+		DayZHumanWoundTable[actor.UniqueID] = nil;
+	end
+	--Add the player's equipped item
+	if actor.EquippedItem ~= nil then
+		local obj = actor.EquippedItem;
+		local item = {itype = obj.ClassName, name = obj.PresetName, sharpness = obj.Sharpness};
+		table.insert(self.TransitionHumanTable[#self.TransitionHumanTable].inventory, item);
+	end
+	--Add the player's inventory
+	if not actor:IsInventoryEmpty() then
+		for i = 1, actor.InventorySize do
+			local obj = actor:Inventory();
+			local item = {itype = obj.ClassName, name = obj.PresetName, sharpness = obj.Sharpness};
+			table.insert(self.TransitionHumanTable[#self.TransitionHumanTable].inventory, item);
+			actor:SwapNextInventory(nil, true);
 		end
 	end
-	--TODO Test NPC, Remove Me!
-	--[[self.TestNPC = CreateAHuman("Survivor Black" , self.RTE);
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Hatchet" , self.RTE));
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
-	self.TestNPC:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
-	self.TestNPC:AddInventoryItem(CreateTDExplosive("M67" , self.RTE));
-	self.TestNPC.Pos = Vector(1250, 400);
-	self.TestNPC.Team = self.PlayerTeam;
-	self.TestNPC.AIMode = Actor.AIMODE_SENTRY;
-	MovableMan:AddActor(self.TestNPC);
-	self.NPCTable[#self.NPCTable+1] = {self.TestNPC, 0, 0}--]]
+	MovableMan:RemoveActor(actor);
+end
+--Add starting player actors after a transition
+function ModularActivity:AddStartingPlayerActors(spawnarea)
+	if #self.TransitionHumanTable == 0 then
+		print ("MAKE NEW ACTORS FOR TRANSITION");
+		self:CreateNewPlayerActors();
+	else
+		print ("LOAD PREVIOUS ACTORS FOR TRANSITION");
+		self:LoadPlayersAfterTransition();
+	end
+	self:SpawnPlayerActors(spawnarea);
+end
+--Load players that were saved for the transition
+function ModularActivity:LoadPlayersAfterTransition()
+	for _, humantable in pairs(self.TransitionHumanTable) do
+		----------------------------------------------------------------------------------------------------
+		--TODO in future versions use simple MovableMan:RemoveActor and MovableMan:RemoveActor for this
+		local a = humantable.actor;
+		local newactor = CreateAHuman(a.PresetName, self.RTE);
+		newactor.Team = self.PlayerTeam;
+		newactor.Health = a.Health;
+		newactor.Sharpness = a.Sharpness;
+		newactor.AIMode = Actor.AIMODE_SENTRY;
+		newactor.HUDVisible = false;
+		--Attach wounds
+		for _, wound in pairs(humantable.wounds) do
+			local wound = CreateAEmitter(wound.PresetName);
+			newactor:AttachEmitter(wound, Vector(RangeRand(-1,1),RangeRand(-a.Height/3,a.Height/3)), true); --TODO maybe come up with a better way of wound positioning? Get the original positions?
+		end
+		--Add inventory
+		local itemcreatetable = {HDFirearm = function(name) return CreateHDFirearm(name) end,
+								 TDExplosive = function(name) return CreateTDExplosive(name) end,
+								 HeldDevice = function(name) return CreateHeldDevice(name) end,
+								 ThrownDevice = function(name) return CreateThrownDevice(name) end}
+		for _, item in ipairs(humantable.inventory) do
+			local newitem = itemcreatetable[item.itype](item.name);
+			newitem.Sharpness = item.sharpness;
+			newactor:AddInventoryItem(newitem);
+		end
+			
+		----------------------------------------------------------------------------------------------------
+		self:AddPlayerToRespawnTable(newactor, humantable.player);
+		self:AddToPlayerTable(newactor);
+		self:NotifySust_ChangePlayerSust(newactor.UniqueID, humantable.sust);
+	end
+	self.TransitionHumanTable = {};
+end
+
+--------------------
+--DELETE FUNCTIONS--
+--------------------
+--Clean up main script tables for transitions
+function ModularActivity:DoCleanupForTransition()
+	self.HumanTable = {
+		Players = {},
+		NPCs = {}
+	};
+	self.ZombieTable = {};
 end

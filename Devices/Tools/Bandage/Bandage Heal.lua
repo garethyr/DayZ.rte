@@ -1,83 +1,51 @@
 function Create(self)
 	if not DayZHumanWoundTable then
+		print ("Bandage making DayZHumanWoundTable");
 		DayZHumanWoundTable = {}
 	end
-	self.Parent = nil;
-	self.DelayTimer = Timer();
-	self.Counter = 0;
-	self.SParticle = CreateAEmitter("Bandage Sound Heal","DayZ.rte"); --The sound particle that plays on use
-	--Junk is the empty version of the item, if there is one
-	self.Junk = nil
-	if self.RootID ~= 255 then
-		self.Parent = ToActor(MovableMan:GetMOFromID(self.RootID));
-	end
+	
+	local UseScriptPath = "DayZ.rte/Devices/Tools/Usage Item Scripts.lua";
+	dofile(UseScriptPath);
+	RunUsageInclusions();
+	
+	--UseTable is a specifically formatted table with the main key being the used item's presetname and several values
+	--item - The empty item to replace this item with. No value means no item replacement
+	--useinterval - The length of time it takes to use the item. No value means instant use
+	--useable - Whether the item is currently useable by the current parent actor. No value defaults to always true
+	--onuse - The action that occurs on use, usually sound playing. No value means no action
+	--duringuse - The action performed continuously during use, usually limiting movement/shooting. No value means no continuous actions
+	--afteruse - The result that occurs once the item has finished being used. No value means no result
+	local usetable = {
+		["Bandage"] = {useinterval = 3000,
+						useable = function(self)
+							--Check if the parent is in the global wound table and has wounds
+							--print ("Usability check for actor "..self.Parent.PresetName..": "..tostring(DayZHumanWoundTable[self.Parent.UniqueID] ~= nil and #DayZHumanWoundTable[self.Parent.UniqueID].wounds > 0));
+							--if (DayZHumanWoundTable[self.Parent.UniqueID] ~= nil) then
+							--	print ("Parent's wound count is "..tostring(#DayZHumanWoundTable[self.Parent.UniqueID].wounds));
+							--end
+							return DayZHumanWoundTable[self.Parent.UniqueID] ~= nil and #DayZHumanWoundTable[self.Parent.UniqueID].wounds > 0;
+						end,
+						onuse = function(self)
+							local p  = CreateAEmitter("Bandage Sound Heal","DayZ.rte");
+							MakeEffectParticle(p, self.Pos);
+						end,
+						duringuse = function(self)
+							DisableAllWeaponActions(self.Parent);
+							DisableMoving(self.Parent);
+							DisableJumping(self.Parent);
+						end,
+						afteruse = function(self)
+							--Remove all wounds from the parent actor
+							for _, wound in pairs(DayZHumanWoundTable[self.Parent.UniqueID].wounds) do
+								wound:EnableEmission(false);
+							end
+							DayZHumanWoundTable[self.Parent.UniqueID] = nil;
+						end}
+	};
+	SetupUsage(self, usetable);
 end
 function Update(self)
-	--Various parent checks
-	--If we have no parent or no non-self root
-	if self.Parent == nil or self.RootID == self.ID or self.RootID == 255 then
-		--Check if there's a parent to be had
-		if self.RootID ~= 255 and self.RootID ~= self.ID then
-			self.Parent = ToActor(MovableMan:GetMOFromID(self.RootID));
-		else
-			self.Parent = nil;
-		end
-	--Otherwise, if we have a parent and a non-self root
-	elseif self.Parent ~= nil and self.RootID ~= self.ID then
-		--If the root isn't the parent, change the parent
-		if self.RootID ~= self.Parent.ID then
-			self.Parent = ToActor(MovableMan:GetMOFromID(self.RootID));
-		end
-		--Just in case, if the parent doesn't exist, remove it
-		if not MovableMan:IsActor(self.Parent) or self.RootID == self.ID then
-			self.Parent = nil;
-		end
-
-		--Do the item effects
-		if self:IsActivated() and self.Parent ~= nil then
-			self.Counter = 1;
-		end
-		if self.Counter > 0 then
-			--Reset the timer on use
-			if self.Counter == 1 then
-				self.DelayTimer:Reset();
-				self.Counter = 2;
-			end
-			if self.DelayTimer:IsPastSimMS(100) then
-				if self.Counter == 2 then
-				
-					--Stop wounds on this actor from emitting
-					if #DayZHumanWoundTable > 0 then
-						local used = false; --Flag true if it's actually useable
-						for i = #DayZHumanWoundTable, 1, -1 do
-							if DayZHumanWoundTable[i][2].ID == self.Parent.ID then
-								DayZHumanWoundTable[i][1]:EnableEmission(false);
-								table.remove(DayZHumanWoundTable, k);
-								used = true;
-							end
-						end
-						--If it's been used, get rid of it
-						if used == true then
-							self.SParticle.Pos = self.Pos;
-							MovableMan:AddParticle(self.SParticle);
-
-							if self.Junk ~= nil then
-								self.Parent:AddInventoryItem(self.Junk);
-							end
-							
-							self.Counter = 3;
-						else
-							self.Counter = 0;
-						end
-					end
-				
-				elseif self.Counter == 3 then
-					self.Parent:GetController():SetState(Controller.WEAPON_CHANGE_PREV, true);
-					self.ToDelete = true;
-				end
-			else
-				self.Parent:GetController():SetState(Controller.WEAPON_FIRE,false);
-			end
-		end
+	if HasParent(self) then
+		ManageItemUse(self);
 	end
 end

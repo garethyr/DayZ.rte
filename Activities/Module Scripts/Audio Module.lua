@@ -13,7 +13,7 @@ function ModularActivity:StartAudio()
 	self.AudioGlobalMaxVolume = AudioMan.MusicVolume; --The maximum volume to fade-in to, based on the volume set by the player
 	self.AudioGlobalMinVolume = 0; --The minimum volume to fade-out to, when the volume reaches this level the next track fades in
 	--Localized
-	self.AudioDefaultLocalizedAreaName = "Nature"; --The default area that's not other areas
+	self.AudioDefaultLocalizedAreaName = self.AudioDefaultLocalizedAreaName; --The default area that's not other areas, defined in the scene datafile
 	self.AudioLocalizedBaseSoundInterval = 15000; --The base number of MS between playing localized sounds for each player
 	self.AudioLocalizedSoundIntervalModifier = self.AudioLocalizedBaseSoundInterval/3; --The randomizing modifier for the localized sound interval, adds between 0 and this many MS to the interval
 	--Suspense
@@ -27,7 +27,8 @@ function ModularActivity:StartAudio()
 								["Nature Day"] = {17, "DAmbient "},
 								["Nature Night"] = {18, "NAmbient "},
 								["Civilization"] = {9, "CAmbient "},
-								["Beach"] = {3, "BAmbient "}},
+								["Beach"] = {3, "BAmbient "},
+								["Underground"] = {9, "CAmbient "}}, --TODO replace this with proper underground sounds
 							Suspense = {16, "Suspense "}};
 								
 	
@@ -61,7 +62,6 @@ function ModularActivity:StartAudio()
 				for i = 1, subtable[1] do
 					table.insert(self.AudioLocalizedSoundDefinitionTable[subtype], subtable[2]..tostring(i));
 				end
-				
 			end
 		--Setup name table for non-localized suspense sounds
 		elseif (k == "Suspense") then
@@ -214,7 +214,7 @@ function ModularActivity:GetActorAudioArea(actor)
 		end
 	end
 	--If not in an area, return the default audio accounting for day or night
-	return self.AudioDefaultLocalizedAreaName.." "..self:AudioRequestDayNight_DayOrNightCapitalizedString();
+	return self.AudioDefaultLocalizedAreaName..self:AudioRequestDayNight_DayOrNightOrEmptyFormattedString();
 end
 --SUSPENSE--
 --Deal with suspense sounds, play them randomly over time

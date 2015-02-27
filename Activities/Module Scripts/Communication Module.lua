@@ -9,9 +9,28 @@ function ModularActivity:RequestSustenance_AddToSustenanceTable(actor)
 		self:AddToSustenanceTable(actor);
 	end
 end
+function ModularActivity:RequestSustenance_GetSustenanceValuesForID(ID)
+	local tab = {};
+	if self.IncludeSustenance and self.SustTable[ID] ~= nil then
+		for _, susttype in pairs(self.SustTypes) do
+			tab[susttype] = self.SustTable[ID][susttype];
+		end
+	end
+	return tab;
+end
+function ModularActivity:RequestDayNight_GetCurrentStateAndTime()
+	if self.IncludeDayNight then
+		return {cstate = self.DayNightIsNight, ctime = self.DayNightTimer.ElapsedSimTimeMS};
+	end
+end
 function ModularActivity:RequestIcons_AddToMeterTable(actor)
 	if self.IncludeIcons then
 		self:AddToMeterTable(actor);
+	end
+end
+function ModularActivity:RequestIcons_RemoveAllMeters()
+	if self.IncludeIcons then
+		self.MeterTable = {};
 	end
 end
 --TODO make this also take a maxdist so alerts can trigger things like zombie spawns by being visible within the max spawndist???
@@ -62,11 +81,16 @@ function ModularActivity:IconsRequestSustenance_ActorSustenancePercent(susttype,
 end
 
 --Audio
-function ModularActivity:AudioRequestDayNight_DayOrNightCapitalizedString()
-	if self.IncludeDayNight then
-		return self.DayNightIsNight and "Night" or "Day";
+function ModularActivity:AudioRequestDayNight_DayOrNightOrEmptyFormattedString()
+	if self.IncludeDayNight and self.IsOutside then
+		return self.DayNightIsNight and " Night" or " Day";
+	else
+		if self.IsOutside then
+			return " Day";
+		else
+			return "";
+		end
 	end
-	return "Day";
 end
 
 --Alerts
@@ -100,6 +124,23 @@ function ModularActivity:NotifySust_DeadPlayer(ID)
 		self.SustTable[ID] = nil;
 	end
 end
+function ModularActivity:NotifySust_ChangePlayerSust(ID, newsust)
+	if self.IncludeSustenance and self.SustTable[ID] ~= nil then
+		for _, susttype in pairs(self.SustTypes) do
+			self.SustTable[ID][susttype] = newsust[susttype];
+		end
+	end
+end
+function ModularActivity:NotifyDayNight_SceneTransitionOccurred(isnight, currenttime)
+	if self.IncludeDayNight then
+		if isnight ~= nil and currenttime ~= nil then
+			self.DayNightIsNight = isnight;
+			self.DayNightTimer.ElapsedSimTimeMS = currenttime;
+		end
+		self:DoDayNightChangeActions();
+		self:DayNightResetBackgroundPosition();
+	end
+end
 function ModularActivity:NotifyIcons_DeadPlayer(ID)
 	if self.IncludeIcons and self.MeterTable[ID] ~= nil then
 		self:IconsRemoveMeter(ID);
@@ -109,9 +150,6 @@ function ModularActivity:NotifyAlerts_DeadHuman(alert)
 	if self.IncludeAlerts and alert ~= false then
 		self:MoveAlertFromDeadActor(alert);
 	end
-end
-function ModularActivity:NotifyDayNight_ResetBackgroundPosition()
-	self:DayNightResetBackgroundPosition();
 end
 
 --Loot

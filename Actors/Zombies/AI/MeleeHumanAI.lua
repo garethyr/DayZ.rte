@@ -9,3 +9,6 @@ end
 function UpdateAI(self)
 	self.AI:Update(self)
 end
+
+function Update(self)
+end

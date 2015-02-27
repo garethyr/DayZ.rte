@@ -2,7 +2,7 @@
 -- Description
 -----------------------------------------------------------------------------------------
 --Setup
-function DayZ:StartSaveLoad()
+function ModularActivity:StartSaveLoad()
 	
 	-----------------------
 	--SAVE LOAD CONSTANTS--
@@ -23,8 +23,9 @@ end
 ----------------------
 --CREATION FUNCTIONS--
 ----------------------
-function DayZ:StartNewGame()
-	self:DoSceneTransition("Chernarus", "1");
+--Start a new game in the starting scene
+function ModularActivity:StartNewGame()
+	self:DoSceneTransition("Chernarus Tunnels 1", 1);
 end
 --------------------
 --UPDATE FUNCTIONS--

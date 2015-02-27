@@ -29,6 +29,9 @@ CelestialBodies = true
 SunFrameTotal = 1
 MoonFrameTotal = 1
 
+||AUDIO
+DefaultAudioType = Nature
+
 ||TRANSITION AREAS
 Transition Area 1 = Chernarus Tunnels 1
 	Spawn Area = 1

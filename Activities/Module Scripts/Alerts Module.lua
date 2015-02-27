@@ -491,7 +491,7 @@ function ModularActivity:ManageAlertItems()
 	for k, v in pairs(self.AlertItemTable) do
 		--If the item is turned on and should add an alert(set in the item's script)
 		if v.item.Sharpness > 0 then
-		print (v.ismobile);
+		print ("Alert item is mobile: "..tostring(v.ismobile));
 			self:AddAlert(v.item.Pos, (v.ismobile and v.item or nil), (v.ismobile and v.light or {strength = v.light.strength, parent = nil}), (v.ismobile and v.sound or {strength = v.sound.strength, parent = nil}));
 			--Notify day/night about the item if it's got light strength
 			if v.light.strength > 0 then

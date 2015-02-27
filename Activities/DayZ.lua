@@ -26,6 +26,7 @@ function DayZ:StartActivity()
 	--A table of humans, key is actor.UniqueId
 	--Keys - Values 
 	--actor, alert - whether or not they have an alert on them and if so the alert, lightOn - whether their flashlight is on or off,
+	--spawned - a boolean for if the actor's been spawned into the movable manager,
 	--rounds - the number of rounds left in their gun if they have one (USED FOR ALERTS),
 	--activity - {sound - {current - current sound addition value, total - total sound level, timer - a timer for lowering their sound level}
 	--			  light - {current - current light addition value, total - total light level, timer - a timer for lowering their light level}}
@@ -59,7 +60,9 @@ function DayZ:StartActivity()
 	
 	--Teams
 	self.PlayerTeam = Activity.TEAM_1;
-	self.NPCTeam = Activity.TEAM_2;
+	self.BanditTeam = Activity.TEAM_2;
+	self.MilitaryTeam = Activity.TEAM_3;
+	self.UnknownTeam = Activity.TEAM_4;
    	self.ZombieTeam = -1;
 	
 	--Lag Timers
@@ -69,8 +72,9 @@ function DayZ:StartActivity()
 	--MODULE INCLUSION--
 	--------------------
 	self.ModulePath = "DayZ.rte/Activities/Module Scripts/"; --The path for all modules
-	self.ModulesInitialized = false;
-	--Note: These determine whether a module can be included at all, the actual inclusions are scene specific but can be overwritten in the relevant function
+	
+	--Note: These determine whether a module can be included at all
+	--		The actual inclusions are scene specific but can be overwritten in the Scene Loading and Transitions Module DoModuleOverwrites() function
 	self.LootIncludable = true;
 	self.SustenanceIncludable = true;
 	self.SpawnsIncludable = true;
@@ -81,56 +85,28 @@ function DayZ:StartActivity()
 	self.AudioIncludable = true;
 	self.AlertsIncludable = true;
 	
-	--v DO NOT TOUCH FOR MODULE CHANGES v--
-	self:DoModuleOverwrites();
-	self:DoModuleEnforcement();
-	self:DoModuleInclusion();
+	self:DoCoreModuleInclusionAndInitialization();
 	
-	--TODO right now a scene must be loaded before module initialization, replace this call with a proper version
+	--TODO this starts a new game right away, replace this with player selection for restarting or loading
 	self:StartNewGame();
-	
-	
-	self:DoModuleInitialization();
-	self.ModulesInitialized = true;
-	--^ DO NOT TOUCH FOR MODULE CHANGES ^--
-	
-	--TODO right now this is also buggy like startnewgame, it shouldn't have to be added here as it should happen automatically with scene transition
-	self:AddStartingPlayerActors(self.SpawnAreas[1]);
 end
 -----------------------------------------------------------------------------------------
 -- Module Stuff
 -----------------------------------------------------------------------------------------
---Overwrite scene specific module inclusions as desired here, still constrained by whether or not the module's includable
-function DayZ:DoModuleOverwrites()
-	--Example:
-	--self.IncludeAlerts = false; -- Don't include alerts regardless of the scene
-end
---Enforce any module constraints
-function DayZ:DoModuleEnforcement()
-	self.IncludeBehaviours = self.IncludeSpawns and self.IncludeBehaviours;
-	self.IncludeFlashlight = self.IncludeDayNight and self.IncludeFlashlight;
-	
-	--Make sure to only include modules that are marked as includable
-	self.IncludeLoot = self.LootIncludable and self.IncludeLoot;
-	self.IncludeSustenance = self.SustenanceIncludable and self.IncludeSustenance;
-	self.IncludeSpawns = self.SpawnsIncludable and self.IncludeSpawns;
-	self.IncludeDayNight = self.DayNightIncludable and self.IncludeDayNight;
-	self.IncludeFlashlight = self.FlashlightIncludable and self.IncludeFlashlight;
-	self.IncludeIcons = self.IconsIncludable and self.IncludeIcons;
-	self.IncludeBehaviours = self.BehavioursIncludable and self.IncludeBehaviours;
-	self.IncludeAudio = self.AudioIncludable and self.IncludeAudio;
-	self.IncludeAlerts = self.AlertsIncludable and self.IncludeAlerts;
-end
---Include modules we want
-function DayZ:DoModuleInclusion()
+--Include and initialize the modules we need
+function DayZ:DoCoreModuleInclusionAndInitialization()
 	--Required Modules
 	dofile(self.ModulePath.."Communication Module.lua"); --Communication always included
 	dofile(self.ModulePath.."Util Module.lua"); --Util always included
-	dofile(self.ModulePath.."Scene Loading and Transitions Module.lua"); --Scene Loading and Transitions always included
-	self:StartSceneLoading();
 	dofile(self.ModulePath.."Save Load Module.lua"); --Game Saving and Loading always included
 	self:StartSaveLoad();
-	
+	dofile(self.ModulePath.."Player Management Module.lua"); --Player Management always included
+	self:StartPlayerManagement();
+	dofile(self.ModulePath.."Scene Loading and Transitions Module.lua"); --Scene Loading and Transitions always included
+	self:StartSceneLoading();
+end
+--Include the non-required modules we want
+function DayZ:DoExtraModuleInclusion()
 	--Non-Required Modules
 	if self.LootIncludable then
 		dofile(self.ModulePath.."Loot Spawn Module.lua");
@@ -160,8 +136,29 @@ function DayZ:DoModuleInclusion()
 		dofile(self.ModulePath.."Alerts Module.lua");
 	end
 end
+--Overwrite scene specific module inclusions as desired here, still constrained by whether or not the module's includable
+function DayZ:DoExtraModuleOverwrites()
+	--Example:
+	--self.IncludeAlerts = false; -- Don't include alerts regardless of the scene
+end
+--Enforce any module constraints
+function DayZ:DoExtraModuleEnforcement()
+	self.IncludeBehaviours = self.IncludeSpawns and self.IncludeBehaviours;
+	self.IncludeFlashlight = self.IncludeDayNight and self.IncludeFlashlight;
+	
+	--Make sure to only include modules that are marked as includable
+	self.IncludeLoot = self.LootIncludable and self.IncludeLoot;
+	self.IncludeSustenance = self.SustenanceIncludable and self.IncludeSustenance;
+	self.IncludeSpawns = self.SpawnsIncludable and self.IncludeSpawns;
+	self.IncludeDayNight = self.DayNightIncludable and self.IncludeDayNight;
+	self.IncludeFlashlight = self.FlashlightIncludable and self.IncludeFlashlight;
+	self.IncludeIcons = self.IconsIncludable and self.IncludeIcons;
+	self.IncludeBehaviours = self.BehavioursIncludable and self.IncludeBehaviours;
+	self.IncludeAudio = self.AudioIncludable and self.IncludeAudio;
+	self.IncludeAlerts = self.AlertsIncludable and self.IncludeAlerts;
+end
 --Initialize the included modules
-function DayZ:DoModuleInitialization()
+function DayZ:DoExtraModuleInitialization()
 	if self.IncludeLoot then
 		self:StartLoot();
 	end
@@ -246,7 +243,8 @@ function DayZ:UpdateActivity()
 	end
 	if UInputMan:KeyPressed(2) then
 		for k, v in pairs (self.HumanTable.Players) do
-			ToHeldDevice(v.actor.EquippedItem):Activate();
+			print (v.actor:Inventory());
+			v.actor:SwapNextInventory(v.actor:Inventory(), true);
 		end
 	end
 	if UInputMan:KeyPressed(26) then --Print some stuff
@@ -276,6 +274,10 @@ function DayZ:UpdateActivity()
 				v.actor.Sharpness = 0;
 			end
 		end
+	end
+	if UInputMan:KeyPressed(14) then --Print everything in the console to a file called "output" then clear it
+		ConsoleMan:SaveAllText("output");
+		ConsoleMan:Clear();
 	end
 	end
 	---------------------
@@ -354,8 +356,8 @@ end
 function DayZ:DoActorChecksAndCleanup()
 	for _, humantable in pairs(self.HumanTable) do
 		for k, v in pairs(humantable) do
-			if v.actor.Health <= 0 or not MovableMan:IsActor(v.actor) or v.actor.ToDelete == true then
-				print ("Removing dead "..k.." from table in Main Script");
+			if v.spawned and (v.actor.Health <= 0 or not MovableMan:IsActor(v.actor) or v.actor.ToDelete == true) then
+				print ("Removing dead ".._.." from table in Main Script");
 				self:NotifySust_DeadPlayer(k);
 				self:NotifyIcons_DeadPlayer(k);
 				self:NotifyAlerts_DeadHuman(v.alert);

@@ -1,3 +1,19 @@
+PLAYER SPAWNS
+
+On starting a new game, load the scene then
+Call CreatePlayers() -- Generates all the players, gives them items
+		--Actually calls create player for each Activity Human Player, to make respawning easier
+		
+Call Spawn Players(areanum) --Sets the player's position and based on the area and adds them to the scene
+		--Actually calls spawn player for each Activity Human Player, forcing that forcing that player to take control of the actor
+		
+When a player dies, wait for the respawn time (make an observer actor) then call CreatePlayer() then SpawnPlayer(areanum) to readd the player actor.
+Note: To organize when players get control of an actor, when a player dies, add the Activity Player to the front of a queue. When SpawnPlayer is called, it'll force control of the actor to the player at the fron of the queue
+
+
+
+
+
 ALERT ZOMBIE SPAWNS AND BEHAVIOURS:
 
 Note: Need to allow for zombies with variable sprint distances OR must allow for flag to set them sprinting on start (probably latter) - could also spawn ones that are always sprinting instead?

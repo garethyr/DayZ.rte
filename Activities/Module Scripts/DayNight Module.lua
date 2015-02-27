@@ -7,11 +7,13 @@ function ModularActivity:StartDayNight()
 	--DAYNIGHT CONSTANTS--
 	----------------------
 	--Defined by the scene datafile
-	self.IsOutdoors = true; --If it's not outdoors (i.e. indoors/underground) no BG transitions will occur and no celestial bodies will be placed
+	self.IsOutside = self.IsOutside; --If it's not outdoors (i.e. indoors/underground) no BG transitions will occur and no celestial bodies will be placed
 	
 	--Fog of war
 	self.DayNightNumRevealBoxes = 2; --Number of reveal boxes an unassisted human will make
-	self.DayNightRevealBoxSize = 72; --Size of the reveal boxes an unassisted human will make
+	self.DayNightRevealBoxMinSize = 80; --Minimum size of the reveal boxes an unassisted human will make
+	self.DayNightRevealBoxMaxSize = FrameMan.PlayerScreenWidth/2; --Maximum size of the reveal boxes an unassisted human will make
+	self.DayNightRevealAbsoluteDarknessPercent = 0.5; --The percent of the night which will stay at the lowest light level, the rest of the night will darken and brighten accordingly. E.g. 0.2 means 1/5th of the night is lowest light
 	self.DayNightLightItemBaseRevealSize = {["Chemlight"] = 300, ["Flare"] = 600};
 
 	--Day/Night
@@ -22,14 +24,14 @@ function ModularActivity:StartDayNight()
 	self.DayNightIsNight = false; --Flag for whether it's night, true starts the game off during the night, false starts it off during the day
 	
 	--Changing background
-	self.BackgroundChanges = self.BackgroundChanges and self.IsOutdoors; --Whether or not the background should change, as defined by the scene's datafile
+	self.BackgroundChanges = self.BackgroundChanges and self.IsOutside; --Whether or not the background should change, as defined by the scene's datafile
 	self.BackgroundTotalNumber = self.BackgroundTotalNumber; --The total number of backgrounds per day/night, as defined by the scene's datafile
 	self.BackgroundCurrentNumber = 0; --The current background, must start at 0 to load the first background
 	self.BackgroundNames = {[false] = "DayBG", [true] = "NightBG"} --The naming scheme for backgrounds; day is false, night is true
 	self.BackgroundPos = self.BackgroundPos; --The position to place backgrounds at (presumably the centre of the scene)
 	
 	--Sun and moon
-	self.CelestialBodies = self.CelestialBodies and self.IsOutdoors; --Whether or not to have celestial bodies, as defined by the scene's datafile
+	self.CelestialBodies = self.CelestialBodies and self.IsOutside; --Whether or not to have celestial bodies, as defined by the scene's datafile
 	self.CelestialBodyName = {[false] = "Sun", [true] = "Moon"} --The naming scheme for mobile celestial bodies; day is false, night is true
 	self.CelestialBody = nil; --The actual celestial body object, do not edit this
 	self.CelestialBodyWidthVariance = FrameMan.PlayerScreenWidth + 64; --The x distance the celestial body will travel throughout the day, best left as FrameMan.PlayerScreenWidth + CelestialBody's Size*2 so it travels the full screen
@@ -59,7 +61,7 @@ end
 --Add the correct celestial body
 function ModularActivity:AddCelestialBody()
 	self.CelestialBody = CreateMOSRotating(self.CelestialBodyName[self.DayNightIsNight], self.RTE);
-	self.CelestialBody.Pos = self:GetCelestialBodyOffset(self:GetControlledActor(0).Pos); --TODO this breaks when the player is dead
+	self.CelestialBody.Pos = self:GetCelestialBodyOffset();
 	MovableMan:AddParticle(self.CelestialBody);
 end
 --------------------
@@ -69,11 +71,18 @@ end
 function ModularActivity:DoDayNight()
 	self:DoDayNightCleanup();
 	--Swap from day to night after a certain amount of time
-	--TODO Have a more smooth swapping, gradual darkness etc. Use numbers instead of booleans to determine when alerts will have effects/how effective they'll be?
 	if self.DayNightTimer:IsPastSimMS(self.DayNightInterval) then
 		self:CycleDayNight();
 		self.DayNightTimer:Reset();
 	end
+	
+	local timenum = 6 + math.ceil(12*self.DayNightTimer.ElapsedSimTimeMS/self.DayNightInterval);
+	local timestring = self.DayNightIsNight and "PM" or "AM";
+	if timenum > 12 then
+		timenum = timenum - 12;
+		timestring = timestring == "PM" and "AM" or "PM";
+	end
+	self:AddScreenText("The current time is "..tostring(timenum).." "..timestring);
 	
 	if self.DayNightCheck == false then
 		self:DoDayNightChangeActions();
@@ -89,7 +98,7 @@ function ModularActivity:DoDayNight()
 			self:AddCelestialBody();
 		end
 		--Move the celestial body (accounting for gravity), stopping its rotationg and changing its frame
-		self.CelestialBody.Pos = self:GetCelestialBodyOffset(self:GetControlledActor(0).Pos);
+		self.CelestialBody.Pos = self:GetCelestialBodyOffset();
 		self.CelestialBody.Pos.Y = self.CelestialBody.Pos.Y-((SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs)/3);
 		self.CelestialBody.Vel.Y = self.CelestialBody.Vel.Y - SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs;
 		self.CelestialBody.RotAngle = 0;
@@ -101,14 +110,6 @@ function ModularActivity:DoDayNight()
 	self:DoDayNightContinuousActions();
 	
 	--TODO: Remove light alerts during day, increase alert distances for zombies.
-	if self.DayNightIsNight == false then
-	--Make nighttime when in night
-	elseif self.DayNightIsNight == true then
-		--If we haven't done the once off checks
-		if self.DayNightCheck == false then
-			self.DayNightCheck = true;
-		end
-	end
 end
 --------------------
 --DELETE FUNCTIONS--
@@ -147,7 +148,9 @@ function ModularActivity:DoDayNightChangeActions()
 	else --During the day
 		--Reveal the map (only for Players and NPCs)
 		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.PlayerTeam);
-		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.NPCTeam);
+		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.BanditTeam);
+		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.MilitaryTeam);
+		SceneMan:RevealUnseenBox(0,0,SceneMan.Scene.Width,SceneMan.Scene.Height, self.UnknownTeam);
 	end
 end
 --Change the map background based on time of day/night
@@ -165,28 +168,44 @@ function ModularActivity:DoDayNightBackgroundChanges()
 end
 --Actions performed continuously during day or night, also reveals celestial body
 function ModularActivity:DoDayNightContinuousActions()
-	if self.DayNightIsNight == true then --During the night
+	if self.DayNightIsNight or not self.IsOutside then --During the night
 		--Make everything invisible for humans
 		SceneMan:MakeAllUnseen(Vector(24, 24), self.PlayerTeam);
-		SceneMan:MakeAllUnseen(Vector(24, 24), self.NPCTeam);
+		SceneMan:MakeAllUnseen(Vector(24, 24), self.BanditTeam);
+		SceneMan:MakeAllUnseen(Vector(24, 24), self.MilitaryTeam);
+		SceneMan:MakeAllUnseen(Vector(24, 24), self.UnknownTeam);
 		--Reveal all human visibility areas TODO make flashlight simply affect this instead of working on its own
 		for _, humantable in pairs(self.HumanTable) do
 			for k, v in pairs(humantable) do
 				local xmult = math.cos(v.actor:GetAimAngle(true));
 				local ymult = -math.sin(v.actor:GetAimAngle(true));
-				local size = self.DayNightRevealBoxSize;
 				
-				for j = 0, self.DayNightNumRevealBoxes do
-					local pos = Vector(v.actor.Pos.X + size*2*j*xmult, v.actor.Pos.Y + size*2*j*ymult);
-					SceneMan:RevealUnseenBox(pos.X - size, pos.Y - size, size*2, size*2, self.PlayerTeam);
-					SceneMan:RevealUnseenBox(pos.X - size, pos.Y - size, size*2, size*2, self.NPCTeam);
+				--Calculate the size of the boxes to reveal based on time of night if outside, or just use the smallest size if not
+				local size = self.DayNightRevealBoxMinSize;
+				if self.IsOutside then
+					local completion = math.max(self.DayNightTimer.ElapsedSimTimeMS/self.DayNightInterval, 0.01); --Make sure we can't divide by 0
+					local darknesspercents = {lessthan = 0.5 - self.DayNightRevealAbsoluteDarknessPercent*0.5, greaterthan = 0.5 + self.DayNightRevealAbsoluteDarknessPercent*0.5}
+					local diff = self.DayNightRevealBoxMaxSize - self.DayNightRevealBoxMinSize;
+					--One fifth of the night remains completely dark
+					if completion < darknesspercents.lessthan then
+						size = self.DayNightRevealBoxMaxSize - diff*completion/darknesspercents.lessthan;
+					elseif completion > darknesspercents.greaterthan then
+						size = self.DayNightRevealBoxMinSize + diff*(completion - darknesspercents.greaterthan)/(1-darknesspercents.greaterthan);
+					end
+				end
+				--Place the actual reveal boxes, including one right on top of the player
+				for i = 0, self.DayNightNumRevealBoxes do
+					local pos = Vector(v.actor.Pos.X + size*2*i*xmult, v.actor.Pos.Y + size*2*i*ymult);
+					SceneMan:RevealUnseenBox(pos.X - size, pos.Y - size, size*2, size*2, v.actor.Team);
 				end
 			end
 		end
 		--Reveal all areas lit up by items
 		for _, v in pairs(self.DayNightLightItemTable) do
 			SceneMan:RevealUnseenBox(v.item.Pos.X - v.reveal/2, v.item.Pos.Y - v.reveal/2, v.reveal, v.reveal, self.PlayerTeam);
-			SceneMan:RevealUnseenBox(v.item.Pos.X - v.reveal/2, v.item.Pos.Y - v.reveal/2, v.reveal, v.reveal, self.NPCTeam);
+			SceneMan:RevealUnseenBox(v.item.Pos.X - v.reveal/2, v.item.Pos.Y - v.reveal/2, v.reveal, v.reveal, self.BanditTeam);
+			SceneMan:RevealUnseenBox(v.item.Pos.X - v.reveal/2, v.item.Pos.Y - v.reveal/2, v.reveal, v.reveal, self.MilitaryTeam);
+			SceneMan:RevealUnseenBox(v.item.Pos.X - v.reveal/2, v.item.Pos.Y - v.reveal/2, v.reveal, v.reveal, self.UnknownTeam);
 		end
 		--Reveal all extra reveal boxes created by anything else
 		if #self.DayNightExtraRevealBoxes > 0 then
@@ -194,7 +213,9 @@ function ModularActivity:DoDayNightContinuousActions()
 			for i = #self.DayNightExtraRevealBoxes, 1, -1 do
 				v = self.DayNightExtraRevealBoxes[i];
 				SceneMan:RevealUnseenBox(v.Corner.X, v.Corner.Y, v.Width, v.Height, self.PlayerTeam);
-				SceneMan:RevealUnseenBox(v.Corner.X, v.Corner.Y, v.Width, v.Height, self.NPCTeam);
+				SceneMan:RevealUnseenBox(v.Corner.X, v.Corner.Y, v.Width, v.Height, self.BanditTeam);
+				SceneMan:RevealUnseenBox(v.Corner.X, v.Corner.Y, v.Width, v.Height, self.MilitaryTeam);
+				SceneMan:RevealUnseenBox(v.Corner.X, v.Corner.Y, v.Width, v.Height, self.UnknownTeam);
 				table.remove(self.DayNightExtraRevealBoxes, i);
 			end
 		end
@@ -205,7 +226,9 @@ function ModularActivity:DoDayNightContinuousActions()
 	end
 end
 --Return the correct position for the celestial body
-function ModularActivity:GetCelestialBodyOffset(pos)
+function ModularActivity:GetCelestialBodyOffset()
+	local pos = self:GetControlledActor(0) ~= nil and self:GetControlledActor(0).Pos or Vector(0, 0); --TODO this should be reworked so it's not dumb
+	
 	local completion = self.DayNightTimer.ElapsedSimTimeMS/self.DayNightInterval;
 	
 	local minposx = pos.X - self.CelestialBodyWidthVariance/2;

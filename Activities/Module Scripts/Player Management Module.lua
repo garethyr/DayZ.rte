@@ -53,9 +53,6 @@ function ModularActivity:CreateNewPlayerActor()
 	actor:AddInventoryItem(CreateHDFirearm("Hunting Knife" , self.RTE));
 	actor:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
 	actor:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
-	if self.IncludeFlashlight then
-		actor:AddInventoryItem(CreateHDFirearm("Flashlight" , self.RTE));
-	end
 	actor:AddInventoryItem(CreateTDExplosive("Flare" , self.RTE));
 	
 	actor.Sharpness = 0;

@@ -260,8 +260,9 @@ function ModularActivity:DoSceneTransition(target, spawnareanumber)
 	local stateandtime = self:RequestDayNight_GetCurrentStateAndTime() or {};
 	self.TransitionAreas = {};
 	self:SavePlayersForTransition();
+	
 	SceneMan:LoadScene(target, true); --Load the actual scene
-	self:DoCleanupForTransition();
+	self:DoCleanupForTransition(); --Cleanup any leftovers from required modules that don't get re-instantiated
 	self:LoadScene(target); --Parse the scene datafiles
 	self:LoadSceneSpawnAreas(); --Get as areas the spawn areas for the scene, as defined in the datafile
 	
@@ -314,10 +315,8 @@ end
 --Add starting player actors after a transition
 function ModularActivity:AddStartingPlayerActors(spawnarea)
 	if #self.TransitionHumanTable == 0 then
-		print ("MAKE NEW ACTORS FOR TRANSITION");
 		self:CreateNewPlayerActors();
 	else
-		print ("LOAD PREVIOUS ACTORS FOR TRANSITION");
 		self:LoadPlayersAfterTransition();
 	end
 	self:SpawnPlayerActors(spawnarea);

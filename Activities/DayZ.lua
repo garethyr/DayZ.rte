@@ -143,9 +143,6 @@ function DayZ:DoExtraModuleOverwrites()
 end
 --Enforce any module constraints
 function DayZ:DoExtraModuleEnforcement()
-	self.IncludeBehaviours = self.IncludeSpawns and self.IncludeBehaviours;
-	self.IncludeFlashlight = self.IncludeDayNight and self.IncludeFlashlight;
-	
 	--Make sure to only include modules that are marked as includable
 	self.IncludeLoot = self.LootIncludable and self.IncludeLoot;
 	self.IncludeSustenance = self.SustenanceIncludable and self.IncludeSustenance;
@@ -156,6 +153,10 @@ function DayZ:DoExtraModuleEnforcement()
 	self.IncludeBehaviours = self.BehavioursIncludable and self.IncludeBehaviours;
 	self.IncludeAudio = self.AudioIncludable and self.IncludeAudio;
 	self.IncludeAlerts = self.AlertsIncludable and self.IncludeAlerts;
+	
+	--Make sure modules that require other modules have their requirements enforced
+	self.IncludeBehaviours = self.IncludeSpawns and self.IncludeBehaviours;
+	self.IncludeFlashlight = self.IncludeDayNight and self.IncludeFlashlight;
 end
 --Initialize the included modules
 function DayZ:DoExtraModuleInitialization()
@@ -170,10 +171,10 @@ function DayZ:DoExtraModuleInitialization()
 	end
 	if self.IncludeDayNight then
 		self:StartDayNight();
-		self:DayNightNotifyMany_DayNightCycle(); --Notify so everything knows the time of day
+		self:DayNightNotifyMany_DayNightCycle(); --Notify so everything that needs to knows the time of day
 	end
 	if self.IncludeFlashlight then
-		self:StartFlashlight(); --Doesn't actually do anything, placed here for ease
+		self:StartFlashlight();
 	end
 	if self.IncludeIcons then
 		self:StartIcons();
@@ -242,10 +243,7 @@ function DayZ:UpdateActivity()
 		self:StartActivity();
 	end
 	if UInputMan:KeyPressed(2) then
-		for k, v in pairs (self.HumanTable.Players) do
-			print (v.actor:Inventory());
-			v.actor:SwapNextInventory(v.actor:Inventory(), true);
-		end
+		print ("This key does nothing right now");
 	end
 	if UInputMan:KeyPressed(26) then --Print some stuff
 		local count = 0;

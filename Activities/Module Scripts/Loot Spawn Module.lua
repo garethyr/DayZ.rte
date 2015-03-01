@@ -106,7 +106,7 @@ function ModularActivity:SpawnLoot(area, areanum, set)
 	end
 	loot.Pos = Vector(area:GetRandomPoint().X + math.random(-5,5), area:GetCenterPoint().Y);
 	MovableMan:AddParticle(loot);
-	print ("Added loot item "..loot.PresetName.." to position "..tostring(loot.Pos).." in loot area "..tostring(areanum));
+	--print ("Added loot item "..loot.PresetName.." to position "..tostring(loot.Pos).." in loot area "..tostring(areanum));
 	
 	--Create a loot table for this area if there's not one already
 	if self.LootTable[areanum] == nil then

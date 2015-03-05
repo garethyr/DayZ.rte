@@ -47,11 +47,11 @@ end
 --UPDATE FUNCTIONS--
 --------------------
 --Track stuff for killing
-function ModularActivity:DoSustenance() --TODO refactor this, cleaner update function and make the notification for dead players apply to all humans and call a deletion function in Sust
+function ModularActivity:DoSustenance()
 	for k, v in pairs (self.SustTable) do
 		--Do movement multipliers, base is 1, the rest are defined in create
 		v.drainMult = 1;
-		if v.actor:GetController():IsState(Controller.HOLD_LEFT) or v.actor:GetController():IsState(Controller.MOVE_LEFT) or v.actor:GetController():IsState(Controller.HOLD_RIGHT) or v.actor:GetController():IsState(Controller.MOVE_RIGHT)then
+		if v.actor:GetController():IsState(Controller.MOVE_LEFT) or v.actor:GetController():IsState(Controller.MOVE_RIGHT)then
 			v.drainMult = self.SustDrainMultAct.move;
 		elseif v.actor:GetController():IsState(Controller.BODY_JUMPSTART) or v.actor:GetController():IsState(Controller.BODY_JUMP) then
 			v.drainMult = self.SustDrainMultAct.jump;

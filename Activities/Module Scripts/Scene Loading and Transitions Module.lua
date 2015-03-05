@@ -125,8 +125,8 @@ function ModularActivity:StartSceneLoading()
 	
 	--The saved human table, used to transition humans from scene to scene
 	--Keys - Values 
-	--actor = the actor, player = the player controlling the actor,
-	--sust = {table with their values for each susttype}, wounds = all their wounds from the global wound table
+	--name, team, health, sharpness, player = the player controlling the actor, sust = {table with their values for each susttype},
+	--wounds = all their wounds from the global wound table, inventory = their inventory and equipped item, in order
 	self.TransitionHumanTable = {};
 	
 	------------------------
@@ -285,13 +285,13 @@ function ModularActivity:SavePlayersForTransition()
 end
 --Save a player for transition to keep its stats
 function ModularActivity:SavePlayerForTransition(actor)
-	table.insert(self.TransitionHumanTable, {actor = actor, player = actor:GetController().Player, sust = {}, wounds = {}, inventory = {}});
+	table.insert(self.TransitionHumanTable, {name = actor.PresetName, team = actor.Team, health = actor.Health, sharpness = actor.Sharpness, player = actor:GetController().Player, sust = {}, wounds = {}, inventory = {}});
 	--Add the player's sust
 	for susttype, sustamount in pairs(self:RequestSustenance_GetSustenanceValuesForID(actor.UniqueID)) do
 		self.TransitionHumanTable[#self.TransitionHumanTable].sust[susttype] = sustamount;
 	end
 	--Add the player's wounds
-	if DayZHumanWoundTable[actor.UniqueID] ~= nil then
+	if DayZHumanWoundTable ~= nil and DayZHumanWoundTable[actor.UniqueID] ~= nil then
 		self.TransitionHumanTable[#self.TransitionHumanTable].wounds = DayZHumanWoundTable[actor.UniqueID].wounds;
 		DayZHumanWoundTable[actor.UniqueID] = nil;
 	end
@@ -310,7 +310,7 @@ function ModularActivity:SavePlayerForTransition(actor)
 			actor:SwapNextInventory(nil, true);
 		end
 	end
-	MovableMan:RemoveActor(actor);
+	actor.ToDelete = true;
 end
 --Add starting player actors after a transition
 function ModularActivity:AddStartingPlayerActors(spawnarea)
@@ -325,18 +325,17 @@ end
 function ModularActivity:LoadPlayersAfterTransition()
 	for _, humantable in pairs(self.TransitionHumanTable) do
 		----------------------------------------------------------------------------------------------------
-		--TODO in future versions use simple MovableMan:RemoveActor and MovableMan:RemoveActor for this
-		local a = humantable.actor;
-		local newactor = CreateAHuman(a.PresetName, self.RTE);
-		newactor.Team = self.PlayerTeam;
-		newactor.Health = a.Health;
-		newactor.Sharpness = a.Sharpness;
+		--TODO in future versions use simple MovableMan:RemoveActor and MovableMan:RemoveActor for this NOTE: RemoveActor may cause problems!?
+		local newactor = CreateAHuman(humantable.name, self.RTE);
+		newactor.Team = humantable.team;
+		newactor.Health = humantable.health;
+		newactor.Sharpness = humantable.sharpness;
 		newactor.AIMode = Actor.AIMODE_SENTRY;
 		newactor.HUDVisible = false;
 		--Attach wounds
 		for _, wound in pairs(humantable.wounds) do
 			local wound = CreateAEmitter(wound.PresetName);
-			newactor:AttachEmitter(wound, Vector(RangeRand(-1,1),RangeRand(-a.Height/3,a.Height/3)), true); --TODO maybe come up with a better way of wound positioning? Get the original positions?
+			newactor:AttachEmitter(wound, Vector(RangeRand(-1,1),RangeRand(-newactor.Height/3, newactor.Height/3)), true); --TODO maybe come up with a better way of wound positioning? Get the original positions?
 		end
 		--Add inventory
 		local itemcreatetable = {HDFirearm = function(name) return CreateHDFirearm(name) end,
@@ -348,7 +347,7 @@ function ModularActivity:LoadPlayersAfterTransition()
 			newitem.Sharpness = item.sharpness;
 			newactor:AddInventoryItem(newitem);
 		end
-			
+		--a.ToDelete = true;
 		----------------------------------------------------------------------------------------------------
 		self:AddPlayerToRespawnTable(newactor, humantable.player);
 		self:AddToPlayerTable(newactor);

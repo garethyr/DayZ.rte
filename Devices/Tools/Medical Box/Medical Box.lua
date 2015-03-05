@@ -1,68 +1,99 @@
 function Create(self)
-	self.maxcopyitems = 15; -- maximum number of items to copy from the original actor
-	self.sameitem = false;
+	---------------------------------------------------------------------------------
+	--The name of the global variable for the activity we want to try to respawn with
+	local activitytocheck = ModularActivity;
+	---------------------------------------------------------------------------------
 
-	self.curdist = 20
-   for i = 1,MovableMan:GetMOIDCount()-1 do
-   	self.gun = MovableMan:GetMOFromID(i);
-    if self.gun.PresetName == "Medical Box" and self.gun.ClassName == "HDFirearm" and (self.gun.Pos-self.Pos).Magnitude < self.curdist then
-   	self.actor = MovableMan:GetMOFromID(self.gun.RootID);
-     if MovableMan:IsActor(self.actor) then
-	self.parent = ToActor(self.actor);
-	self.parentname = self.parent.PresetName;
-	self.repairedactor = CreateAHuman(self.parentname);
 
-	self.itemblocker = CreateTDExplosive("Stone","Ronin.rte");
-	self.itemblocker.PresetName = "Medical Box Blocker Rock";
-	self.parent:AddInventoryItem(self.itemblocker);
+	local UseScriptPath = "DayZ.rte/Devices/Tools/Usage Item Scripts.lua";
+	dofile(UseScriptPath);
+	RunUsageInclusions();
+	
+	--UseTable is a specifically formatted table with the main key being the used item's presetname and several values
+	--item - The empty item to replace this item with. No value means no item replacement
+	--useinterval - The length of time it takes to use the item. No value means instant use
+	--useable - Whether the item is currently useable by the current parent actor. No value defaults to always true
+	--onuse - The action that occurs on use, usually sound playing. No value means no action
+	--duringuse - The action performed continuously during use, usually limiting movement/shooting. No value means no continuous actions
+	--afteruse - The result that occurs once the item has finished being used. No value means no result
+	local usetable = {
+		["Medical Box"] = {useinterval = 5000,
+					onuse = function(self)
+						local p = CreateAEmitter("Medical Box Sound Repair","DayZ.rte"); 
+						MakeEffectParticle(p, self.Pos);
+					end,
+					duringuse = function(self)
+						DisableAllWeaponActions(self.Parent);
+						DisableAllMovementActions(self.Parent);
+					end,
+					afteruse = function(self)
+						--Respawn the parent actor
+						local parentplayer = self.Parent:GetController().Player;
+						local parentpos = self.Parent.Pos;
+						local newactor;
+						--If we're not in activitytocheck, which has its own actor respawning, manually respawn
+						if activitytocheck == nil then
+							newactor = MedicalBoxSimpleRespawn(self.Parent, parentplayer);
+						--Otherwise, use the activity's respawning for this
+						else
+							print ("Activity based respawn from medbox");
+							activitytocheck:SavePlayerForTransition(self.Parent);
+							activitytocheck:LoadPlayersAfterTransition();
+							newactor = activitytocheck.PlayerRespawnTable[#activitytocheck.PlayerRespawnTable].actor;
+							activitytocheck:SpawnPlayerActor(nil, newactor, parentplayer, 0);
+							table.remove(activitytocheck.PlayerRespawnTable, #activitytocheck.PlayerRespawnTable);
+						end
+						newactor.Pos = parentpos;
+						ActivityMan:GetActivity():ReportDeath(newactor.Team,-1);
+					end}
+	}
+	SetupUsage(self, usetable);
+end
+function Update(self)
+	if HasParent(self) then
+		ManageItemUse(self);
+	end
+end
 
-	self.parent:GetController():SetState(Controller.WEAPON_CHANGE_PREV,true);
-
---	self.inventorychecker = self.parent:Inventory();
---      if self.inventorychecker ~= nil then
---	self.parent:SwapNextInventory(self.inventorychecker,true);
---      end
-
-      for i = 1, self.maxcopyitems do
-
-	self.potentialwep = self.parent:Inventory();
-       if self.potentialwep ~= nil and self.potentialwep.PresetName ~= "Medical Box Blocker Rock" then
-
-        if self.potentialwep.ClassName == "HDFirearm" then
-	self.repairedactor:AddInventoryItem(CreateHDFirearm(self.potentialwep.PresetName));
-        elseif self.potentialwep.ClassName == "TDExplosive" then
-	self.repairedactor:AddInventoryItem(CreateTDExplosive(self.potentialwep.PresetName));
-        elseif self.potentialwep.ClassName == "HeldDevice" then
-	self.repairedactor:AddInventoryItem(CreateHeldDevice(self.potentialwep.PresetName));
-        end
-
-	self.parent:SwapNextInventory(self.potentialwep,true);
-       else
-	break;
-       end
-      end
-
-      if self.parent:IsPlayerControlled() == true then
-	self.parentplayer = self.parent:GetController().Player;
-      end
-
-	self.repairedactor.Pos = self.parent.Pos;
-	self.repairedactor.Team = self.parent.Team;
-	self.repairedactor.AIMode = Actor.AIMODE_SENTRY;
-	self.parent.ToDelete = true;
-	MovableMan:AddActor(self.repairedactor);
-      if self.parentplayer ~= nil then
-	ActivityMan:GetActivity():SwitchToActor(self.repairedactor,self.parentplayer,self.repairedactor.Team);
-      end
-	local sparticle = CreateAEmitter("Medical Box Sound Repair","DayZ.rte");
-	sparticle.Pos = self.repairedactor.Pos;
-	MovableMan:AddParticle(sparticle);
---	self.repairedactor:FlashWhite(610);
-	ActivityMan:GetActivity():ReportDeath(self.repairedactor.Team,-1);
-
-     end
-    end
-   end
-
-	self.ToDelete = true;
+function MedicalBoxSimpleRespawn(actor, player)
+	local newactor;
+	local inventory = {};
+	
+	--Save equipped item
+	if actor.EquippedItem ~= nil then
+		local obj = actor.EquippedItem;
+		local item = {itype = obj.ClassName, name = obj.PresetName, sharpness = obj.Sharpness};
+		table.insert(inventory, item);
+	end
+	--Save inventory
+	if not actor:IsInventoryEmpty() then
+		for i = 1, actor.InventorySize do
+			local obj = actor:Inventory();
+			local item = {itype = obj.ClassName, name = obj.PresetName, sharpness = obj.Sharpness};
+			table.insert(inventory, item);
+			actor:SwapNextInventory(nil, true);
+		end
+	end
+	
+	local newactor = CreateAHuman(actor.PresetName);
+	newactor.Team = actor.Team;
+	newactor.Sharpness = actor.Sharpness;
+	newactor.AIMode = Actor.AIMODE_SENTRY;
+	
+	--Load equipped item and/or inventory
+	local itemcreatetable = {HDFirearm = function(name) return CreateHDFirearm(name) end,
+							 TDExplosive = function(name) return CreateTDExplosive(name) end,
+							 HeldDevice = function(name) return CreateHeldDevice(name) end,
+							 ThrownDevice = function(name) return CreateThrownDevice(name) end}
+	for _, item in ipairs(inventory) do
+		local newitem = itemcreatetable[item.itype](item.name);
+		newitem.Sharpness = item.sharpness;
+		newactor:AddInventoryItem(newitem);
+	end
+	--MovableMan:RemoveActor(actor);
+	actor.ToDelete = true;
+	
+	MovableMan:AddActor(newactor);
+	ActivityMan:GetActivity():SwitchToActor(newactor, player, newactor.Team);
+	return newactor;
 end

@@ -48,7 +48,7 @@ function ModularActivity:StartLoot()
 							create = function(name) return CreateTDExplosive(name, self.RTE) end};
 	
 	--This table stores all the medical supply names
-	self.LootMedicineTable = {"Bandage", "Blood Bag", "[DZ] Medical Box",
+	self.LootMedicineTable = {"Bandage", "Bloodbag", "Medical Box",
 							create = function(name) return CreateHDFirearm(name, self.RTE) end};
 	
 	--This table stores all civilian ammo names
@@ -64,7 +64,7 @@ function ModularActivity:StartLoot()
 							create = function(name) return CreateHeldDevice(name, self.RTE) end};
 	
 	--This table stores all military weapons names
-	self.LootMWeaponTable = {"[DZ] G17", "[DZ] AKM", "[DZ] M16A2", "[DZ] MP5SD6", "[DZ] M4A1 CCO SD", "[DZ] Mk 48 Mod 0", "[DZ] M14 AIM", "[DZ] M107",
+	self.LootMWeaponTable = {"[DZ] G17", "[DZ] AKM", "[DZ] M16A2", "[DZ] MP5SD6", "[DZ] M4A1 CCO SD", "[DZ] Mk 48 Mod 0", "[DZ] M14 AIM", {name = "[DZ] M107", chance = 0.25},
 							create = function(name) return CreateHDFirearm(name, self.RTE) end};
 
 	--This table stores the spawn chances for each type of loot item, based on the lootset of the area
@@ -101,7 +101,17 @@ function ModularActivity:SpawnLoot(area, areanum, set)
 	for itemtype, spawnchance in pairs(self.LootSpawnChances[set]) do
 		if math.random() < spawnchance then
 			local lootitemtable = self["Loot"..itemtype.."Table"]; --Get the loot item table for the itemtype (e.g. LootFoodTable, etc.)
-			loot = lootitemtable.create(lootitemtable[math.random(#lootitemtable)]);
+			local lootitemvalue = lootitemtable[math.random(#lootitemtable)];
+			--If we find a loot item with a table value, that means it has a low chance of spawning - if it randomly shouldn't spawn, spawn another item instead
+			if type (lootitemvalue) == "table" then
+				if math.random() >= lootitemvalue.chance then
+					print ("Tried to spawn "..lootitemvalue.name.." but random number was more than the "..tostring(lootitemvalue.chance).." so replacing with new loot item instead.");
+					self:SpawnLoot(area, areanum, set);
+					return;
+				end
+				lootitemvalue = lootitemvalue.name;
+			end
+			loot = lootitemtable.create(lootitemvalue);
 		end
 	end
 	loot.Pos = Vector(area:GetRandomPoint().X + math.random(-5,5), area:GetCenterPoint().Y);

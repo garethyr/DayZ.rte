@@ -62,13 +62,11 @@ function DisableWeaponSwap(actor)
 	actor:GetController():SetState(Controller.WEAPON_CHANGE_NEXT,false);
 end
 --Stop an actor from performing any weapon actions (i.e. all of the above)
-function DisableAllWeaponActions(a)
-	for actor in MovableMan.Actors do
+function DisableAllWeaponActions(actor)
 	DisableFiring(actor);
 	DisableReloading(actor);
 	DisablePickupAndDrop(actor);
 	DisableWeaponSwap(actor);
-	end
 end
 
 --------------------

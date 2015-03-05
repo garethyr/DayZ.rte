@@ -47,6 +47,7 @@ end
 --Actually create a single player
 function ModularActivity:CreateNewPlayerActor()
 	local actor = CreateAHuman("Survivor Black Reticle Actor" , self.RTE);
+	actor:AddInventoryItem(CreateHDFirearm("Medical Box" , self.RTE));
 	actor:AddInventoryItem(CreateHDFirearm("[DZ] .45 Revolver" , self.RTE));
 	actor:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
 	actor:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
@@ -69,9 +70,13 @@ function ModularActivity:SpawnPlayerActors(spawnarea)
 		table.remove(self.PlayerRespawnTable, i);
 	end
 end
-function ModularActivity:SpawnPlayerActor(spawnarea, actor, player, positionmodifier)
+function ModularActivity:SpawnPlayerActor(spawnarea, actor, player, positionmodifier) --Setting spawn area as nil defaults to spawn area 1
+	if spawnarea == nil then
+		spawnarea = self.SpawnAreas[1];
+	end
 	actor.Pos = Vector(spawnarea:GetCenterPoint().X - 25*math.floor(self.PlayerCount*0.5) + 25*positionmodifier, spawnarea:GetCenterPoint().Y);
-	actor:SetControllerMode(Controller.CIM_PLAYER, player);
+	actor:SetControllerMode(Controller.CIM_PLAYER, player); --TODO one of these may not be necessary, probably this one?
+	self:SwitchToActor(actor, player, actor.Team);
 	MovableMan:AddActor(actor);
 	self.HumanTable.Players[actor.UniqueID].spawned = true;
 end

@@ -1,26 +1,37 @@
 function Create(self)
-	self.curdist = 20
-   for i = 1,MovableMan:GetMOIDCount()-1 do
-   	self.gun = MovableMan:GetMOFromID(i);
-    if self.gun.PresetName == "Bloodbag" and self.gun.ClassName == "HDFirearm" and (self.gun.Pos-self.Pos).Magnitude < self.curdist then
-   	self.actor = MovableMan:GetMOFromID(self.gun.RootID);
-     if MovableMan:IsActor(self.actor) then
-	self.parent = ToActor(self.actor);
-	self.parentgun = ToHDFirearm(self.gun);
-      if self.parent.Health < 100 then
-	self.parentgun.ToDelete = true;
---	self.parent:FlashWhite(760);
-	local sparticle = CreateAEmitter("Bloodbag Sound Heal","DayZ.rte");
-	sparticle.Pos = self.parent.Pos;
-	MovableMan:AddParticle(sparticle);
-       if self.parent.Health <= 0 then
-       self.parent.Health = self.parent.Health + 100;
-       else
-       self.parent.Health = 100;
-       end
-      end
-     end
-    end
-   end
-	self.ToDelete = true;
+	local UseScriptPath = "DayZ.rte/Devices/Tools/Usage Item Scripts.lua";
+	dofile(UseScriptPath);
+	RunUsageInclusions();
+	
+	--UseTable is a specifically formatted table with the main key being the used item's presetname and several values
+	--item - The empty item to replace this item with. No value means no item replacement
+	--useinterval - The length of time it takes to use the item. No value means instant use
+	--useable - Whether the item is currently useable by the current parent actor. No value defaults to always true
+	--onuse - The action that occurs on use, usually sound playing. No value means no action
+	--duringuse - The action performed continuously during use, usually limiting movement/shooting. No value means no continuous actions
+	--afteruse - The result that occurs once the item has finished being used. No value means no result
+	local usetable = {
+		["Bloodbag"] = {useinterval = 3000,
+						useable = function(self)
+							return self.Parent.Health < 100;
+						end,
+						onuse = function(self)
+							local p  = CreateAEmitter("Bloodbag Sound Heal","DayZ.rte");
+							MakeEffectParticle(p, self.Pos);
+						end,
+						duringuse = function(self)
+							DisableAllWeaponActions(self.Parent);
+							DisableMoving(self.Parent);
+							DisableJumping(self.Parent);
+						end,
+						afteruse = function(self)
+							self.Parent.Health = 100;
+						end}
+	};
+	SetupUsage(self, usetable);
+end
+function Update(self)
+	if HasParent(self) then
+		ManageItemUse(self);
+	end
 end

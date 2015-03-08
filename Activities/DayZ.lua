@@ -55,6 +55,10 @@ function DayZ:StartActivity()
 	--Tracker for nights survived
 	self.NightsSurvived = -1; --Note: This count will be 1 less than it should if the game begins during night instead of day. This can be fixed if we keep these counters forever
 	
+	--Values for transitioning requirements TODO probably move this somewhere in future
+	self.HasBoat = false;
+	self.InHelicopter = false;
+	
 	--Screentext for all players
 	self.ScreenText = {};
 	
@@ -353,13 +357,11 @@ end
 -----------------------------------------------------------------------------------------
 function DayZ:DoActorChecksAndCleanup()
 	for _, humantable in pairs(self.HumanTable) do
-		for k, v in pairs(humantable) do
+		for ID, v in pairs(humantable) do
 			if v.spawned and (v.actor.Health <= 0 or not MovableMan:IsActor(v.actor) or v.actor.ToDelete == true) then
 				print ("Removing dead ".._.." from table in Main Script");
-				self:NotifySust_DeadPlayer(k);
-				self:NotifyIcons_DeadPlayer(k);
-				self:NotifyAlerts_DeadHuman(v.alert);
-				humantable[k] = nil;
+				self:NotifyMany_DeadHuman(ID, v.alert);
+				humantable[ID] = nil;
 			else
 				--Reset the actor's round count if he changes weapons in any way
 				local c = v.actor:GetController();

@@ -19,7 +19,6 @@
 • "Dodge" system
 • Beartrap
 • Bandit sprites/actor
-• Clock (days survived and/or current time?)
 • Rethink stairs
 • Zombie climbing? (next build possible?)
 • Vomit emitter fx
@@ -46,7 +45,6 @@
 ----------------------------------------------------------------------
 • Fix bug with setting day/night longer than 60 seconds
 • Make custom zombie AI (bleh)
-• Make vomit act over time
 • Fix alert bugs where they place late or in strange locations (alerts may be showing up delayed?)
 • Completely properly fix all crashes on death
 • Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
@@ -57,7 +55,6 @@
 • BUGS - Light items being held without being activated die after a while. Using ammo adds noise (perhaps equivalent to the gun it's for??)
 • Bugs found while playtesting - 	Line 200 of alerts: if dist >= mindist and dist <= maxdist and dist <= visdist then
 									Line 75 of Sustenance: v[susttype] = v[susttype] + self.SustItems[itemgroup][ahuman.EquippedItem.PresetName];
-• Item-specific loot weights (ex defib, barrett, rare items)
 • Saving and loading games
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
 • Random events? (NPCs, bandit ambush, zombie hordes, etc?)
@@ -82,4 +79,5 @@
 • Reworked item scripts to be less messy and use a unified system for parent checking and effects that reduces duplicated code and clutter
 • Fixed medical box to work with DayZ
 • Made it so specific loot items in a set can have a low chance of spawning, for use if they're way better than the other items
+• Made vomiting act over time and immobilize the vomiting actor until it's finished
 

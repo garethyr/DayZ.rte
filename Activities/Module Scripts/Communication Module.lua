@@ -119,12 +119,21 @@ end
 --NOTIFICATIONS--
 -----------------
 --Main
-function ModularActivity:NotifySust_DeadPlayer(ID)
+function ModularActivity:NotifyMany_DeadPlayer(ID, alert)
 	if self.IncludeSustenance and self.SustTable[ID] ~= nil then
-		self.SustTable[ID] = nil;
+		self:RemoveFromSustTable(ID);
+	end
+	if self.IncludeIcons and self.MeterTable[ID] ~= nil then
+		self:IconsRemoveMeter(ID);
+	end
+	if self.IncludeBehaviours then
+		--self:RemoveFromBehaviour...(ID);
+	end
+	if self.IncludeAlerts and alert ~= false then
+		self:MoveAlertFromDeadActor(alert);
 	end
 end
-function ModularActivity:NotifySust_ChangePlayerSust(ID, newsust)
+function ModularActivity:NotifySust_SetActorSust(ID, newsust)
 	if self.IncludeSustenance and self.SustTable[ID] ~= nil then
 		for _, susttype in pairs(self.SustTypes) do
 			self.SustTable[ID][susttype] = newsust[susttype];
@@ -139,16 +148,6 @@ function ModularActivity:NotifyDayNight_SceneTransitionOccurred(isnight, current
 		end
 		self:DoDayNightChangeActions();
 		self:DayNightResetBackgroundPosition();
-	end
-end
-function ModularActivity:NotifyIcons_DeadPlayer(ID)
-	if self.IncludeIcons and self.MeterTable[ID] ~= nil then
-		self:IconsRemoveMeter(ID);
-	end
-end
-function ModularActivity:NotifyAlerts_DeadHuman(alert)
-	if self.IncludeAlerts and alert ~= false then
-		self:MoveAlertFromDeadActor(alert);
 	end
 end
 

@@ -48,7 +48,7 @@ function ModularActivity:ManageZombieTargets()
 			if zombie.target.ttype == "actor" then
 				local curdist = SceneMan:ShortestDistance(zombie.target.val.Pos, zombie.actor.Pos, true).Magnitude;
 				zombie.target.startdist = math.max(self.ZombieDespawnDistance, math.min(curdist, zombie.target.startdist));
-				if curdist > zombie.target.startdist*1.1 then
+				if curdist > zombie.target.startdist*1.1 then --TODO remove this magic number
 					print ("Remove zombie actor target because curdist is "..tostring(curdist).." out of "..tostring(zombie.target.startdist*1.5));
 					zombie.target = {val = false, ttype = "", startdist = 0};
 				end

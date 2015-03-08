@@ -227,7 +227,7 @@ function ModularActivity:RunTransitions()
 			self.TransitionTimer:Reset();
 		--Start to transition if the transition count is equal to the number of players
 		elseif #possibletransitions == self.HumanCount then
-			self:AddScreenText("Transition in "..tostring(self.TransitionWaitCounter).." seconds.");
+			self:AddScreenText("Transition in "..tostring(self.TransitionWaitCounter).." seconds");
 			if self.TransitionWaitCounter > 0 and self.TransitionTimer:IsPastSimMS(self.TransitionInterval) then
 				self.TransitionWaitCounter = self.TransitionWaitCounter - 1;
 				self.TransitionTimer:Reset()
@@ -248,8 +248,8 @@ end
 --------------------
 --Check if a transitions area's constraints are met (also returns true if they're invalid)
 function ModularActivity:CheckTransitionConstraints(constraints)
-	for _, data in pairs(constraints) do
-		if self.SceneLoadingData["TRANSITION AREAS"] == false then
+	for _, constraint in pairs(constraints) do
+		if self.SceneLoadingData["TRANSITION AREAS"][constraint](self) == false then
 			return false;
 		end
 	end
@@ -347,11 +347,10 @@ function ModularActivity:LoadPlayersAfterTransition()
 			newitem.Sharpness = item.sharpness;
 			newactor:AddInventoryItem(newitem);
 		end
-		--a.ToDelete = true;
 		----------------------------------------------------------------------------------------------------
 		self:AddPlayerToRespawnTable(newactor, humantable.player);
 		self:AddToPlayerTable(newactor);
-		self:NotifySust_ChangePlayerSust(newactor.UniqueID, humantable.sust);
+		self:NotifySust_SetActorSust(newactor.UniqueID, humantable.sust);
 	end
 	self.TransitionHumanTable = {};
 end

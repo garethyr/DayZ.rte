@@ -77,38 +77,6 @@ function ModularActivity:DoSustenance()
 	end
 	self:DoVomiting();
 end
---Do vomiting effects for any vomiting actors
-function ModularActivity:DoVomiting()
-	local stillvomiting;
-	for i = #self.SustVomitTable, 0, -1 do
-		local tab = self.SustTable[self.SustVomitTable[i]];
-		stillvomiting = true; --Set as true for when the timer isn't ready to check for trueness
-		if tab ~= nil then
-			--If the actor is not at the vomit end point, drain all types of sust and flag as still vomiting
-			if self.SustVomitDrainTimer:IsPastSimMS(self.SustVomitDrainInterval) then
-				stillvomiting = false; --Set as false so it can be triggered by checks
-				for _, susttype in pairs(self.SustTypes) do
-					if tab[susttype] ~= nil then
-						if tab[susttype] >= self.MaxSust[susttype]*self.SustVomitDrainEndPoint[susttype] then
-							tab[susttype] = tab[susttype] - self.MaxSust[susttype]*self.SustVomitDrainRate;
-							stillvomiting = true;
-						end
-					end
-				end
-				self.SustVomitDrainTimer:Reset();
-			end
-			--If the actor is still vomiting, keep it prone
-			if stillvomiting then
-				tab.actor:GetController():SetState(Controller.BODY_CROUCH, true);
-				tab.actor:GetController():SetState(Controller.BODY_JUMP, false);
-				tab.actor:GetController():SetState(Controller.BODY_JUMPSTART, false);
-			--If the actor is not still vomiting, remove it from the vomiting table
-			else
-				table.remove(self.SustVomitTable, i);
-			end
-		end
-	end
-end
 --------------------
 --DELETE FUNCTIONS--
 --------------------
@@ -163,6 +131,38 @@ function ModularActivity:CheckForActorSustItemUse(sust)
 					self:AddToVomitTable(sust.actor);
 				end
 				break; --No need to check the rest of them since one won't eat/drink more than one item per frame
+			end
+		end
+	end
+end
+--Do vomiting effects for any vomiting actors
+function ModularActivity:DoVomiting()
+	local stillvomiting;
+	for i = #self.SustVomitTable, 0, -1 do
+		local tab = self.SustTable[self.SustVomitTable[i]];
+		stillvomiting = true; --Set as true for when the timer isn't ready to check for trueness
+		if tab ~= nil then
+			--If the actor is not at the vomit end point, drain all types of sust and flag as still vomiting
+			if self.SustVomitDrainTimer:IsPastSimMS(self.SustVomitDrainInterval) then
+				stillvomiting = false; --Set as false so it can be triggered by checks
+				for _, susttype in pairs(self.SustTypes) do
+					if tab[susttype] ~= nil then
+						if tab[susttype] >= self.MaxSust[susttype]*self.SustVomitDrainEndPoint[susttype] then
+							tab[susttype] = tab[susttype] - self.MaxSust[susttype]*self.SustVomitDrainRate;
+							stillvomiting = true;
+						end
+					end
+				end
+				self.SustVomitDrainTimer:Reset();
+			end
+			--If the actor is still vomiting, keep it prone
+			if stillvomiting then
+				tab.actor:GetController():SetState(Controller.BODY_CROUCH, true);
+				tab.actor:GetController():SetState(Controller.BODY_JUMP, false);
+				tab.actor:GetController():SetState(Controller.BODY_JUMPSTART, false);
+			--If the actor is not still vomiting, remove it from the vomiting table
+			else
+				table.remove(self.SustVomitTable, i);
 			end
 		end
 	end

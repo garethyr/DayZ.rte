@@ -33,28 +33,41 @@ function ModularActivity:RequestIcons_RemoveAllMeters()
 		self.MeterTable = {};
 	end
 end
---TODO make this also take a maxdist so alerts can trigger things like zombie spawns by being visible within the max spawndist???
-function ModularActivity:RequestAlerts_CheckForVisibleAlerts(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+function ModularActivity:RequestAlerts_CheckForVisibleAlerts(pos, awarenessmod, ...) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
-		return self:CheckForVisibleAlerts(pos, awarenessmod, mindist);
+		return self:CheckForVisibleAlerts(pos, awarenessmod, ...);
 	end
 	return false;
 end
-function ModularActivity:RequestAlerts_NearestVisibleAlert(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+function ModularActivity:RequestAlerts_NearestVisibleAlert(pos, awarenessmod, ...) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
-		return self:NearestVisibleAlert(pos, awarenessmod, mindist);
+		return self:NearestVisibleAlert(pos, awarenessmod, ...);
 	end
 	return nil;
 end
-function ModularActivity:RequestAlerts_VisibleAlerts(pos, awarenessmod, mindist) --awareness mod < 1 lowers awareness distance, > 1 raises it
+function ModularActivity:RequestAlerts_AllVisibleAlerts(pos, awarenessmod, ...) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
 		return self:VisibleAlerts(pos, awarenessmod, mindist);
 	end
 	return {};
 end
+function ModularActivity:RequestAlerts_GetAlertCurrentStrength(alert)
+	if self.IncludeAlerts then
+		return self:GetAlertStrength(alert.light.strength, alert.sound.strength);
+	end
+	return 0;
+end
+function ModularActivity:RequestAlerts_GetBaseAlertStrength()
+	if self.IncludeAlerts then
+		return self.AlertBaseStrength;
+	end
+	return 0;
+end
 --Loot
 
 --Sustenance
+
+--Spawns
 
 --DayNight
 
@@ -80,6 +93,8 @@ function ModularActivity:IconsRequestSustenance_ActorSustenancePercent(susttype,
 	return 0;
 end
 
+--Behaviours
+
 --Audio
 function ModularActivity:AudioRequestDayNight_DayOrNightOrEmptyFormattedString()
 	if self.IncludeDayNight and self.IsOutside then
@@ -94,17 +109,22 @@ function ModularActivity:AudioRequestDayNight_DayOrNightOrEmptyFormattedString()
 end
 
 --Alerts
-function ModularActivity:AlertsRequestSpawns_SpawnAlertZombie(position)
+function ModularActivity:AlertsRequestSpawns_GetZombieMinSpawnDistance()
 	if self.IncludeSpawns then
-		return self:SpawnZombie(position, position, "alert");
+		return self.ZombieSpawnMinDistance;
 	end
-	return false;
 end
 function ModularActivity:AlertsRequestSpawns_GetZombieSpawnInterval()
 	if self.IncludeSpawns then
 		return self.ZombieSpawnInterval;
 	end
 	return 0;
+end
+function ModularActivity:AlertsRequestSpawns_SpawnAlertZombie(alert, offset)
+	if self.IncludeSpawns then
+		return self:SpawnZombie(offset, alert, "alert", alert); --args: (position, target, targettype, spawntype), offset used instead of position for alerts
+	end
+	return false;
 end
 function ModularActivity:AlertsRequestDayNight_LightItemNotInTable(item)
 	if self.IncludeDayNight then
@@ -113,21 +133,19 @@ function ModularActivity:AlertsRequestDayNight_LightItemNotInTable(item)
 	return false;
 end
 
---SpawnsAndBehaviours
-
 -----------------
 --NOTIFICATIONS--
 -----------------
 --Main
-function ModularActivity:NotifyMany_DeadPlayer(ID, alert)
+function ModularActivity:NotifyMany_DeadHuman(ID, alert)
 	if self.IncludeSustenance and self.SustTable[ID] ~= nil then
 		self:RemoveFromSustTable(ID);
 	end
 	if self.IncludeIcons and self.MeterTable[ID] ~= nil then
-		self:IconsRemoveMeter(ID);
+		self:IconsRemoveMeters(ID);
 	end
 	if self.IncludeBehaviours then
-		--self:RemoveFromBehaviour...(ID);
+		self:RemoveZombieTargetsForDeadActor(ID);
 	end
 	if self.IncludeAlerts and alert ~= false then
 		self:MoveAlertFromDeadActor(alert);
@@ -155,6 +173,8 @@ end
 
 --Sustenance
 
+--Spawns
+
 --DayNight
 function ModularActivity:DayNightNotifyMany_DayNightCycle()
 	if self.IncludeAlerts then
@@ -180,13 +200,43 @@ function ModularActivity:IconsNotifyDayNight_RevealIcons(corner)
 	end
 end
 
+--Behaviours
+
 --Audio
 
 --Alerts
+function ModularActivity:AlertsNotifyMany_NewAlertAdded(alert)
+	if alert.target ~= nil then
+		for _, humantable in pairs(self.HumanTable) do
+			if humantable[alert.target.UniqueID] ~= nil then
+				humantable[alert.target.UniqueID].alert = alert;
+				break;
+			end
+		end
+	end
+	--Note: Spawning alert zombies is done elsewhere so the alert can keep track of its zombies
+	if self.IncludeBehaviours then
+		self:ManageZombieBehaviourForNewAlert(alert);
+	end
+end
 function ModularActivity:AlertsNotifyDayNight_LightEmittingItemAdded(item)
 	if self.IncludeDayNight then
 		self:AddDayNightLightItem(item)
 	end
 end
+function ModularActivity:AlertsNotifyMany_DeadAlert(alert)
+	--If the target is an actor, remove the alert from its humantable entry
+	if alert.target ~= nil then
+		for _, humantable in pairs(self.HumanTable) do
+			if humantable[alert.target.UniqueID] ~= nil then
+				humantable[alert.target.UniqueID].alert = false;
+			end
+		end
+	end
+	--Clear the target for any zombies that have this alert as a target
+	self:RemoveZombieTargetsForDeadAlert(alert);
+end
 
---SpawnsAndBehaviours
+--Spawns
+
+--Behaviours

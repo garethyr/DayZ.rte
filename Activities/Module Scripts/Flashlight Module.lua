@@ -5,9 +5,6 @@
 --CREATE FUNCTIONS--
 --------------------
 function ModularActivity:StartFlashlight()
-	for k, v in pairs(self.HumanTable.Players) do
-		v.actor:AddInventoryItem(CreateHDFirearm("Flashlight" , self.RTE));
-	end
 end
 --------------------
 --UPDATE FUNCTIONS--
@@ -47,6 +44,12 @@ end
 --------------------
 --ACTION FUNCTIONS--
 --------------------
+--Adds a flashlight to the actor's inventory if there's not one there already
+function ModularActivity:AddFlashlightForActor(actor)
+	if not actor:HasObject("Flashlight") then
+		actor:AddInventoryItem(CreateHDFirearm("Flashlight" , self.RTE));
+	end
+end
 --Add a new flashlight to the actor's inventory, flashlight battery starts off very low as punishment for losing it
 function ModularActivity:ReAddFlashlight(actor)
 	local newlight = CreateHDFirearm("Flashlight", self.RTE);

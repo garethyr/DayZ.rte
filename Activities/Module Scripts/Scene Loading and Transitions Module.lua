@@ -28,6 +28,8 @@ function ModularActivity:StartSceneLoading()
 	
 	--General multi-purpose variables
 	self.IsOutside = nil; --Used to determine if the current map is outside, i.e. true means daynight, weather, celestial bodies, no BG changes. False means none of those and permanent darkness (though daynight time still passes)
+	self.LeftMostSpawn = 0; --Number of pixels away from the left side of the map that zombies or npcs can spawn
+	self.RightMostSpawn = SceneMan.SceneWidth; --Number of pixels away from the right side of the map that zombies or npcs can spawn
 	
 	--Non-Transition Areas
 	self.NumberOfCivilianLootAreas = nil; --The number of civilian loot areas
@@ -80,7 +82,9 @@ function ModularActivity:StartSceneLoading()
 		
 		["GENERAL"] = {
 			["LoadData"] = function (self, data, loadtable) self:AddSimpleValueFromData(data, loadtable) end,
-			["IsOutside"] = function(self, val) self.IsOutside = val end
+			["IsOutside"] = function(self, val) self.IsOutside = val end,
+			["LeftMostSpawn"] = function(self, val) self.LeftMostSpawn = val end,
+			["RightMostSpawn"] = function(self, val) self.RightMostSpawn = val end
 		},
 		
 		["AREA NUMBERS"] = {
@@ -244,6 +248,17 @@ function ModularActivity:RunTransitions()
 	end
 end
 --------------------
+--DELETE FUNCTIONS--
+--------------------
+--Clean up main script tables for transitions
+function ModularActivity:DoCleanupForTransition()
+	self.HumanTable = {
+		Players = {},
+		NPCs = {}
+	};
+	self.ZombieTable = {};
+end
+--------------------
 --ACTION FUNCTIONS--
 --------------------
 --Check if a transitions area's constraints are met (also returns true if they're invalid)
@@ -353,16 +368,4 @@ function ModularActivity:LoadPlayersAfterTransition()
 		self:NotifySust_SetActorSust(newactor.UniqueID, humantable.sust);
 	end
 	self.TransitionHumanTable = {};
-end
-
---------------------
---DELETE FUNCTIONS--
---------------------
---Clean up main script tables for transitions
-function ModularActivity:DoCleanupForTransition()
-	self.HumanTable = {
-		Players = {},
-		NPCs = {}
-	};
-	self.ZombieTable = {};
 end

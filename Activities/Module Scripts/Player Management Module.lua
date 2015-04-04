@@ -54,6 +54,9 @@ function ModularActivity:CreateNewPlayerActor()
 	actor:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
 	actor:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
 	actor:AddInventoryItem(CreateTDExplosive("Flare" , self.RTE));
+	if self.IncludeFlashlight then
+		self:AddFlashlightForActor(actor);
+	end
 	
 	actor.Sharpness = 0;
 	actor.Team = self.PlayerTeam;

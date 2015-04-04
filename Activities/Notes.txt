@@ -1,6 +1,30 @@
+GENERAL ZOMBIE BEHAVIOURS
+
+Behaviours module needs to be notified when new alerts are added so zombies can decide if they should go after that alert. Spawns does too to know whether to spawn loot zombies and alert zombies
+When a zombie is going for a target, if it finds a better target it should change to that better one.
+A hierarchy of targets might be best, so it can only go up the hierarchy, not back down (unless it's gotten far enough to lose its target).
+1. Actor targets are king, when an actor is being chased, only a closer (or maybe more dangerous?) actor should be targeted instead. Danger is a pain to manage though
+2. Alerts - a zombie with a position target that sees an alert should go for that
+3. Position - pretty much used as a leftover from lost alerts or actors
+
+Note that all of these target types will have weights to them, so pos are set on creation, actor are based on distance and alert are based on alert relative strength (i.e. alert strength and distance)
+Swapping to a different target will only happen if that target's weight outweighs the current target's weight.
+	E.g. a zombie swarm attack would have very high weight position target, and throwing a flare might entrance the one it hits but no more. Likewise, they would only change to humans that got close enough to them
+	E.g. a player running from a zombie could throw a flare at the zombie and it may stop the zombie in its tracks. But if the zombie is close enough to the player still it would ignore it and keep going.
+Also note that the hierarchy stuff for alerts only applies to preexisting alerts, so newly made ones can ignore it and attract zombies with actor targets, since throwing a bright light at the zombie might screw it up
+	
+This could also allow for different types of zombies, e.g. bloodhound zombie which would have a bonus to weight for human targets, or forgetful zombie which would have a mallus to weight for all targets and would change targets more often
+
+To Do This:
+Need to refactor spawns and zombie table to add weights to zombie stuff
+Need to refactor behaviours so zombies losing actor targets is based on the weight of the target and when that weight is lower than min weight they lose the target
+Need to refactor behaviours so the position targets for zombies that lose actor or alert targets are very weak and can be easily usurped
+Need to add to behaviours a system so zombies will change targets for higher hierarchy, higher weight targets
+
+
 ALERT ZOMBIE SPAWNS AND BEHAVIOURS:
 
-Note: Need to allow for zombies with variable sprint distances OR must allow for flag to set them sprinting on start (probably latter) - could also spawn ones that are always sprinting instead?
+Note: Need to allow for zombies with flag to set the distance at which they start sprinting to a target. The actual sprinting will be taken care of by their ai script
 VL - Zombies within 500px sprint towards alert, spawns 1 walking zombie 750px away (sprints on reaching default sprint distance) with respawn time 1 minute
 L - Zombies on screen sprint towards alert, spawns 1 sprinting zombie 1000px away with respawn time 30 seconds
 M - Zombies within 1100px sprint towards alert, spawns 1 walking zombie 1500px away with respawn 10 seconds
@@ -52,5 +76,7 @@ The look through all actors in the above or below table to see if they should be
 	Either way, the actor is added to a table of actors using the stairs that also mentions whether they came from above or below
 	
 Actors using the stairs have their controllers disabled and are force moved - walked in the right direction and have some relevant vel added to them
+
+Also have to account for top side of stairs allowing actors to still walk by applying vel to them in the direction they're trying to walk
 
 Stairs can be both directions, that will be accounted for in the create part of the script that'll determine up and down x movements based on their name

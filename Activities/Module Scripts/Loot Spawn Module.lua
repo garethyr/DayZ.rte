@@ -132,7 +132,7 @@ end
 --Run the loot update functions, cleanup first then check for spawning
 function ModularActivity:DoLoot()
 	self:DoLootDespawns();
-	self:DoLootCleanup();
+	self:DoLootTableCleanup();
 	self:DoLootSpawning();
 end
 --------------------
@@ -149,7 +149,7 @@ function ModularActivity:DoLootDespawns()
 	end
 end
 --Remove loot from table when picked up or destroyed
-function ModularActivity:DoLootCleanup()
+function ModularActivity:DoLootTableCleanup()
 	local v;
 	--Iterate through each area section of the loot table
 	for areanum, tab in ipairs(self.LootTable) do

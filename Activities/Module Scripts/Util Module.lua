@@ -59,12 +59,16 @@ function ModularActivity:SortMaxAndMinArguments(dists)
 	local mindist = dists[1];
 	local maxdist = dists[2];
 	--If we have both max and min dists, make sure they're set right
-	if maxdist ~= nil then
+	if maxdist ~= nil and mindist ~= nil then
 		mindist = math.min(dists[1], dists[2]);
 		maxdist = math.max(dists[1], dists[2]);
 	--Otherwise, the mindist is already set so set the maxdist to a large number
-	else
+	elseif maxdist == nil then
 		maxdist = SceneMan.SceneWidth*10;
+	end
+	--If we enter no minimum distance, set it to 0
+	if mindist == nil then
+		mindist = 0;
 	end
 	return mindist, maxdist;
 end
@@ -86,7 +90,7 @@ function ModularActivity:NearestHuman(pos, ...) --Optional args: [1] - Minimum d
 	return target;
 end
 -----------------------------------------------------------------------------------------
--- Find whether or not there are humans less than maxdist away from the passed in pos
+-- Return true if there is a human more than mindist and, optionally, less than maxdist away from the passed in pos
 -----------------------------------------------------------------------------------------
 function ModularActivity:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
@@ -128,6 +132,13 @@ function ModularActivity:AddToNPCTable(actor)
 	self:RequestSustenance_AddToSustenanceTable(actor);
 end
 -- Add a zombie
-function ModularActivity:AddToZombieTable(actor, target, targettype, startdist)
-	self.ZombieTable[actor.UniqueID] = {actor = actor, target = {val = target, ttype = targettype, startdist = startdist}};
+function ModularActivity:AddToZombieTable(actor, targetval, targettype, spawner, startdist)
+	self.ZombieTable[actor.UniqueID] = {actor = actor, spawner = spawner, target = {val = targetval, ttype = targettype, startdist = startdist}};
+end
+-- Remove a zombie and, if it's spawned by an alert, remove it from the alert's zombie table
+function ModularActivity:RemoveFromZombieTable(actor)
+	if type(self.ZombieTable[actor.UniqueID].spawner) == "table" then --If the zombie was spawned by an alert, remove it from the alert's list of zombies
+		self.ZombieTable[actor.UniqueID].spawner.zombie.actors[actor.UniqueID] = nil;
+	end
+	self.ZombieTable[actor.UniqueID] = nil;
 end

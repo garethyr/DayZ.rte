@@ -11,6 +11,8 @@ Alerts = true
 
 ||GENERAL
 IsOutside = true
+LeftMostSpawn = 200
+RightMostSpawn = 1300
 
 ||AREA NUMBERS
 CivilianLootAreas = 33

@@ -178,7 +178,7 @@ function DayZ:DoExtraModuleInitialization()
 		self:DayNightNotifyMany_DayNightCycle(); --Notify so everything that needs to knows the time of day
 	end
 	if self.IncludeFlashlight then
-		self:StartFlashlight();
+		self:StartFlashlight(); --Does nothing, just to fill space so the order stays the same
 	end
 	if self.IncludeIcons then
 		self:StartIcons();
@@ -226,6 +226,7 @@ function DayZ:UpdateActivity()
 	if UInputMan:KeyPressed(3) then --Reset all
 		SceneMan:LoadScene("DayZ Loader", true);
 		for k, v in pairs (self.ZombieTable) do
+			self:RemoveFromZombieTable(v.actor)
 			v.actor.ToDelete = true;
 		end
 		for k, v in pairs(self.HumanTable) do
@@ -289,7 +290,7 @@ function DayZ:UpdateActivity()
 	--Clean tables, must be done first as it's important to prevent crashes
 	self:DoActorChecksAndCleanup();
 	
-	--Deal with food and drink, called every frame for dynamic decreasing by actions
+	--Deal with sustenance, called every frame for dynamic decreasing by actions
 	if self.IncludeSustenance then
 		self:DoSustenance();
 	end
@@ -321,6 +322,11 @@ function DayZ:UpdateActivity()
 	
 	if self.GeneralLagTimer:IsPastSimMS(100) then
 		
+		--Deal with loot actions
+		if self.IncludeLoot then
+			self:DoLoot();
+		end
+		
 		--Deal with zombie and NPC spawns
 		if self.IncludeSpawns then
 			self:DoSpawns();
@@ -329,11 +335,6 @@ function DayZ:UpdateActivity()
 		--Deal with zombie and NPC behaviours
 		if self.IncludeBehaviours then
 			self:DoBehaviours();
-		end
-		
-		--Deal with loot actions
-		if self.IncludeLoot then
-			self:DoLoot();
 		end
 			
 		self.GeneralLagTimer:Reset();
@@ -374,7 +375,7 @@ function DayZ:DoActorChecksAndCleanup()
 	for k, v in pairs(self.ZombieTable) do
 		if not MovableMan:IsActor(v.actor) then
 			print ("Removing dead zombie from table in Main Script");
-			self.ZombieTable[k] = nil;
+			self:RemoveFromZombieTable(v.actor);
 			self.ZombiesKilled = self.ZombiesKilled + 1;
 		end
 	end

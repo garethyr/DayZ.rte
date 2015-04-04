@@ -76,7 +76,7 @@ function ModularActivity:IconsCleanupMeters()
 	end	
 end
 --Remove a given set of meter
-function ModularActivity:IconsRemoveMeter(ID)
+function ModularActivity:IconsRemoveMeters(ID)
 	for k, v in pairs(self.MeterTable[ID]) do
 		if type(k) == "number" then
 			v.ToDelete = true;

@@ -1,12 +1,12 @@
 -----------------------------------------------------------------------------------------
--- Stuff for alerting zombies and NPCs
+-- Stuff for alerting players, NPCs and zombies
 -----------------------------------------------------------------------------------------
 function ModularActivity:StartAlerts()
 	-------------------
 	--ALERT CONSTANTS--
 	-------------------
 	--The alert value at which to change activity to alerts
-	self.AlertValue = 5000; -- default 10000
+	self.AlertValue = 5000; -- default 5000
 	--The base value for alert lifetimes, in MS, only applies to alerts that aren't being renewed
 	self.AlertBaseLifetime = 5000;
 	--The base value for alert strengths, technically an arbitrary number but a lot is balanced to it
@@ -17,13 +17,20 @@ function ModularActivity:StartAlerts()
 	self.ActorActivityRemoveTime = 5000;
 	--The rate at which activity is removed from actors, removed every MS
 	self.ActorActivityRemoveSpeed = 10;
+	
 	--The number to divide the alert strength by when determining if actors are close enough to react. Greater number means less reactive.
 	self.AlertAwareness = 10;
-	--Not a very intuitive number, the vector magnitude difference at which actors will target alerts over other actors for spawning, etc. So a bigger number will mean they give more priority to alerts.
-	--	If the number is big enough, they'll care more about alerts than actors, etc.
-	self.AlertPriorityFactor = 50;
+	--Not a very intuitive number, the vector magnitude difference at which actors will target alerts over other actors for spawning, etc.
+	--A bigger number will mean more priority given to alerts, if the number is big enough, they'll care more about alerts than actors, etc.
+	self.AlertPriorityFactor = 50; --TODO review the need and use of this, should probably be in behaviours???
+	
 	--The amount of time it takes for alert zombies to respawn.
 	self.AlertZombieSpawnInterval = self:AlertsRequestSpawns_GetZombieSpawnInterval()/3;
+	--The number of alert zombies a very high alert will spawn, used as a base for calculation of other strength alerts
+	self.VeryHighAlertNumberOfZombies = 3;
+	--The approximate distance at which to spawn very zombies for very low strength alerts, used as a base for calculation of other distances
+	self.VeryLowAlertZombieSpawnDistance = self:AlertsRequestSpawns_GetZombieMinSpawnDistance();
+	
 	--The default alert value for junk items when they hit the ground, each item can have a different value
 	self.JunkNoise = self.AlertValue*0.5;
 	--The alert value for flashlights, not relevant if they're not included
@@ -66,7 +73,7 @@ function ModularActivity:StartAlerts()
 	--pos = the position, strength = the maximum of the alert's light and sound strengths, target = the actor the alert's on if there is one,
 	--light, sound = {strength = light/sound alert strength, savedstrength = stores for the alert type when it's deactivated by map effects,
 	--					timer = light/sound killtimer, parent = the creator of this alert type}
-	--alertZombie = {actor = the alert zombie on it if there is one, timer = the timer for respawning the alert zombie, counts down from when it dies}
+	--zombie = {actors = {table of the alert zombie(s) on it if there are any}, timer = the timer for respawning the alert zombies, counts down from when any are dead}
 	self.AlertTable = {};
 	
 	--A table of all thrown items that create alert. Key is item.UniqueID. Cuts down on lag
@@ -120,17 +127,11 @@ function ModularActivity:AddAlert(pos, target, light, sound)
 		pos = Vector(pos.X, pos.Y), strength = self:GetAlertStrength(light.strength, sound.strength), target = target,
 		light = {strength = light.strength, savedstrength = 0, timer = Timer(), parent = light.parent},
 		sound = {strength = sound.strength, savedstrength = 0, timer = Timer(), parent = sound.parent},
-		zombie = {actor = false, timer = Timer()}
+		zombie = {actors = {}, timer = Timer()}
 	};
+	self.AlertTable[key].zombie.timer.ElapsedSimTimeMS = self:GetZombieRespawnIntervalForAlert(self.AlertTable[key]) - 500; --Set the alert's zombie timer so it spawns zombies soon
 	--Set the target's alert in the human table
-	if target ~= nil then
-		for _, humantable in pairs(self.HumanTable) do
-			if humantable[target.UniqueID] ~= nil then
-				humantable[target.UniqueID].alert = alert;
-				break;
-			end
-		end
-	end
+	self:AlertsNotifyMany_NewAlertAdded(self.AlertTable[key]);
 end
 --Add a thrown item based on parameter values
 function ModularActivity:AddAlertItem(item, ismobile, light, sound)
@@ -140,6 +141,7 @@ end
 ---------------------
 --UTILITY FUNCTIONS--
 ---------------------
+--GENERAL UTILITY FUNCTIONS--
 --Merge two alerts and remove the second (fromalert), does not check if the alerts are be mergeable
 function ModularActivity:MergeAlerts(toalert, fromalert, fromindex)
 	print ("MERGING ALERT AT "..tostring(fromalert.pos).." INTO ALERT AT "..tostring(toalert.pos));
@@ -147,7 +149,7 @@ function ModularActivity:MergeAlerts(toalert, fromalert, fromindex)
 	if fromalert.light.strength > 0 then
 		toalert.light.parent = fromalert.light.parent --If both alerts are nil this will stay nil, otherwise the alert's parent will be the current light item
 		toalert.light.timer:Reset();
-		--If the alert has no target, make its strength the maximum of the strengths, otherwise strength will change over time from DoAlertCreations function
+		--If the alert has no target, make its strength the maximum of the strengths, otherwise strength will change over time from DoAlertCreations
 		if toalert.target == nil then
 			toalert.light.strength = math.max(toalert.light.strength, fromalert.light.strength);
 		end
@@ -156,7 +158,7 @@ function ModularActivity:MergeAlerts(toalert, fromalert, fromindex)
 	if fromalert.sound.strength > 0 then
 		toalert.sound.parent = fromalert.sound.parent --If both alerts are nil this will stay nil, otherwise the alert's parent will be the current sound item
 		toalert.sound.timer:Reset();
-		--If the alert has no target, make its strength the maximum of the strengths, otherwise strength will change over time from DoAlertCreations function
+		--If the alert has no target, make its strength the maximum of the strengths, otherwise strength will change over time from DoAlertCreations
 		if toalert.target == nil then
 			toalert.sound.strength = math.max(toalert.sound.strength, fromalert.sound.strength);
 		end
@@ -184,15 +186,16 @@ end
 function ModularActivity:GetWeaponAlertStrength(soundlevel)
 	return math.min(self.AlertStrengthLimit, self.AlertValue*soundlevel/self.WeaponAlertValues[self.WeaponAlertStrengthComparator]);
 end
-
+--Return the max distance at which an alert of certain strength can be seen
 function ModularActivity:AlertVisibilityDistance(alertstrength)
 	return alertstrength/self.AlertAwareness;
 end
---TODO make this also take a maxdist so alerts can trigger things like zombie spawns by being visible within the max spawndist???
---Return true if there are any visible alerts more than mindist away from the visible position, based on awarenessmod*self:AlertDistance
-function ModularActivity:CheckForVisibleAlerts(pos, awarenessmod, mindist)
-	local dist, maxdist, visdist;
-	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
+--VISIBLE ALERT UTILITY FUNCTIONS--
+--Return true if there are any visible alerts more than mindist and less than maxdist away from pos
+--Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
+function ModularActivity:CheckForVisibleAlerts(pos, awarenessmod, ...)
+	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
+	local dist, visdist;
 	
 	for _, alert in pairs(self.AlertTable) do
 		dist = SceneMan:ShortestDistance(pos, alert.pos, true).Magnitude;
@@ -203,9 +206,11 @@ function ModularActivity:CheckForVisibleAlerts(pos, awarenessmod, mindist)
 	end
 	return false;
 end
-function ModularActivity:NearestVisibleAlert(pos, awarenessmod, mindist)
-	local dist, maxdist, visdist, target = nil;
-	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
+--Return the nearest visible alert more than mindist and less than maxdist away from pos
+--Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
+function ModularActivity:NearestVisibleAlert(pos, awarenessmod, ...)
+	mindist, maxdist = self:SortMaxAndMinArguments(arg);
+	local dist, visdist, target = nil;
 	
 	for _, alert in pairs(self.AlertTable) do
 		dist = SceneMan:ShortestDistance(pos, alert.pos, true).Magnitude;
@@ -217,9 +222,11 @@ function ModularActivity:NearestVisibleAlert(pos, awarenessmod, mindist)
 	end
 	return target;
 end
-function ModularActivity:VisibleAlerts(pos, awarenessmod, mindist)
-	local dist, maxdist, visdist, alerts = {};
-	mindist, maxdist = self:SortMaxAndMinArguments({mindist, maxdist});
+--Return all visible alerts more than mindist and less than maxdist away from pos
+--Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
+function ModularActivity:AllVisibleAlerts(pos, awarenessmod, ...)
+	mindist, maxdist = self:SortMaxAndMinArguments(arg);
+	local dist, visdist, alerts = {};
 	
 	for _, alert in pairs(self.AlertTable) do
 		dist = SceneMan:ShortestDistance(pos, alert.pos, true).Magnitude;
@@ -229,6 +236,49 @@ function ModularActivity:VisibleAlerts(pos, awarenessmod, mindist)
 		end
 	end
 	return alerts;
+end
+--ALERT ZOMBIE UTILITY FUNCTIONS--
+--Returns true if the alert has 0 zombies or less zombies than it should for its strength
+function ModularActivity:AlertIsMissingZombies(alert)
+	--Check for an empty table
+	if next(alert.zombie.actors) == nil then
+		return true;
+	--Check for full complement of zombies
+	else
+		local n = 0;
+		for _, zombie in pairs(alert.zombie.actors) do
+			n = n+1;
+		end
+		if n < self:GetNumberOfZombiesForAlert(alert) then
+			return true;
+		end
+	end
+	return false;
+end
+--Returns the number of zombies an alert should spawn based on its strength
+function ModularActivity:GetNumberOfZombiesForAlert(alert)
+	local alertstrength = self:GetAlertStrength(alert.light.strength, alert.sound.strength);
+	if (alertstrength <= self.WeaponAlertValues.M) then
+		return 1;
+	end
+	return math.floor(self.VeryHighAlertNumberOfZombies*alertstrength/(self.WeaponAlertValues.VH - self.WeaponAlertValues.VL)); --Subtract VL alert value from denominator to give leeway
+end
+--Returns a distance used to determine roughly where to spawn the zombie, which is then safety checked in spawns
+function ModularActivity:GetZombieSpawnDistanceOffsetForAlert(alert)
+	local alertstrength = self:GetAlertStrength(alert.light.strength, alert.sound.strength);
+	local i = 0;
+	if alertstrength >= self.WeaponAlertValues.M then
+		i = 2;
+	elseif alertstrength >= self.WeaponAlertValues.L then
+		i = 1;
+	end
+	return self.VeryLowAlertZombieSpawnDistance + self.VeryLowAlertZombieSpawnDistance*0.5*i;
+end
+--Return the respawn interval for the given alert
+function ModularActivity:GetZombieRespawnIntervalForAlert(alert)
+	--TODO flesh this stuff out through discussion with uber, 
+	--	nicer to use a mathematical formula than arbitrary numbers found in Notes.txt
+	return self.AlertZombieSpawnInterval;
 end
 --------------------
 --UPDATE FUNCTIONS--
@@ -282,20 +332,7 @@ function ModularActivity:DoAlertCleanup()
 		--Remove alert because no strength left
 		if v.light.strength <= 0 and v.light.savedstrength <= 0 and v.sound.strength <= 0 and v.sound.savedstrength <= 0 then
 			--If the alert is on an actor, set him to no longer have an alert
-			if v.target ~= nil then
-				--Check Players and NPCs
-				for _, humantable in pairs(self.HumanTable) do
-					if humantable[v.target.UniqueID] ~= nil then
-						humantable[v.target.UniqueID].alert = false;
-					end
-				end
-				for _, zombie in pairs(self.ZombieTable) do
-					if zombie.targettype == "alert" and zombie.target.val == v then
-						zombie.targettype = "pos";
-						zombie.target.val = v.pos;
-					end
-				end
-			end
+			self:AlertsNotifyMany_DeadAlert(v);
 			canremove = false;
 			--Remove the alert
 			self.AlertTable[k] = nil;
@@ -505,7 +542,7 @@ end
 function ModularActivity:ManageAlertPoints()
 	--General update loop
 	for k, v in pairs(self.AlertTable) do
-		--Reset lifetimer on emitting items
+		--Reset lifetimer on emitting items so the alert won't expire and have its strength set to 0
 		for _, atype in pairs(self.AlertTypes) do
 			if MovableMan:ValidMO(v[atype].parent) then
 				v[atype].timer:Reset();
@@ -514,26 +551,34 @@ function ModularActivity:ManageAlertPoints()
 		end
 	
 		--Merge nearby alerts
-		for k2, v2 in pairs(self.AlertTable) do --TODO alert merge range should depend on the number of alerts in total, more alerts means bigger range
+		--[[for k2, v2 in pairs(self.AlertTable) do --TODO alert merge range should depend on the number of alerts in total, more alerts means bigger range
 			if k ~= k2 and self:AlertsHaveSameTarget(v, v2) and SceneMan:ShortestDistance(v.pos, v2.pos, false).Magnitude < 100 then
 				self:MergeAlerts(v, v2, k2);
 			end
-		end
+		end--]]
 		
-		--If the alert doesn't have a zombie, add one if the alert's zombie timer's ready and there are no humans too nearby
-		if self.IncludeSpawns and v.zombie.actor == nil and v.zombie.timer:IsPastSimMS(self.AlertZombieSpawnInterval) then
-			if self:CheckForNearbyHumans(v.pos, 100) == false then --TODO remove the magic number
-				v.zombie.actor = self:AlertsRequestSpawns_SpawnAlertZombie(v.pos);
-				--Note, if spawns isn't included, the request will return false and the alert will never try to add more zombies
+		--If the alert doesn't have zombies and its alert's zombie respawn timer is ready, add them until 
+		--Note that cleaning the alert's zombie table is done in utilities, as it is handled when the zombie dies and is removed from the table
+		if self.IncludeSpawns and self:AlertIsMissingZombies(v) and v.zombie.timer:IsPastSimMS(self:GetZombieRespawnIntervalForAlert(alert)) then
+			local curzombienum = 0; --Used to hold the current number of zombies this alert has
+			for _, __ in pairs(v.zombie.actors) do
+				curzombienum = curzombienum+1;
 			end
-		--If the alert has a zombie but it's dead, remove it and reset the alert's spawn timer
-		elseif type(v.zombie.actor) == "userdata" and not MovableMan:IsActor(v.zombie.actor) then
+			print ("check for alert spawning zombies, alert currently has "..tostring(curzombienum).." out of "..tostring(self:GetNumberOfZombiesForAlert(v)).." zombies");
+			--If the alert doesn't have its full set of zombies, add them in
+			if self:GetNumberOfZombiesForAlert(v) - curzombienum > 0 then
+				for i = 1, self:GetNumberOfZombiesForAlert(v) - curzombienum do
+					local zombie = self:AlertsRequestSpawns_SpawnAlertZombie(v, self:GetZombieSpawnDistanceOffsetForAlert(v));
+					v.zombie.actors[zombie.UniqueID] = zombie;
+				end
+			end
 			v.zombie.timer:Reset();
-			v.zombie.actor = nil
+		--If there are no missing zombies for the alert, keep the timer at 0
+		elseif self.IncludeSpawns and not self:AlertIsMissingZombies(v) then
+			v.zombie.timer:Reset();
 		end
-	end			
-end				
-				
+	end
+end
 --Add objective points for alert positions
 function ModularActivity:MakeAlertArrows()
 	for _, players in pairs(self.HumanTable.Players) do

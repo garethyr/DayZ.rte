@@ -45,19 +45,20 @@
 ----------------------------------------------------------------------
 • Fix bug with setting day/night longer than 60 seconds
 • Make custom zombie AI (bleh)
-• Fix alert bugs where they place late or in strange locations (alerts may be showing up delayed?)
-• Completely properly fix all crashes on death
-• Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
+• Random events? (NPCs, bandit ambush, zombie hordes, etc?)
+• Saving and loading games
+• Add scudding clouds (will go in weather module as they'll be affected by that)
 • Allow "Drop Ammo" pie menu icon to work with any amount of ammo, not just ammo over a minimum of a full load (you come across a weapon you already have; take ammo instead of a slightly "fuller" gun) Right now you can only take ammo if you have more than the default full magazine/load for each weapon.
 			PLEASE CLARIFY - If I'm understanding right, you want to be able to pick up a gun, unload it and have that ammo as a separate item? What's happening now?
 			NEVERMIND REQUEST FOR CLARIFICATION - I get what you're saying. I'm thinking I may rework the ammo system a bit so it's less of a mess and doesn't require you to have the weapon and ammo next to each other. I'll also make ammo pickup/drop easier.
-• Add scudding clouds (will go in weather module as they'll be affected by that)
+• Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
+
+• Fix alert bugs where they place late or in strange locations (alerts may be showing up delayed?)
+• Completely properly fix all crashes on death
 • BUGS - Light items being held without being activated die after a while. Using ammo adds noise (perhaps equivalent to the gun it's for??)
 • Bugs found while playtesting - 	Line 200 of alerts: if dist >= mindist and dist <= maxdist and dist <= visdist then
 									Line 75 of Sustenance: v[susttype] = v[susttype] + self.SustItems[itemgroup][ahuman.EquippedItem.PresetName];
-• Saving and loading games
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
-• Random events? (NPCs, bandit ambush, zombie hordes, etc?)
 
 
 ----------------------------------------------------------------------
@@ -73,7 +74,7 @@
 • Added separate loot areas and loot sets for hospital and military areas
 • Reworked transition scripts for neatness and to allow comments
 • Reworked screen text display scripts for better access and handling
-• Reworked spawning so it can work dynamically based on scene areas
+• Reworked player spawning so it can work dynamically based on scene areas
 • Completely fixed reworked spawning so everything about the actor is saved on scene transition
 • Smoothed out day/night transition so nights grow gradually more dark then less dark over time
 • Reworked item scripts to be less messy and use a unified system for parent checking and effects that reduces duplicated code and clutter

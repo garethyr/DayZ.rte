@@ -1,9 +1,11 @@
---Change the item's sharpness, for Chernarus, when thrown
+--Call relevant ModularActivity (DayZ) function when the item hits the ground
 function Create(self)
-	self.Sharpness = 0;
 end
 function Update(self)
-	if self.Sharpness == 0 and not self:IsAttached() and self:IsActivated() and self:GetAltitude(300, 5) <= 10 then
-		self.Sharpness = 1;
+end
+function Destroy(self)
+	--If we're running a ModularActivity (DayZ) then let it know the item is ready to become an alert
+	if ModularActivity ~= nil and ModularActivity.IncludeAlerts and ModularActivity.AlertItemTable[self.UniqueID] ~= nil then
+		ModularActivity:AddAlertFromAlertItem(self);
 	end
 end

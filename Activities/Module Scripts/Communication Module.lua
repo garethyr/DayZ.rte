@@ -35,19 +35,19 @@ function ModularActivity:RequestIcons_RemoveAllMeters()
 end
 function ModularActivity:RequestAlerts_CheckForVisibleAlerts(pos, awarenessmod, ...) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
-		return self:CheckForVisibleAlerts(pos, awarenessmod, ...);
+		return self:CheckForVisibleAlerts(pos, awarenessmod, select(1, ...));
 	end
 	return false;
 end
 function ModularActivity:RequestAlerts_NearestVisibleAlert(pos, awarenessmod, ...) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
-		return self:NearestVisibleAlert(pos, awarenessmod, ...);
+		return self:NearestVisibleAlert(pos, awarenessmod, select(1, ...));
 	end
 	return nil;
 end
 function ModularActivity:RequestAlerts_AllVisibleAlerts(pos, awarenessmod, ...) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
-		return self:VisibleAlerts(pos, awarenessmod, mindist);
+		return self:AllVisibleAlerts(pos, awarenessmod, select(1, ...));
 	end
 	return {};
 end
@@ -210,6 +210,7 @@ function ModularActivity:AlertsNotifyMany_NewAlertAdded(alert)
 		for _, humantable in pairs(self.HumanTable) do
 			if humantable[alert.target.UniqueID] ~= nil then
 				humantable[alert.target.UniqueID].alert = alert;
+				print ("Human target for alert updated so it contains a reference to the alert")
 				break;
 			end
 		end
@@ -233,8 +234,10 @@ function ModularActivity:AlertsNotifyMany_DeadAlert(alert)
 			end
 		end
 	end
-	--Clear the target for any zombies that have this alert as a target
-	self:RemoveZombieTargetsForDeadAlert(alert);
+	if self.IncludeBehaviours then
+		--Clear the target for any zombies that have this alert as a target
+		self:RemoveZombieTargetsForDeadAlert(alert);
+	end
 end
 
 --Spawns

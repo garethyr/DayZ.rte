@@ -11,7 +11,8 @@ function ModularActivity:StartBehaviours()
 	self.ZombieMaxTargetDistance = self.ZombieSpawnMinDistance + 100;	--The distance a target needs to be within of a zombie for it to stop wandering and move at the target, setting it to less than min spawn distance may do strange things for alert zombies
 	self.ZombieMaxTargetWeight = 1000; --Arbitrary max target weight for zombies, that target weights are balanced to
 	
-	self.ZombieTargetPriorityTable = {actor = 1, alert = 2, pos = 3}; --Zombie target types in order of importance (zombies can only change to lower number targets naturally)
+	self.ZombieTargetPriorityTable = {human = 1, alert = 2, pos = 3}; --Zombie target types in order of importance (zombies can only change to lower number targets naturally)
+	self.ZombieLowestPriorityTargetType = "pos"; --The lowest priority type (i.e. the one with the highest number), must be updated manually for clearing targets to work properly
 	---------------------------
 	--NPC BEHAVIOUR CONSTANTS--
 	---------------------------
@@ -39,33 +40,38 @@ function ModularActivity:CheckForNewZombieTargets()
 		--Get all the possible new targets
 		local possibletargets = {};
 		possibletargets.human = self:CheckForNearbyHumans(zombie.actor.Pos, 0, self.ZombieMaxTargetDistance) and self:NearestHuman(zombie.actor.Pos, 0, self.ZombieMaxTargetDistance) or nil;
-		--If the target is not higher priority than alerts, look for a potential alert target
+		--If the target is not higher priority (i.e. lower number) than alerts, look for a potential alert target
 		if origpriority >= self.ZombieTargetPriorityTable["alert"] and self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier, 0, self.ZombieMaxTargetDistance) then
 			possibletargets.alert = self:RequestAlerts_NearestVisibleAlert(zombie.actor.Pos, self.ZombieAlertAwarenessModifier, 0, self.ZombieMaxTargetDistance);
 		end
 		
 		--Iterate through all possible targets and get the most weighted one, as long as it's lower priority than the original target
 		for targettype, priority in pairs(self.ZombieTargetPriorityTable) do
-			--Make sure the new target we're checking isn't the current target
-			local notcurrenttarget = true;
-			if targettype == origtargettype then
-				local origpos = self:GetZombieTargetPos(zombie.target.val, origtargettype);
-				local newpos = self:GetZombieTargetPos(possibletargets[targettype], targettype);
-				if origpos.X == newpos.X and origpos.Y == newpos.Y then
-					notcurrentarget = false;
+			--Make sure the target is actually possible
+			if possibletargets[targettype] ~= nil then
+				--Make sure the new target we're checking isn't the current target
+				local notcurrenttarget = true;
+				if targettype == origtargettype then
+					local origpos = self:GetZombieTargetPos(zombie.target.val, origtargettype);
+					local newpos = self:GetZombieTargetPos(possibletargets[targettype], targettype);
+					--Note: It's fine to not worry about very close by targets since humans will move around and change and alerts should merge when closeby
+					--if SceneMan:ShortestDistance(origpos, newpos, true).Magnitude < 10 then
+					if origpos.X == newpos.X and origpos.Y == newpos.Y then
+						notcurrenttarget = false;
+					end
 				end
-			end
-			--If it isn't the original target, it can be checked to see if it should be used as the new target
-			if notcurrenttarget then
-				--Accept if its weight is higher than the current target and its priority higher than (<=) the original
-				targetweight = self:GetWeightOfTargetForZombie(zombie, possibletargets[targettype]);
-				if targetweight > curweight and priority <= origpriority then
-					curtargettype = targettype;
-					curweight = targetweight;
-					curpriority = priority; --Not actually used TODO Remove???
-					newtarget = possibletargets[targettype] ~= nil and possibletargets[targettype] or false; --Safety check
-				else
-					print (string.format("Zombie at %s DID NOT change target from %s with weight %d and priority %d, to %s with weight %d and priority %d", tostring(zombie.actor.Pos), origtargettype, origweight, origpriority, targettype, targetweight, priority));
+				--If it isn't the original target, it can be checked to see if it should be used as the new target
+				if notcurrenttarget then
+					--Accept if its weight is higher than the current target and its priority higher than (<=) the original
+					targetweight = self:GetWeightOfTargetForZombie(zombie, possibletargets[targettype], targettype);
+					if targetweight > curweight and priority <= origpriority then
+						curtargettype = targettype;
+						curweight = targetweight;
+						curpriority = priority; --Not actually used TODO Remove???
+						newtarget = possibletargets[targettype] ~= nil and possibletargets[targettype] or false; --Safety check
+					else
+						print (string.format("Zombie at %s DID NOT change target from %s with weight %d and priority %d, to %s with weight %d and priority %d", tostring(zombie.actor.Pos), origtargettype, origweight, origpriority, targettype, targetweight, priority));
+					end
 				end
 			end
 		end
@@ -87,14 +93,14 @@ function ModularActivity:ManageZombieTargets()
 				zombie.target.startdist = math.max(self.ZombieDespawnDistance, math.min(curdist, zombie.target.startdist));
 				if curdist > zombie.target.startdist*1.1 then --TODO remove this magic number
 					print ("Remove zombie actor target because curdist is "..tostring(curdist).." out of "..tostring(zombie.target.startdist*1.5));
-					self:ClearZombieTarget(zombie);
+					self:RemoveZombieTarget(zombie);
 				end
 			--If we have a position target and the zombie's close to it, lose the target so the zombie can idle
 			elseif zombie.target.ttype == "pos" then
 				local curdist = SceneMan:ShortestDistance(zombie.target.val.pos, zombie.actor.Pos, true).Magnitude;
 				if curdist <= self.ZombieIdleDistance then
 					print ("Remove zombie pos target because curdist is "..tostring(curdist).." less than "..tostring(self.ZombieIdleDistance));
-					self:ClearZombieTarget(zombie);
+					self:RemoveZombieTarget(zombie);
 				end
 			--If we have an alert target, update its position to account for any movement it may have, and if the zombie is close, make them wander around it
 			elseif zombie.target.ttype == "alert" then
@@ -107,11 +113,11 @@ function ModularActivity:ManageZombieTargets()
 					local curdist = SceneMan:ShortestDistance(zombie.target.val.pos, zombie.actor.Pos, true).Magnitude;
 					if curdist <= self.ZombieIdleDistance*2 then
 						local offsetpos = math.random(0, self.ZombieIdleDistance);
-						if zombie.actor.Pos.X > zombie.target.val.pos then
+						if zombie.actor.Pos.X > zombie.target.val.pos.X then
 							offsetpos = -offsetpos;
 						end
 						zombie.actor:ClearAIWaypoints();
-						zombie.actor:AddAISceneWaypoint(SceneMan:MovePointToGround(Vector(zombie.target.val.pos.X + offsetpos, zombie.target.val.pos.Y)));
+						zombie.actor:AddAISceneWaypoint(SceneMan:MovePointToGround(Vector(zombie.target.val.pos.X + offsetpos, zombie.target.val.pos.Y), 10, 5));
 						print ("Zombie with alert target at "..tostring(zombie.target.val.pos).." idling around target");
 					end
 				end
@@ -136,17 +142,17 @@ end
 function ModularActivity:RemoveZombieTargetsForDeadActor(ID)
 	for zombieID, zombie in pairs(self.ZombieTable) do
 		if zombie.target.ttype == "human" and zombie.target.val.UniqueID == ID then
-			self:SetZombieTarget(zombie.actor, {pos = zombie.actor:GetLastAIWaypoint(), weight = 0}, "pos", zombie.spawner);
-			print (string.format("Zombie at %s with HUMAN target of %d given lightweight position target at %s", (zombie.actor.Pos), ID, tostring(zombie.actor:GetLastAIWaypoint())));
+			self:ClearZombieTarget(zombie, zombie.actor:GetLastAIWaypoint());
+			print (string.format("Zombie at %s with HUMAN target of %d given 0 strength position target at %s", (zombie.actor.Pos), ID, tostring(zombie.actor:GetLastAIWaypoint())));
 		end
 	end
 end
 --Set a new position target with 0 weight for any zombies that are targeting the dead alert
-function ModularActivity:RemoveZombieTargetsForDeadAlert(alert) --TODO maybe make this kill off zombies spawned for this alert???
+function ModularActivity:RemoveZombieTargetsForDeadAlert(alert)
 	for zombieID, zombie in pairs(self.ZombieTable) do
 		if zombie.target.ttype == "alert" and zombie.target.val.pos == alert.pos then
-			self:SetZombieTarget(zombie.actor, {pos = zombie.actor:GetLastAIWaypoint(), weight = 0}, "pos", zombie.spawner);
-			print (string.format("Zombie at %s with ALERT target of %d given lightweight position target at %s", tostring(zombie.actor.Pos), ID, tostring(zombie.actor:GetLastAIWaypoint())));
+			self:ClearZombieTarget(zombie, zombie.actor:GetLastAIWaypoint());
+			print (string.format("Zombie at %s with ALERT target of at pos %s given 0 strength position target at %s", tostring(zombie.actor.Pos), alert.pos, tostring(zombie.actor:GetLastAIWaypoint())));
 		end
 	end
 end
@@ -155,46 +161,63 @@ end
 --------------------
 --Set the alert as the target for any zombies whose current target has lower weight, priority is completely ignored
 function ModularActivity:ManageZombieBehaviourForNewAlert(alert)
+	-- print ("managing zombie behaviours for new alert")
+	-- ConsoleMan:SaveAllText("output")
 	for _, zombie in pairs(self.ZombieTable) do
+		-- print ("zombie table actor is "..tostring(zombie.actor).." with id "..tostring(zombie.actor.UniqueID).." and an "..zombie.target.ttype.." target");
+	-- ConsoleMan:SaveAllText("output")
 		local curweight = self:GetCurrentTargetWeightForZombie(zombie);
-		local alertweight = self:GetWeightOfTargetForZombie(zombie, alert);
+		-- print("current target weight is "..tostring(curweight));
+	-- ConsoleMan:SaveAllText("output")
+		local alertweight = self:GetWeightOfTargetForZombie(zombie, alert, "alert");
+		-- print("alert target weight is "..tostring(alertweight));
+	-- ConsoleMan:SaveAllText("output")
 		if alertweight > curweight then
 			print (string.format("NEW ALERT caused zombie at %s to change target from %s with weight %d, to %s with weight %d", zombie.actor.Pos, zombie.target.ttype, curweight, "alert", alertweight));
+			-- ConsoleMan:SaveAllText("output")
 			self:SetZombieTarget(zombie.actor, alert, "alert", zombie.spawner);
 		end
 	end
 end
 --Return the weight of the zombie's current target
 function ModularActivity:GetCurrentTargetWeightForZombie(zombie)
-	print ("Getting weight of current target for zombie at "..tostring(zombie.actor.Pos));
+	--print ("Getting weight of current target for zombie at "..tostring(zombie.actor.Pos));
 	if zombie.target.ttype == "pos" then
 		return zombie.target.val.weight;
 	else
-		return self:GetWeightOfTargetForZombie(zombie, zombie.target.val);
+		return self:GetWeightOfTargetForZombie(zombie, zombie.target.val, zombie.target.ttype);
 	end
 end
---Return the weight of the inputted target for the zombie
-	--TODO determine whether or not target here should be target.val or not and adjust code accordingly
-function ModularActivity:GetWeightOfTargetForZombie(zombie, target)
+--Return the weight of the inputted target (given target type) for the zombie
+function ModularActivity:GetWeightOfTargetForZombie(zombie, target, targettype)
 	local pos = zombie.actor.Pos;
 	local dist, weight = 0, 0;
-	print ("Checking weight of target for zombie, for target "..tostring(target));
+	--print ("Checking weight of target for zombie, for target "..tostring(target));
 	--Note that the weight of any target is 0 at or beyond max target distance, and can't be larger than max target weight
 	if target ~= nil and target ~= false  then
 		--Human target weight is based entirely on distance
-		if target.ttype == "human" then
-			dist = SceneMan:ShortestDistance(pos, target.val.Pos, true).Magnitude;
-			weight = self.ZombieMaxTargetWeight*(self.ZombieMaxTargetDistance - dist)/self.ZombieMaxTargetDistance;
-			print ("Weight for ACTOR target with distance "..tostring(dist).." = "..tostring(weight));
+		if targettype == "human" then
+			dist = SceneMan:ShortestDistance(pos, target.Pos, true).Magnitude;
+			weight = math.max(0, self.ZombieMaxTargetWeight*(self.ZombieMaxTargetDistance - dist)/self.ZombieMaxTargetDistance);
+			--print ("Weight for ACTOR target with distance "..tostring(dist).." = "..tostring(weight));
 		--Alert target weight is based on the overall zombie awareness modifier and the strength of the alert (compared to the overall base alert strength)
-		elseif target.ttype == "alert" then
+		elseif targettype == "alert" then
 			local alertcoefficient = self.ZombieAlertAwarenessModifier*self:RequestAlerts_GetAlertCurrentStrength(target)/self:RequestAlerts_GetBaseAlertStrength();
-			dist = SceneMan:ShortestDistance(pos, target.val.pos, true).Magnitude;
-			weight = self.ZombieMaxTargetWeight*alertcoefficient*(self.ZombieMaxTargetDistance - dist)/self.ZombieMaxTargetDistance;
-			print ("Weight for ALERT target with distance "..tostring(dist).." and coefficient "..tostring(alertcoefficient).." = "..tostring(weight));
+			dist = SceneMan:ShortestDistance(pos, target.pos, true).Magnitude;
+			weight = math.max(0, self.ZombieMaxTargetWeight*alertcoefficient*(self.ZombieMaxTargetDistance - dist)/self.ZombieMaxTargetDistance);
+			--print ("Weight for ALERT target with distance "..tostring(dist).." and coefficient "..tostring(alertcoefficient).." = "..tostring(weight));
+		--NOTE: Should not have a pos target passed into this method, but it is handled and warned about for safety
+		elseif targettype == "pos" then
+			print ("WARNING: Position target passed into function GetWeightOfTargetForZombie - This shouldn't happen")
+			weight = target.weight ~= nil and target.weight or 0;
 		end
 	end
 	return math.min(weight, self.ZombieMaxTargetWeight); --Make sure weight isn't over max weight
+end
+--Set the zombie's target as lowest priority target type with weight 0
+function ModularActivity:ClearZombieTarget(zombie, pos)
+	self:SetZombieTarget(zombie.actor, {pos = pos, weight = 0}, self.ZombieLowestPriorityTargetType, zombie.spawner);
+	print ("Cleared zombie target, zombie table target entry is now "..tostring(self.ZombieTable[zombie.actor.UniqueID].target.val.pos));
 end
 
 --VVVVVVVVVVVVVVVVVVVVVVVVV--
@@ -204,7 +227,8 @@ end
 -----------------------------------------------------------------------------------------
 -- A convenient function for finding the closest target, also returns
 -----------------------------------------------------------------------------------------
-function ModularActivity:FindTarget(start, bool, hasactorbool) --TODO change this so it takes a number as its last value, allowing you to change the range to check for actors
+local oldModularActivity = ModularActivity;
+function oldModularActivity:FindTarget(start, bool, hasactorbool) --TODO change this so it takes a number as its last value, allowing you to change the range to check for actors
 	--Check through players, NPCs and alerts (if bool == true) to find a target
 	local target = nil; --Pick a distant point as the initial target
 	local tmod = nil; --Used to make alert strength affect whether or not it counts as a target in the end
@@ -276,7 +300,7 @@ function ModularActivity:FindTarget(start, bool, hasactorbool) --TODO change thi
 	return target, tmod, hasactors;
 end
 --Zombie actions - follow player when close and move around randomly when not
-function ModularActivity:DoZombieActions()
+function oldModularActivity:DoZombieActions()
 	if #self.ZombieTable > 0 then
 		--Go through all zombies
 		for i = 1, #self.ZombieTable do

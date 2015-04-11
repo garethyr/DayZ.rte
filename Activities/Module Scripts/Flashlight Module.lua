@@ -11,8 +11,8 @@ end
 --------------------
 --Turn flashlights on or off for players and npcs
 function ModularActivity:DoFlashlights()
-	for _, tab in pairs(self.HumanTable) do
-		for k, v in pairs(tab) do
+	for _, humantable in pairs(self.HumanTable) do
+		for k, v in pairs(humantable) do
 			--Flag for the flashlight on or off based on its actor's sharpness
 			v.lightOn = (v.actor.Sharpness == 1);
 			

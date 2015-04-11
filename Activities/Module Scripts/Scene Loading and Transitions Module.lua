@@ -73,7 +73,7 @@ function ModularActivity:StartSceneLoading()
 			["Sustenance"] = function(self, val) self.IncludeSustenance = val end,
 			["Spawns"] = function(self, val) self.IncludeSpawns = val end,
 			["DayNight"] = function(self, val) self.IncludeDayNight = val end,
-			["Flashlight"] = function(self, val) self.IncludeIcons = val end,
+			["Flashlight"] = function(self, val) self.IncludeFlashlight = val end,
 			["Behaviours"] = function(self, val) self.IncludeBehaviours = val end,
 			["Icons"] = function(self, val) self.IncludeIcons = val end,
 			["Audio"] = function(self, val) self.IncludeAudio = val end,

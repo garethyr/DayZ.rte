@@ -212,6 +212,7 @@ function DayZ:EndActivity()
 	if self.IncludeAudio then
 		AudioMan.MusicVolume = self.AudioGlobalMaxVolume;
 	end
+	ModularActivity = nil;
 	print("END! -- Chernarus:EndActivity()!");
 end
 -----------------------------------------------------------------------------------------
@@ -253,13 +254,16 @@ function DayZ:UpdateActivity()
 	if UInputMan:KeyPressed(26) then --Print some stuff
 		local count = 0;
 		for k, v in pairs (self.ZombieTable) do
-			count = count + #v;
+			count = count + 1;
 		end
 		print ("Zombies: "..tostring(count));
-		for k, v in pairs (self.LootTable) do
-			count = count + #v;
+		count = 0;
+		if self.IncludeLoot then
+			for k, v in pairs (self.LootTable) do
+				count = count + 1;
+			end
+			print ("Loot: "..tostring(count));
 		end
-		print ("Loot: "..tostring(count));
 		print ("Wounds: "..tostring(#DayZHumanWoundTable));
 		if self.IncludeAlerts then
 			count = 0;
@@ -267,6 +271,11 @@ function DayZ:UpdateActivity()
 				count = count + 1;
 			end
 			print ("Alerts: "..tostring(count));
+			count = 0;
+			for k, v in pairs(self.AlertItemTable) do
+				count = count + 1;
+			end
+			print ("Alert Items: "..tostring(count));
 		end
 	end
 	if UInputMan:KeyPressed(24) then --Turn on and off flashlight

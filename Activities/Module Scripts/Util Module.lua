@@ -33,7 +33,7 @@ end
 -- Add to screentext for all players OR optional player(s)
 -----------------------------------------------------------------------------------------
 function ModularActivity:AddScreenText(text, ...)
-	--TODO for lua 5.1 (used in new cc version) arg is no longer useable. Now use select(1, ...) for first arg in ..., select("#", ...) for count of args in ...
+	local arg = {...};
 	if #arg == 0 then
 		for i = 0, self.PlayerCount do
 			if self.ScreenText[i+1] == nil or self.ScreenText[i+1] == "" then
@@ -73,10 +73,10 @@ function ModularActivity:SortMaxAndMinArguments(dists)
 	return mindist, maxdist;
 end
 -----------------------------------------------------------------------------------------
--- Find the nearest human to a point
+-- Find the nearest human, more than mindist and less than maxdist to a point
 -----------------------------------------------------------------------------------------
 function ModularActivity:NearestHuman(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
-	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
+	local mindist, maxdist = self:SortMaxAndMinArguments({...});
 	local dist, target;
 	for _, humantable in pairs(self.HumanTable) do
 		for __, v in pairs(humantable) do
@@ -90,10 +90,10 @@ function ModularActivity:NearestHuman(pos, ...) --Optional args: [1] - Minimum d
 	return target;
 end
 -----------------------------------------------------------------------------------------
--- Return true if there is a human more than mindist and, optionally, less than maxdist away from the passed in pos
+-- Return true if there is a human more than mindist and less than maxdist away from the passed in pos
 -----------------------------------------------------------------------------------------
 function ModularActivity:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
-	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
+	local mindist, maxdist = self:SortMaxAndMinArguments({...});
 	local dist;
 	for _, humantable in pairs(self.HumanTable) do
 		for __, v in pairs(humantable) do

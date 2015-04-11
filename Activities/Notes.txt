@@ -12,6 +12,7 @@ Swapping to a different target will only happen if that target's weight outweigh
 	E.g. a zombie swarm attack would have very high weight position target, and throwing a flare might entrance the one it hits but no more. Likewise, they would only change to humans that got close enough to them
 	E.g. a player running from a zombie could throw a flare at the zombie and it may stop the zombie in its tracks. But if the zombie is close enough to the player still it would ignore it and keep going.
 Also note that the hierarchy stuff for alerts only applies to preexisting alerts, so newly made ones can ignore it and attract zombies with actor targets, since throwing a bright light at the zombie might screw it up
+Note: For mobile alerts, keep checking if they should super override targets until they stop moving, so a flare will keep trying to override until it hits the ground and sits
 	
 This could also allow for different types of zombies, e.g. bloodhound zombie which would have a bonus to weight for human targets, or forgetful zombie which would have a mallus to weight for all targets and would change targets more often
 

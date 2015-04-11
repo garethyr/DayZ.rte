@@ -60,7 +60,6 @@ function ModularActivity:SpawnZombie(spawnpos, target, targettype, spawner)
 		
 		MovableMan:AddActor(actor);
 		self:SetZombieTarget(actor, target, targettype, spawner);
-        self:AddToZombieTable(actor, target, targettype, spawner, startdist);
 		
 		return actor; --In case the function caller needs a reference to the actor
 	end
@@ -78,7 +77,7 @@ function ModularActivity:DoLootZombieSpawning()
 	for i, v in ipairs(self.SpawnLootZombieArea) do
 		if self.SpawnLootZombieTimer[i]:IsPastSimMS(self.SpawnLootZombieInterval) then
 			nearhumans = self:CheckForNearbyHumans(v:GetCenterPoint(), self.SpawnLootZombieMinDistance, self.SpawnLootZombieMaxDistance);
-			nearalerts = self:RequestAlerts_CheckForVisibleAlerts(v:GetCenterPoint(), self.ZombieAlertAwarenessModifier, self.SpawnLootZombieMinDistance);
+			nearalerts = self:RequestAlerts_CheckForVisibleAlerts(v:GetCenterPoint(), self.ZombieAlertAwarenessModifier, self.SpawnLootZombieMinDistance, self.SpawnLootZombieMaxDistance);
 			--Get the spawn target if there are nearby humans or alerts
 			if nearhumans or nearalerts then
 				--Human targets take priority - for an alert target to take priority it would have to be made before a human started it
@@ -90,9 +89,11 @@ function ModularActivity:DoLootZombieSpawning()
 				--If there are no nearby humans, alert targets are used
 				elseif not nearhumans and nearalerts then
 					target = self:RequestAlerts_NearestVisibleAlert(v:GetCenterPoint(), self.ZombieAlertAwarenessModifier, self.SpawnLootZombieMinDistance);
+					print ("nearest alert to point is alert at pos "..tostring(target.pos));
 					for j = 1, math.random(1, self.SpawnLootZombieMaxGroupSize) do
 						self:SpawnZombie(v:GetCenterPoint(), target, "alert", "loot");
 					end
+					print ("Loot zombies spawned because of alert at pos "..tostring(target.pos));
 				end
 				self.SpawnLootZombieTimer[i]:Reset();
 			end
@@ -117,10 +118,10 @@ function ModularActivity:GetSafeRandomSpawnPosition(spawnpos, offset, randomoffs
 		end
 	end
 	--If the position found wasn't viable, try using the position of the nearest human, offset by ZombieSpawnMinDistance
-	if not viable then
-		local humanactor = self:NearestHuman(resultpos, 0, self.ZombieSpawnMinDistance);
-		resultpos = GetSafeRandomSpawnPosition(humanactor.Pos, self.ZombieSpawnMinDistance, randomoffsetrange, movetoground);
-	end
+	--if not viable then
+	--	local humanactor = self:NearestHuman(resultpos, 0, self.ZombieSpawnMinDistance);
+	--	resultpos = self:GetSafeRandomSpawnPosition(humanactor.Pos, self.ZombieSpawnMinDistance, randomoffsetrange, movetoground);
+	--end
 		
 	--Move the point to ground if necessary
 	if movetoground then
@@ -129,6 +130,7 @@ function ModularActivity:GetSafeRandomSpawnPosition(spawnpos, offset, randomoffs
 	return resultpos;
 end
 --Directly set a zombie's target, both human waypoints and zombie table target value
+--NOTE: Rewrites the zombie's zombietable entry since it's the easiest way to update everything
 function ModularActivity:SetZombieTarget(actor, target, targettype, spawner)
 	local targetpos = self:GetZombieTargetPos(target, targettype);
 	local startdist = math.floor(SceneMan:ShortestDistance(targetpos, actor.Pos, true).Magnitude);
@@ -155,8 +157,8 @@ function ModularActivity:GetZombieTargetPos(target, targettype)
 	end
 	return targetpos;
 end
---Clear the zombie's target completely
-function ModularActivity:ClearZombieTarget(zombie)
+--Remove the zombie's target completely, setting it to empty target type and false target value
+function ModularActivity:RemoveZombieTarget(zombie)
 	zombie.target = {val = false, ttype = "", startdist = 0};
-	print ("Cleared zombie target, zombie table target entry is now "..tostring(self.ZombieTable[zombie.actor.UniqueID].target.val));
+	print ("Removed zombie target, zombie table target entry is now "..tostring(self.ZombieTable[zombie.actor.UniqueID].target.val));
 end

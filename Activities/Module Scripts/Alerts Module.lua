@@ -49,12 +49,12 @@ function ModularActivity:StartAlerts()
 	self.JunkAlertTable = {["Empty Tin Can"] = self.JunkNoise, ["Empty Whiskey Bottle"] = self.JunkNoise, ["Empty Coke"] = self.JunkNoise, ["Empty Pepsi"] = self.JunkNoise, ["Empty Mountain Dew"] = self.JunkNoise};
 	
 	--This table stores all light making throwables and their alert values
-	self.LightAlertTable = {["Red Chemlight"] = self.AlertValue, ["Green Chemlight"] = self.AlertValue, ["Blue Chemlight"] = self.AlertValue, ["Flare"] = self.AlertValue*1.5};
+	self.LightAlertTable = {["Red Chemlight"] = self.AlertBaseStrength, ["Green Chemlight"] = self.AlertBaseStrength, ["Blue Chemlight"] = self.AlertBaseStrength, ["Flare"] = self.AlertBaseStrength*1.5};
 	
 	--This table stores all types of alerts and is used around the script for ease. If any alert types are added they should be updated here as well
 	self.AlertTypes = {"sound", "light"};
 	
-	--Weapon sound values ordered from lowest (None) to highest (Very Very High), hunting knife with 0 sound is outside of this table
+	--Weapon sound values (i.e. how much shooting adds) ordered from lowest (None) to highest (Very Very High), hunting knife with 0 sound is outside of this table
 	self.WeaponAlertValues = {N=100, VVL=250, VL=500, L=1000, LM=1650, M=2250, MH=3250, H=4500, VH=6000, VVH=10000}; -- default 10, 25, 50, 100, 150, 200, 250, 300, 350, 500
 	self.WeaponAlertTable = { --Note: weapons aren't separated by civilian/military for alerts since there's no need for that distinction here
 		--Civilian weapon alert values
@@ -79,7 +79,7 @@ function ModularActivity:StartAlerts()
 	--A table of all thrown items that create alert. Key is item.UniqueID. Cuts down on lag
 	--Items will turn into alerts if their sharpness is 1.
 	--Keys - Values
-	--item = the item, ismobile = a flag for whether or not this will be a mobile alert (i.e. one with a target),
+	--ismobile = a flag for whether or not this will be a mobile alert (i.e. one with a target),
 	--light, sound = {strength = light/sound alert to be strength, parent = the creator of this alert to be type (almost certainly the item)}
 	self.AlertItemTable = {};
 	
@@ -136,7 +136,18 @@ end
 --Add a thrown item based on parameter values
 function ModularActivity:AddAlertItem(item, ismobile, light, sound)
 	print ("ADD "..(ismobile and "MOBILE" or "").." THROWN ITEM (Key: "..tostring(item.UniqueID)..") - "..item.PresetName..", light: "..tostring(light.strength)..", sound: "..tostring(sound.strength));
-	self.AlertItemTable[item.UniqueID] = {item = item, ismobile = ismobile, light = light, sound = sound};
+	self.AlertItemTable[item.UniqueID] = {ismobile = ismobile, light = light, sound = sound};
+end
+--Make an alert from a thrown alert item, note that this is called from the item's script automatically when it's ready to become an alert
+function ModularActivity:AddAlertFromAlertItem(item)
+	local tab = self.AlertItemTable[item.UniqueID];
+	self:AddAlert(item.Pos, tab.ismobile and item or nil, tab.light, tab.sound);
+	--Notify day/night about the item if it's got light strength
+	if tab.light.strength > 0 then
+		self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
+	end
+	--Remove the item from the alert item table
+	self.AlertItemTable[item.UniqueID] = nil;
 end
 ---------------------
 --UTILITY FUNCTIONS--
@@ -176,11 +187,13 @@ function ModularActivity:AlertsHaveSameTarget(alert1, alert2)
 end
 --Safely update the total strength of an alert
 function ModularActivity:SetAlertStrength(alert)
+	print ("updating alert strength, previous alert strength = "..tostring(alert.strength))
 	alert.strength = self:GetAlertStrength(alert.light.strength, alert.sound.strength);
+	print("updated alert strength, new strength is "..tostring(alert.strength));
 end
 --Return the safe total strength given input light and sound strength
-function ModularActivity:GetAlertStrength(lstr, sstr)
-	return math.max(lstr, sstr);
+function ModularActivity:GetAlertStrength(lightstrength, soundstrength)
+	return math.max(lightstrength, soundstrength);
 end
 --Return the safe strength for a weapon alert given the weapon's sound level
 function ModularActivity:GetWeaponAlertStrength(soundlevel)
@@ -193,8 +206,8 @@ end
 --VISIBLE ALERT UTILITY FUNCTIONS--
 --Return true if there are any visible alerts more than mindist and less than maxdist away from pos
 --Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
-function ModularActivity:CheckForVisibleAlerts(pos, awarenessmod, ...)
-	local mindist, maxdist = self:SortMaxAndMinArguments(arg);
+function ModularActivity:CheckForVisibleAlerts(pos, awarenessmod, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+	local mindist, maxdist = self:SortMaxAndMinArguments({...});
 	local dist, visdist;
 	
 	for _, alert in pairs(self.AlertTable) do
@@ -208,8 +221,8 @@ function ModularActivity:CheckForVisibleAlerts(pos, awarenessmod, ...)
 end
 --Return the nearest visible alert more than mindist and less than maxdist away from pos
 --Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
-function ModularActivity:NearestVisibleAlert(pos, awarenessmod, ...)
-	mindist, maxdist = self:SortMaxAndMinArguments(arg);
+function ModularActivity:NearestVisibleAlert(pos, awarenessmod, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+	mindist, maxdist = self:SortMaxAndMinArguments({...});
 	local dist, visdist, target = nil;
 	
 	for _, alert in pairs(self.AlertTable) do
@@ -224,8 +237,8 @@ function ModularActivity:NearestVisibleAlert(pos, awarenessmod, ...)
 end
 --Return all visible alerts more than mindist and less than maxdist away from pos
 --Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
-function ModularActivity:AllVisibleAlerts(pos, awarenessmod, ...)
-	mindist, maxdist = self:SortMaxAndMinArguments(arg);
+function ModularActivity:AllVisibleAlerts(pos, awarenessmod, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+	mindist, maxdist = self:SortMaxAndMinArguments({...});
 	local dist, visdist, alerts = {};
 	
 	for _, alert in pairs(self.AlertTable) do
@@ -240,17 +253,19 @@ end
 --ALERT ZOMBIE UTILITY FUNCTIONS--
 --Returns true if the alert has 0 zombies or less zombies than it should for its strength
 function ModularActivity:AlertIsMissingZombies(alert)
-	--Check for an empty table
-	if next(alert.zombie.actors) == nil then
-		return true;
-	--Check for full complement of zombies
-	else
-		local n = 0;
-		for _, zombie in pairs(alert.zombie.actors) do
-			n = n+1;
-		end
-		if n < self:GetNumberOfZombiesForAlert(alert) then
+	if alert.zombie ~= false then
+		--Check for an empty table
+		if next(alert.zombie.actors) == nil then
 			return true;
+		--Check for full complement of zombies
+		else
+			local n = 0;
+			for _, zombie in pairs(alert.zombie.actors) do
+				n = n+1;
+			end
+			if n < self:GetNumberOfZombiesForAlert(alert) then
+				return true;
+			end
 		end
 	end
 	return false;
@@ -288,8 +303,9 @@ function ModularActivity:DoAlerts()
 	--Clean the table before doing any alert stuff
 	self:DoAlertCleanup();
 	
-	--Update mobile alert positions
+	--Update all alert strengths and mobile alert positions
 	for _, alert in pairs(self.AlertTable) do
+		SetAlertStrength(alert);
 		if alert.target ~= nil and MovableMan:ValidMO(alert.target) then
 			alert.pos = Vector(alert.target.Pos.X, alert.target.Pos.Y);
 		end
@@ -300,9 +316,6 @@ function ModularActivity:DoAlerts()
 	
 	--Run the general alert making often
 	self:DoAlertCreations();
-	
-	--Deal with converting any thrown items to alerts
-	self:ManageAlertItems();
 	
 	--Run management functions
 	if self.AlertLagTimer:IsPastSimMS(100) then
@@ -523,21 +536,6 @@ function ModularActivity:DoAlertCreations()
 		end
 	end
 end
---Do all management for thrown items to turn them into alerts
-function ModularActivity:ManageAlertItems()
-	for k, v in pairs(self.AlertItemTable) do
-		--If the item is turned on and should add an alert(set in the item's script)
-		if v.item.Sharpness > 0 then
-		print ("Alert item is mobile: "..tostring(v.ismobile));
-			self:AddAlert(v.item.Pos, (v.ismobile and v.item or nil), (v.ismobile and v.light or {strength = v.light.strength, parent = nil}), (v.ismobile and v.sound or {strength = v.sound.strength, parent = nil}));
-			--Notify day/night about the item if it's got light strength
-			if v.light.strength > 0 then
-				self:AlertsNotifyDayNight_LightEmittingItemAdded(v.item);
-			end
-			self.AlertItemTable[k] = nil;
-		end
-	end
-end
 --Count down all alerts, merge alerts that are close to each other
 function ModularActivity:ManageAlertPoints()
 	--General update loop
@@ -568,13 +566,19 @@ function ModularActivity:ManageAlertPoints()
 			--If the alert doesn't have its full set of zombies, add them in
 			if self:GetNumberOfZombiesForAlert(v) - curzombienum > 0 then
 				for i = 1, self:GetNumberOfZombiesForAlert(v) - curzombienum do
-					local zombie = self:AlertsRequestSpawns_SpawnAlertZombie(v, self:GetZombieSpawnDistanceOffsetForAlert(v));
-					v.zombie.actors[zombie.UniqueID] = zombie;
+					local zombieactor = self:AlertsRequestSpawns_SpawnAlertZombie(v, self:GetZombieSpawnDistanceOffsetForAlert(v));
+					if zombieactor == false then
+						v.zombie = false;
+					else
+						v.zombie.actors[zombieactor.UniqueID] = zombieactor;
+					end
 				end
 			end
-			v.zombie.timer:Reset();
+			if v.zombie ~= false then
+				v.zombie.timer:Reset();
+			end
 		--If there are no missing zombies for the alert, keep the timer at 0
-		elseif self.IncludeSpawns and not self:AlertIsMissingZombies(v) then
+		elseif self.IncludeSpawns and not self:AlertIsMissingZombies(v) and v.zombie ~= false then
 			v.zombie.timer:Reset();
 		end
 	end

@@ -28,7 +28,7 @@ function ModularActivity:StartAudio()
 								["Nature Night"] = {18, "NAmbient "},
 								["Civilization"] = {9, "CAmbient "},
 								["Beach"] = {3, "BAmbient "},
-								["Underground"] = {9, "CAmbient "}}, --TODO replace this with proper underground sounds
+								["Underground"] = {1, "UAmbient "}},
 							Suspense = {16, "Suspense "}};
 								
 	
@@ -50,7 +50,7 @@ function ModularActivity:StartAudio()
 	self.AudioGlobalSoundTable = {day = self.AudioPath.."Global/Day Loop.ogg",
 								  night = self.AudioPath.."Global/Night Loop.ogg",
 								  storm = self.AudioPath.."Global/Stormy Loop.ogg"};
-	self.AudioGlobalSoundOverrideTable = {beach = self.AudioPath.."Global/Beach Loop.ogg"}
+	self.AudioGlobalSoundOverrideTable = {beach = self.AudioPath.."Global/Beach Loop.ogg", underground = self.AudioPath.."Global/Underground Loop.ogg"}
 	--Localized and suspense
 	self.AudioLocalizedSoundDefinitionTable = {};
 	self.AudioSuspenseSoundDefinitionTable = {};
@@ -66,8 +66,8 @@ function ModularActivity:StartAudio()
 		--Setup name table for non-localized suspense sounds
 		elseif (k == "Suspense") then
 			self.AudioSuspenseSoundDefinitionTable = {size = v[1]};
-			for i = 1, v[1] do --TODO when new version of CC is released, swap over to using PlaySound for proper full map coverage
-				table.insert(self.AudioSuspenseSoundDefinitionTable, v[2]..tostring(i));--self.AudioPath..k.."/"..v[2]..tostring(i)..".ogg");
+			for i = 1, v[1] do
+				table.insert(self.AudioSuspenseSoundDefinitionTable, self.AudioPath..k.."/"..v[2]..tostring(i)..".ogg");
 			end
 		end
 	end
@@ -119,7 +119,7 @@ end
 --Manage and play all audio
 function ModularActivity:DoAudio()
 	self:CleanupAudio();
-	self:AudioDoLocalSounds(); --TODO Simplify this, it doesn't need any complexity
+	self:AudioDoLocalSounds();
 	self:AudioDoSuspenseSounds();
 	
 	if self.AudioGlobalSoundStatus:find("fade") then
@@ -187,7 +187,7 @@ function ModularActivity:AudioDoLocalSounds()
 			local tab = self.AudioLocalizedSoundTable[i];
 			if tab == nil or (tab ~= nil and tab.timer:IsPastSimMS(tab.interval)) then
 				local actor = self:GetControlledActor(i);
-				if actor ~= nil then
+				if actor ~= nil and actor.ClassName == "AHuman" then
 					local areaname = self:GetActorAudioArea(actor);
 					self:AudioAddLocalizedSound(actor, areaname);
 				end
@@ -201,8 +201,8 @@ function ModularActivity:AudioDoLocalSounds()
 end
 --Get the audio area the actor is in
 function ModularActivity:GetActorAudioArea(actor)
-	for _, areatype in pairs (self.AudioAreas) do
-		for i, v in ipairs(areatype) do
+	for areatype, areatable in pairs (self.AudioAreas) do
+		for i, v in ipairs(areatable) do
 			if v.area:IsInside(actor.Pos) then
 				if v.name == "Beach" then
 					self:AudioChangeGlobalOverrideSound("beach");
@@ -216,18 +216,52 @@ function ModularActivity:GetActorAudioArea(actor)
 	--If not in an area, return the default audio accounting for day or night
 	return self.AudioDefaultLocalizedAreaName..self:AudioRequestDayNight_DayOrNightOrEmptyFormattedString();
 end
+-- function ModularActivity:GetActorAudioArea(actor)
+		-- print ("A1");
+		-- ConsoleMan:SaveAllText("output");
+	-- for _, areatype in pairs (self.AudioAreas) do
+		-- print ("A2");
+		-- ConsoleMan:SaveAllText("output");
+		-- for i, v in ipairs(areatype) do
+		-- print ("A3");
+		-- ConsoleMan:SaveAllText("output");
+			-- if v.area:IsInside(actor.Pos) then
+		-- print ("A4");
+		-- ConsoleMan:SaveAllText("output");
+				-- if v.name == "Beach" then
+		-- print ("A51");
+		-- ConsoleMan:SaveAllText("output");
+					-- self:AudioChangeGlobalOverrideSound("beach");
+		-- print ("A61");
+		-- ConsoleMan:SaveAllText("output");
+				-- else
+		-- print ("A52");
+		-- ConsoleMan:SaveAllText("output");
+					-- self:AudioChangeGlobalOverrideSound(nil);
+		-- print ("A62");
+		-- ConsoleMan:SaveAllText("output");
+				-- end
+		-- print ("A7");
+		-- ConsoleMan:SaveAllText("output");
+				-- return v.name;
+			-- end
+		-- print ("An inner loop done");
+		-- ConsoleMan:SaveAllText("output");
+		-- end
+		-- print ("An outer loop done");
+		-- ConsoleMan:SaveAllText("output");
+	-- end
+		-- print ("A8");
+		-- ConsoleMan:SaveAllText("output");
+	-- If not in an area, return the default audio accounting for day or night
+	-- return self.AudioDefaultLocalizedAreaName..self:AudioRequestDayNight_DayOrNightOrEmptyFormattedString();
+-- end
 --SUSPENSE--
 --Deal with suspense sounds, play them randomly over time
-function ModularActivity:AudioDoSuspenseSounds() --TODO when new version of CC is released, swap over to using PlaySound for proper full map coverage
+function ModularActivity:AudioDoSuspenseSounds()
 	if self.AudioSuspenseTimer:IsPastSimMS(self.AudioSuspenseSoundInterval) then
 		local choice = math.random(1, self.AudioSuspenseSoundDefinitionTable.size);
-		local postable = {100, SceneMan.SceneWidth/2, SceneMan.SceneWidth - 100};
-		for i = 1, 3 do
-			local emitter = CreateAEmitter(self.AudioSuspenseSoundDefinitionTable[choice], self.RTE);
-			emitter.Pos = Vector(postable[i], SceneMan.SceneHeight/2);
-			MovableMan:AddParticle(emitter);
-		end
-		--AudioMan:PlaySound(self.AudioSuspenseSoundDefinitionTable[choice]);
+		AudioMan:PlaySound(self.AudioSuspenseSoundDefinitionTable[choice]);
 		self.AudioSuspenseSoundInterval = self.AudioSuspenseBaseSoundInterval + math.random(0, self.AudioSuspenseSoundIntervalModifier);
 		self.AudioSuspenseTimer:Reset();
 	end

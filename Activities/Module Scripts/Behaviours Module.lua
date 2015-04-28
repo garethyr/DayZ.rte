@@ -134,7 +134,7 @@ function ModularActivity:DespawnTargetlessZombies()
 		if not zombie.target.val and not self:CheckForNearbyHumans(zombie.actor.Pos, 0, self.ZombieDespawnDistance) and not self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier) then
 			print ("Kill zombie "..tostring(zombie.actor.UniqueID).." because it has no target and no nearby humans or visible alerts");
 			zombie.actor.ToDelete = true;
-			RemoveFromZombieTable(zombie.actor);
+			self:RemoveFromZombieTable(zombie.actor);
 		end
 	end
 end

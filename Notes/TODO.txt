@@ -44,9 +44,8 @@
 ------------------------------Lua Specific----------------------------
 ----------------------------------------------------------------------
 • Fix crash to desktop with setting day/night longer than 60 seconds
-• Fix crash to desktop when scene is reset using C and there are zombies around - not crucial but instability is bad
+• Fix crash to desktop with coming back from leaving tunnels
 
-• Fix alert bugs where they place late or in strange locations (alerts may be showing up delayed?) - NOTE: This has to do with merging not working
 • BUGS - Light items being held without being activated die after a while. Using ammo adds noise (perhaps equivalent to the gun it's for??)
 • Bugs found while playtesting - Both of these have been moved and are probably fixed, but just in case I'm keeping the message in
 		Line 200 of alerts: if dist >= mindist and dist <= maxdist and dist <= visdist then
@@ -61,6 +60,12 @@
 			NEVERMIND REQUEST FOR CLARIFICATION - I get what you're saying. I'm thinking I may rework the ammo system a bit so it's less of a mess and doesn't require you to have the weapon and ammo next to each other. I'll also make ammo pickup/drop easier.
 • Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
+• Change location sounds to use the new playsound stuff added in b31
+
+• Fix alert merging so it doesn't cause alerts to place late and in weird locations and reenable it
+• Fix alert zombie spawning for underground maps, maybe don't spawn them at all?
+• Fix alert zombie spawning so it only applies to the thrown alert (i.e. don't spawn zombies when you're throwing a light item and again when it's actually thrown. The best way to do this is probably to either merge the alerts or make the initial alert be on the light item in the first place)
+• Fix new alert zombie attraction so it keeps being tested for the first 50? MS of the alert's lifetime instead of only on alert spawn - maybe make it the first second and check every 100 MS
 
 
 ----------------------------------------------------------------------
@@ -85,4 +90,6 @@
 • Made vomiting act over time and immobilize the vomiting actor until it's finished
 • Gave zombies weighted targeting so they will change targets to closer ones with equal or higher priority (i.e. a zombie going for an alert will change to a closer human, but not the reverse)
 • Made zombies react to newly made alerts differently than other targets, so that they may change their target to the alert thereby simulating suddenly distracting zombies
-
+• Made actor meters work better on higher resolutions and changed the underlying code for them so they'll be easier to properly implement for multiple players
+• Updated suspense sounds to apply across the whole map, added more template stuff for underground sounds
+• Fixed crash to desktop that happens when scene is reset using C and there is more than one actor, this could potentially be the cause of some other crashes

@@ -187,9 +187,7 @@ function ModularActivity:AlertsHaveSameTarget(alert1, alert2)
 end
 --Safely update the total strength of an alert
 function ModularActivity:SetAlertStrength(alert)
-	print ("updating alert strength, previous alert strength = "..tostring(alert.strength))
 	alert.strength = self:GetAlertStrength(alert.light.strength, alert.sound.strength);
-	print("updated alert strength, new strength is "..tostring(alert.strength));
 end
 --Return the safe total strength given input light and sound strength
 function ModularActivity:GetAlertStrength(lightstrength, soundstrength)
@@ -305,7 +303,7 @@ function ModularActivity:DoAlerts()
 	
 	--Update all alert strengths and mobile alert positions
 	for _, alert in pairs(self.AlertTable) do
-		SetAlertStrength(alert);
+		self:SetAlertStrength(alert);
 		if alert.target ~= nil and MovableMan:ValidMO(alert.target) then
 			alert.pos = Vector(alert.target.Pos.X, alert.target.Pos.Y);
 		end

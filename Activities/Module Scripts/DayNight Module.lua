@@ -227,7 +227,7 @@ function ModularActivity:DoDayNightContinuousActions()
 end
 --Return the correct position for the celestial body
 function ModularActivity:GetCelestialBodyOffset()
-	local pos = self:GetControlledActor(0) ~= nil and self:GetControlledActor(0).Pos or Vector(0, 0); --TODO this should be reworked so it's not dumb
+	local pos = (self:GetControlledActor(0) ~= nil and self:GetControlledActor(0).ClassName == "AHuman") and self:GetControlledActor(0).Pos or Vector(0, 0); --TODO this should be reworked so it's not dumb
 	
 	local completion = self.DayNightTimer.ElapsedSimTimeMS/self.DayNightInterval;
 	

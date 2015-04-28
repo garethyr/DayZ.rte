@@ -195,7 +195,7 @@ end
 --Icons
 function ModularActivity:IconsNotifyDayNight_RevealIcons(corner)
 	if self.IncludeDayNight then
-		local box = Box(corner, Vector(corner.X + self.IconMeterSpacing*(self.IconNumMeters+1), corner.Y + self.IconMeterSpacing));
+		local box = Box(corner, Vector(corner.X + self.IconsMeterSpacing*(self.IconsNumMeters+1), corner.Y + self.IconsMeterSpacing));
 		table.insert(self.DayNightExtraRevealBoxes, box);
 	end
 end

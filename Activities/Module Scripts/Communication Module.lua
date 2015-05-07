@@ -25,6 +25,7 @@ function ModularActivity:RequestDayNight_GetCurrentStateAndTime()
 end
 function ModularActivity:RequestIcons_AddToMeterTable(actor)
 	if self.IncludeIcons then
+		print ("Adding "..tostring(actor).." with UniqueID "..tostring(actor.UniqueID).." to meter table");
 		self:AddToMeterTable(actor);
 	end
 end
@@ -53,7 +54,7 @@ function ModularActivity:RequestAlerts_AllVisibleAlerts(pos, awarenessmod, ...) 
 end
 function ModularActivity:RequestAlerts_GetAlertCurrentStrength(alert)
 	if self.IncludeAlerts then
-		return self:GetAlertStrength(alert.light.strength, alert.sound.strength);
+		return alert.strength;
 	end
 	return 0;
 end
@@ -122,7 +123,7 @@ function ModularActivity:AlertsRequestSpawns_GetZombieSpawnInterval()
 end
 function ModularActivity:AlertsRequestSpawns_SpawnAlertZombie(alert, offset)
 	if self.IncludeSpawns then
-		return self:SpawnZombie(offset, alert, "alert", alert); --args: (position, target, targettype, spawntype), offset used instead of position for alerts
+		return self:SpawnZombie(offset, alert, "alert", alert); --args: (spawnpos, target, targettype, spawner), offset used instead of position for alerts
 	end
 	return false;
 end
@@ -137,7 +138,7 @@ end
 --NOTIFICATIONS--
 -----------------
 --Main
-function ModularActivity:NotifyMany_DeadHuman(ID, alert)
+function ModularActivity:NotifyMany_DeadHuman(humantype, player, ID, alert)
 	if self.IncludeSustenance and self.SustTable[ID] ~= nil then
 		self:RemoveFromSustTable(ID);
 	end
@@ -149,6 +150,10 @@ function ModularActivity:NotifyMany_DeadHuman(ID, alert)
 	end
 	if self.IncludeAlerts and alert ~= false then
 		self:MoveAlertFromDeadActor(alert);
+	end
+	if (humantype == "Players") then
+		print ("humantype for "..tostring(ID).." is "..tostring(humantype));
+		self:AddPlayerToRespawnTable(self:CreateNewPlayerActor(player), player);
 	end
 end
 function ModularActivity:NotifySust_SetActorSust(ID, newsust)

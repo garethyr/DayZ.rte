@@ -1,7 +1,7 @@
 function Create(self)
 	---------------------------------------------------------------------------------
 	--The name of the global variable for the activity we want to try to respawn with
-	local activitytocheck = ModularActivity;
+	self.ActivityToCheck = ModularActivity;
 	---------------------------------------------------------------------------------
 
 
@@ -31,17 +31,12 @@ function Create(self)
 						local parentplayer = self.Parent:GetController().Player;
 						local parentpos = self.Parent.Pos;
 						local newactor;
-						--If we're not in activitytocheck, which has its own actor respawning, manually respawn
-						if activitytocheck == nil then
+						--If we're not playing ActivityToCheck, which has its own actor respawning, manually respawn
+						if self.ActivityToCheck == nil then
 							newactor = MedicalBoxSimpleRespawn(self.Parent, parentplayer);
 						--Otherwise, use the activity's respawning for this
 						else
-							print ("Activity based respawn from medbox");
-							activitytocheck:SavePlayerForTransition(self.Parent);
-							activitytocheck:LoadPlayersAfterTransition();
-							newactor = activitytocheck.PlayerRespawnTable[#activitytocheck.PlayerRespawnTable].actor;
-							activitytocheck:SpawnPlayerActor(nil, newactor, parentplayer, 0);
-							table.remove(activitytocheck.PlayerRespawnTable, #activitytocheck.PlayerRespawnTable);
+							newactor = MedicalBoxActivityRespawn(self.Parent, parentplayer, self.ActivityToCheck);
 						end
 						newactor.Pos = parentpos;
 						ActivityMan:GetActivity():ReportDeath(newactor.Team,-1);
@@ -55,30 +50,64 @@ function Update(self)
 	end
 end
 
-function MedicalBoxSimpleRespawn(actor, player)
+function MedicalBoxActivityRespawn(oldactor, player, activity) --TODO this only works for players at the moment as it needs to be implemented for NPCs too. A lot of similar functions can probably be reused
+	print ("Activity based respawn from medbox");
+	--Save and load the actor
+	activity:SavePlayerForTransition(oldactor);
+	activity:LoadPlayersAfterTransition();
+	
+	--Get the human table entry for the old actor and the respawn table entry for the new actor
+	local respawntableentry = activity.PlayerRespawnTable[#activity.PlayerRespawnTable];
+	local humantype = activity.HumanTable.Players[oldactor.UniqueID] ~= nil and "Players" or "NPCs";
+	local oldhumantableentry = activity.HumanTable[humantype][oldactor.UniqueID];
+	newactor = respawntableentry.actor;
+	--Add any alert and activity values to the new actor's respawn table args so they'll be automatically moved over on spawning
+	respawntableentry.args.activity = oldhumantableentry.activity;
+	respawntableentry.args.alert = oldhumantableentry.alert;
+	activity:SpawnPlayerActor(nil, newactor, player, respawntableentry.args, 0);
+	table.remove(activity.PlayerRespawnTable, #activity.PlayerRespawnTable);
+	
+	--Remove wounds and set health to max
+	newactor.Health = newactor.MaxHealth;
+	if DayZHumanWoundTable ~= nil and DayZHumanWoundTable[newactor.UniqueID] ~= nil then
+		for _, wound in pairs(DayZHumanWoundTable[newactor.UniqueID].wounds) do
+			wound:EnableEmission(false);
+			wound.ToDelete = true;
+		end
+		DayZHumanWoundTable[oldactor.UniqueID] = nil;
+	end
+	
+	--Delete the old actor and remove it from whichever human table it was in, so it doesn't get removed by the activity and trigger communications
+	oldactor.ToDelete = true;
+	activity:NotifyMany_DeadHuman(nil, player, oldactor.UniqueID, false); --Pass in nil for the first argument so the actor won't auto respawn and false for the last because it no longer has alerts
+	activity.HumanTable[humantype][oldactor.UniqueID] = nil;
+	return newactor;
+end
+
+function MedicalBoxSimpleRespawn(oldactor, player)
 	local newactor;
 	local inventory = {};
 	
 	--Save equipped item
-	if actor.EquippedItem ~= nil then
-		local obj = actor.EquippedItem;
+	if oldactor.EquippedItem ~= nil then
+		local obj = oldactor.EquippedItem;
 		local item = {itype = obj.ClassName, name = obj.PresetName, sharpness = obj.Sharpness};
 		table.insert(inventory, item);
 	end
 	--Save inventory
-	if not actor:IsInventoryEmpty() then
-		for i = 1, actor.InventorySize do
-			local obj = actor:Inventory();
+	if not oldactor:IsInventoryEmpty() then
+		for i = 1, oldactor.InventorySize do
+			local obj = oldactor:Inventory();
 			local item = {itype = obj.ClassName, name = obj.PresetName, sharpness = obj.Sharpness};
 			table.insert(inventory, item);
-			actor:SwapNextInventory(nil, true);
+			oldactor:SwapNextInventory(nil, true);
 		end
 	end
 	
-	local newactor = CreateAHuman(actor.PresetName);
-	newactor.Team = actor.Team;
-	newactor.Sharpness = actor.Sharpness;
-	newactor.AIMode = Actor.AIMODE_SENTRY;
+	local newactor = CreateAHuman(oldactor.PresetName);
+	newactor.Team = oldactor.Team;
+	newactor.Sharpness = oldactor.Sharpness;
+	newactor.AIMode = oldactor.AIMODE_SENTRY;
 	
 	--Load equipped item and/or inventory
 	local itemcreatetable = {HDFirearm = function(name) return CreateHDFirearm(name) end,
@@ -90,8 +119,8 @@ function MedicalBoxSimpleRespawn(actor, player)
 		newitem.Sharpness = item.sharpness;
 		newactor:AddInventoryItem(newitem);
 	end
-	--MovableMan:RemoveActor(actor);
-	actor.ToDelete = true;
+	--MovableMan:RemoveActor(oldactor);
+	oldactor.ToDelete = true;
 	
 	MovableMan:AddActor(newactor);
 	ActivityMan:GetActivity():SwitchToActor(newactor, player, newactor.Team);

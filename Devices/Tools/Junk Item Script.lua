@@ -1,11 +1,15 @@
---Call relevant ModularActivity (DayZ) function when the item hits the ground
+--Call relevant function from the activity we want to check (DayZ) when the item hits the ground
 function Create(self)
+	---------------------------------------------------------------------------------
+	--The name of the global variable for the activity we want to try to add alert to
+	self.ActivityToCheck = ModularActivity;
+	---------------------------------------------------------------------------------
 end
 function Update(self)
 end
 function Destroy(self)
-	--If we're running a ModularActivity (DayZ) then let it know the item is ready to become an alert
-	if ModularActivity ~= nil and ModularActivity.IncludeAlerts and ModularActivity.AlertItemTable[self.UniqueID] ~= nil then
-		ModularActivity:AddAlertFromAlertItem(self);
+	--If we're running the activity we want to check (DayZ) then let it know the item is ready to become an alert
+	if self.ActivityToCheck ~= nil and self.ActivityToCheck.IncludeAlerts and self.ActivityToCheck.AlertItemTable[self.UniqueID] ~= nil then
+		self.ActivityToCheck:AddAlertFromAlertItem(self);
 	end
 end

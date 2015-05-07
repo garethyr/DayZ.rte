@@ -80,7 +80,7 @@ function ModularActivity:NearestHuman(pos, ...) --Optional args: [1] - Minimum d
 	local dist, target;
 	for _, humantable in pairs(self.HumanTable) do
 		for __, v in pairs(humantable) do
-			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, true).Magnitude;
+			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
 			if dist >= mindist and dist <= maxdist then
 				maxdist = dist;
 				target = v.actor;
@@ -97,7 +97,7 @@ function ModularActivity:CheckForNearbyHumans(pos, ...) --Optional args: [1] - M
 	local dist;
 	for _, humantable in pairs(self.HumanTable) do
 		for __, v in pairs(humantable) do
-			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, true).Magnitude;
+			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
 			if dist >= mindist and dist <= maxdist then
 				return true;
 			end
@@ -109,9 +109,9 @@ end
 -- Functions for adding actors to all active mission tables, for convenient updating
 -----------------------------------------------------------------------------------------
 -- Add a player
-function ModularActivity:AddToPlayerTable(actor)
+function ModularActivity:AddToPlayerTable(actor, player)
 	self.HumanTable.Players[actor.UniqueID] = {
-		actor = actor, lightOn = false, alert = false, spawned = false, rounds = 0,
+		actor = actor, player = player, lightOn = false, alert = false, rounds = 0,
 		activity = {
 			sound = {current = 0, total = 0, timer = Timer()},
 			light = {current = 0, total = 0, timer = Timer()}
@@ -123,7 +123,7 @@ end
 -- Add an NPC
 function ModularActivity:AddToNPCTable(actor)
 	self.HumanTable.NPCs[actor.UniqueID] = {
-		actor = actor, lightOn = false, alert = false, rounds = 0,
+		actor = actor, player = -1, lightOn = false, alert = false, rounds = 0,
 		activity = {
 			sound = {current = 0, total = 0, timer = Timer()},
 			light = {current = 0, total = 0, timer = Timer()},
@@ -133,7 +133,10 @@ function ModularActivity:AddToNPCTable(actor)
 end
 -- Add a zombie
 function ModularActivity:AddToZombieTable(actor, targetval, targettype, spawner, startdist)
-	self.ZombieTable[actor.UniqueID] = {actor = actor, spawner = spawner, target = {val = targetval, ttype = targettype, startdist = startdist}};
+	self.ZombieTable[actor.UniqueID] = {
+		actor = actor, spawner = spawner,
+		target = {val = targetval, ttype = targettype, startdist = startdist}
+	};
 end
 -- Remove a zombie and, if it's spawned by an alert, remove it from the alert's zombie table
 function ModularActivity:RemoveFromZombieTable(actor)

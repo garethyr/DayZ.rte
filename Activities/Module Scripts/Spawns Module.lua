@@ -63,6 +63,7 @@ function ModularActivity:SpawnZombie(spawnpos, target, targettype, spawner)
 		
 		return actor; --In case the function caller needs a reference to the actor
 	end
+	return false;
 end
 --------------------
 --UPDATE FUNCTIONS--
@@ -133,7 +134,7 @@ end
 --NOTE: Rewrites the zombie's zombietable entry since it's the easiest way to update everything
 function ModularActivity:SetZombieTarget(actor, target, targettype, spawner)
 	local targetpos = self:GetZombieTargetPos(target, targettype);
-	local startdist = math.floor(SceneMan:ShortestDistance(targetpos, actor.Pos, true).Magnitude);
+	local startdist = math.floor(SceneMan:ShortestDistance(targetpos, actor.Pos, self.Wrap).Magnitude);
 	
 	actor.AIMode = Actor.AIMODE_SENTRY;
 	actor:ClearAIWaypoints();

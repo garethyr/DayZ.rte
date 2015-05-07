@@ -25,7 +25,7 @@ end
 ----------------------
 --Start a new game in the starting scene
 function ModularActivity:StartNewGame()
-	self:DoSceneTransition("Chernarus", 3);
+	self:DoSceneTransition("Chernarus", -1);
 end
 --------------------
 --UPDATE FUNCTIONS--

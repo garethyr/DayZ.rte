@@ -1,4 +1,8 @@
 function Create(self)
+	---------------------------------------------------------------------------------
+	--The name of the global variable for the activity we want to try to add alert to
+	self.ActivityToCheck = ModularActivity;
+	---------------------------------------------------------------------------------
 	self.LightParticles = {};
 	if string.find(self.PresetName,"Chemlight") then
 		self.RevealSize = 300;
@@ -37,8 +41,8 @@ function Update(self)
 		end
 	else
 		--If its sharpness isn't 0, add an alert for it
-		if ModularActivity ~= nil and ModularActivity.IncludeAlerts and ModularActivity.AlertItemTable[self.UniqueID] ~= nil then
-			ModularActivity:AddAlertFromAlertItem(self);
+		if self.ActivityToCheck ~= nil and self.ActivityToCheck.IncludeAlerts and self.ActivityToCheck.AlertItemTable[self.UniqueID] ~= nil then
+			self.ActivityToCheck:AddAlertFromAlertItem(self);
 		end
 		--Handle sharpness if the item is picked up or thrown
 		if self.Sharpness == 1 and self:IsAttached() then
@@ -51,7 +55,7 @@ function Update(self)
 		--Do active stuff if the item is moving
 		if self.Vel.Magnitude > 0.5 then
 			--Lets the item reveal fog on non Modular activities, and lets it make light
-			if ModularActivity == nil then
+			if self.ActivityToCheck == nil then
 				for i = 0, ToGameActivity(ActivityMan:GetActivity()).TeamCount do
 					SceneMan:RevealUnseenBox(self.Pos.X - self.RevealSize/2, self.Pos.Y - self.RevealSize/2, self.RevealSize, self.RevealSize, i);
 				end

@@ -25,9 +25,8 @@ function DayZ:StartActivity()
 	------------------
 	--A table of humans, key is actor.UniqueId
 	--Keys - Values 
-	--actor, alert - whether or not they have an alert on them and if so the alert, lightOn - whether their flashlight is on or off,
-	--spawned - a boolean for if the actor's been spawned into the movable manager,
-	--rounds - the number of rounds left in their gun if they have one (USED FOR ALERTS),
+	--actor, player - the human player controlling the actor; -1 for NPCs, alert - whether or not they have an alert on them and if so the alert, lightOn - whether their flashlight is on or off,
+	--alert - false if they have no alert on them, or the alert they have on them, rounds - the number of rounds left in their gun if they have one (USED FOR ALERTS),
 	--activity - {sound - {current - current sound addition value, total - total sound level, timer - a timer for lowering their sound level}
 	--			  light - {current - current light addition value, total - total light level, timer - a timer for lowering their light level}}
 	self.HumanTable = {
@@ -45,11 +44,13 @@ function DayZ:StartActivity()
 	--OTHER STUFF--
 	---------------
 	--Limit of MOIDs allowed in the activity
-	self.MOIDLimit = 175;
+	self.MOIDLimit = 300;
 	--Gold is not allowed or applicable
 	self:SetTeamFunds(0 , 0);
 	--The rte to spawn things from, set as a variable for easy modification
 	self.RTE = "DayZ.rte";
+	--Whether or not to check for wrapping when calling ShortestDistance, changes based on the current scene
+	self.Wrap = nil;
 	--Tracker for zombies killed
 	self.ZombiesKilled = 0;
 	--Tracker for nights survived
@@ -88,8 +89,10 @@ function DayZ:StartActivity()
 	self.BehavioursIncludable = true; --Note: Behaviours requires Spawns, this is enforced automatically
 	self.AudioIncludable = true;
 	self.AlertsIncludable = true;
+	self.D = 0;
 	
 	self:DoCoreModuleInclusionAndInitialization();
+	
 	
 	--TODO this starts a new game right away, replace this with player selection for restarting or loading
 	self:StartNewGame();
@@ -250,9 +253,22 @@ function DayZ:UpdateActivity()
 	end
 	if UInputMan:KeyPressed(2) then
 		print ("This key does nothing right now");
+		for k, v in pairs(self.HumanTable.Players) do
+			v.actor.Pos.X = math.min(v.actor.Pos.X + 600, SceneMan.SceneWidth-50);
+		end
 	end
 	if UInputMan:KeyPressed(26) then --Print some stuff
 		local count = 0;
+		for k, v in pairs (self.HumanTable.Players) do
+			count = count + 1;
+		end
+		print ("Players: "..tostring(count));
+		count = 0;
+		for k, v in pairs (self.HumanTable.NPCs) do
+			count = count + 1;
+		end
+		print ("NPCs: "..tostring(count));
+		count = 0;
 		for k, v in pairs (self.ZombieTable) do
 			count = count + 1;
 		end
@@ -260,11 +276,16 @@ function DayZ:UpdateActivity()
 		count = 0;
 		if self.IncludeLoot then
 			for k, v in pairs (self.LootTable) do
-				count = count + 1;
+				for k2, v2 in pairs(v) do
+					count = count + 1;
+				end
 			end
 			print ("Loot: "..tostring(count));
 		end
-		print ("Wounds: "..tostring(#DayZHumanWoundTable));
+		print("Waiting Respawns: "..tostring(#self.PlayerRespawnTable));
+		if (DayZHumanWoundTable) then
+			print ("Wounds: "..tostring(#DayZHumanWoundTable));
+		end
 		if self.IncludeAlerts then
 			count = 0;
 			for k, v in pairs(self.AlertTable) do
@@ -298,6 +319,8 @@ function DayZ:UpdateActivity()
 	
 	--Clean tables, must be done first as it's important to prevent crashes
 	self:DoActorChecksAndCleanup();
+	
+	self:DoPlayerManagement();
 	
 	--Deal with sustenance, called every frame for dynamic decreasing by actions
 	if self.IncludeSustenance then
@@ -366,11 +389,11 @@ end
 -- Check through all tables for things to remove. Done first
 -----------------------------------------------------------------------------------------
 function DayZ:DoActorChecksAndCleanup()
-	for _, humantable in pairs(self.HumanTable) do
+	for humantype, humantable in pairs(self.HumanTable) do
 		for ID, v in pairs(humantable) do
-			if v.spawned and (v.actor.Health <= 0 or not MovableMan:IsActor(v.actor) or v.actor.ToDelete == true) then
-				print ("Removing dead ".._.." from table in Main Script");
-				self:NotifyMany_DeadHuman(ID, v.alert);
+			if v.actor.Health <= 0 or not MovableMan:IsActor(v.actor) or v.actor.ToDelete == true then
+				print ("Removing dead "..humantype.." from table in Main Script");
+				self:NotifyMany_DeadHuman(humantype, v.player, ID, v.alert);
 				humantable[ID] = nil;
 			else
 				--Reset the actor's round count if he changes weapons in any way

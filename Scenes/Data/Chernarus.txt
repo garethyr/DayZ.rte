@@ -22,7 +22,10 @@ LootZombieSpawnAreas = 26
 ShelterAreas = 20
 AudioCivilizationAreas = 5
 AudioBeachAreas = 2
-SpawnAreas = 4
+
+||PLAYER SPAWNS
+PlayerSpawnAreas = 4
+DefaultPlayerSpawnAreaNumber = 3
 
 ||DAYNIGHT
 BackgroundChanges = true

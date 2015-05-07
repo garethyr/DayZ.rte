@@ -35,7 +35,7 @@
 • Add flashlight, matches, jerry can to spawn
 • Add backpacks and inventory limit?
 	Just a potential idea, I'm thinking we can make it so aside from the transitions on the far sides of the map needing a boat and heli, we can also have it so the friendly camp has left side transition back to chernarus and right side transition to one of the other locations, but there's a lengthy forest area which requires more supplies than one can carry without a backpack or something?
-• Add localized sounds for tunnels, also maybe different global BG and suspense noises?
+• Add localized sounds for tunnels, also maybe different global BG?
 • Fix the issues about being unable to find missing presets. Apparently it's that the presets aren't defined but it somehow still works???
 • Add thin but very strong borders on the edges of tunnel transitions so player can't fall out the bottom of tunnels on main map or off the sides of the tunnel map
 
@@ -46,26 +46,33 @@
 • Fix crash to desktop with setting day/night longer than 60 seconds
 • Fix crash to desktop with coming back from leaving tunnels
 
-• BUGS - Light items being held without being activated die after a while. Using ammo adds noise (perhaps equivalent to the gun it's for??)
-• Bugs found while playtesting - Both of these have been moved and are probably fixed, but just in case I'm keeping the message in
-		Line 200 of alerts: if dist >= mindist and dist <= maxdist and dist <= visdist then
-		Line 75 of Sustenance: v[susttype] = v[susttype] + self.SustItems[itemgroup][ahuman.EquippedItem.PresetName];
+• BUGS - Dropping a lit light item seems to bug out, at least under certain circumstances, picking it back up completely kills the alert
+• BUGS - Fix weird issue where a huge number of alert arrows show up - since they won't use arrows in the long run this isn't necessary but it should be investigated
+• BUGS - Fix seagull noise spams sometimes, maybe when there are a bunch of zombies entering the beach area?
+• BUGS - Fix gun firing activity shitiness, fine tooth comb to see why it doesn't work properly all the time. May have to wait for next CC version. Also  using ammo when it works adds noise, this seems to be because it swaps to the gun and adds its noise
 
 • Make custom zombie AI (bleh)
+• Maybe allow behaviour targets to allow for different types of zombies, e.g. bloodhound zombie which would have a bonus to weight for human targets, or forgetful zombie which would have a mallus to weight for all targets and would change targets more often
+	This would have to wait til after some amount of custom zombie ai is done and input is needed on whether or not this is a good idea. May also need some changes to zombie despawn handling
 • Random events (NPCs, bandit ambush, zombie hordes, etc?)
+• Make medical box work for NPCs too later, since right now it uses player only functions. Swap that when NPCs have similar functions.
 • Saving and loading games
 • Add scudding clouds (will go in weather module as they'll be affected by that)
 • Allow "Drop Ammo" pie menu icon to work with any amount of ammo, not just ammo over a minimum of a full load (you come across a weapon you already have; take ammo instead of a slightly "fuller" gun) Right now you can only take ammo if you have more than the default full magazine/load for each weapon.
 			PLEASE CLARIFY - If I'm understanding right, you want to be able to pick up a gun, unload it and have that ammo as a separate item? What's happening now?
 			NEVERMIND REQUEST FOR CLARIFICATION - I get what you're saying. I'm thinking I may rework the ammo system a bit so it's less of a mess and doesn't require you to have the weapon and ammo next to each other. I'll also make ammo pickup/drop easier.
+
 • Implement light alerts disappearing and not working in day, I just realised I never even started doing this, just left a note about it lol.
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar)
-• Change location sounds to use the new playsound stuff added in b31
 
-• Fix alert merging so it doesn't cause alerts to place late and in weird locations and reenable it
 • Fix alert zombie spawning for underground maps, maybe don't spawn them at all?
 • Fix alert zombie spawning so it only applies to the thrown alert (i.e. don't spawn zombies when you're throwing a light item and again when it's actually thrown. The best way to do this is probably to either merge the alerts or make the initial alert be on the light item in the first place)
-• Fix new alert zombie attraction so it keeps being tested for the first 50? MS of the alert's lifetime instead of only on alert spawn - maybe make it the first second and check every 100 MS
+• Fix new alert zombie attraction so, for mobile alerts it keeps checking if they should override targets until they stop moving, so a flare will keep trying to override until it hits the ground and sits
+
+• Decide for sure whether alerts should use lifetime or strength removal or both
+	The former would mean that after n seconds, an alert that's not being renewed would disappear, no matter how strong it was before
+	The latter would mean that alerts are drained of a constant amount of strength every frame and last until their old strength is fully drained, this also means that AIs wouldn't necessarily sit around removed alerts until they're gone
+	Combining the two would mean that alerts drain at such a speed that they always reach zero strength at the same time, regardless of how strong they were. It would be like the lifetime setup, except it has the targeting differences of the strength removal setup
 
 
 ----------------------------------------------------------------------
@@ -93,3 +100,5 @@
 • Made actor meters work better on higher resolutions and changed the underlying code for them so they'll be easier to properly implement for multiple players
 • Updated suspense sounds to apply across the whole map, added more template stuff for underground sounds
 • Fixed crash to desktop that happens when scene is reset using C and there is more than one actor, this could potentially be the cause of some other crashes
+• Fixed alert merging so alerts no longer spawn weirdly delayed or in weird locations. Hopefully.
+• Fixed medkits causing duplicate player respawns, which let the player control many actors at once in a very wonky way.

@@ -70,16 +70,16 @@ end
 --------------------
 --Remove any meters whose actor is no longer alive or whose key (UniqueID) does not match their actor's UniqueID
 function ModularActivity:IconsCleanupMeters()
-	for k, v in pairs(self.MeterTable) do
-		if not MovableMan:IsActor(v.actor) then
-			print ("Removing icon from nonexistant actor");
-			self:IconsRemoveMeters(k);
-		elseif MovableMan:IsActor(v.actor) and v.actor.UniqueID ~= k then
-			print ("Removing icon from mismatched actor and ID");
-			self:IconsRemoveMeters(k);
-			if self.MeterTable[v.actor.UniqueID] == nil then
-				print ("Mismatched actor is not in icon table, readding actor");
-				AddToMeterTable(actor);
+	for ID, metertable in pairs(self.MeterTable) do
+		if not MovableMan:IsActor(metertable.actor) then
+			print ("Removing meters from nonexistant actor with id "..tostring(ID));
+			self:IconsRemoveMeters(ID);
+		elseif MovableMan:IsActor(metertable.actor) and metertable.actor.UniqueID ~= ID then
+			print ("Removing meters from mismatched actor and ID");
+			self:IconsRemoveMeters(ID);
+			if self.MeterTable[metertable.actor.UniqueID] == nil then
+				print ("Mismatched actor is not in meter table, readding actor");
+				self:AddToMeterTable(actor);
 			end
 		end
 	end	
@@ -90,6 +90,7 @@ function ModularActivity:IconsRemoveMeters(ID)
 		v.ToDelete = true;
 	end
 	self.MeterTable[ID] = nil;
+	print ("Removed meters for player with unique id "..tostring(ID));
 end
 --------------------
 --ACTION FUNCTIONS--
@@ -100,7 +101,7 @@ function ModularActivity:DoMeters()
 		--Add screens for any meters that don't have them yet
 		if playermeter.screen == -1 then
 			playermeter.screen = self:ScreenOfPlayer(playermeter.actor:GetController().Player);
-			--print ("Set screen for meter on actor "..tostring(playermeter.actor).." as "..tostring(playermeter.screen));
+			print ("Set screen for meter on actor "..tostring(playermeter.actor).." as "..tostring(playermeter.screen));
 		end
 		--Update meter positions and frames for meters with screens
 		if playermeter.screen > -1 then

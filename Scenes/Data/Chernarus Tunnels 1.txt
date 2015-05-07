@@ -22,7 +22,10 @@ LootZombieSpawnAreas = 0
 ShelterAreas = 0
 AudioCivilizationAreas = 0
 AudioBeachAreas = 0
-SpawnAreas = 2
+
+||PLAYER SPAWNS
+PlayerSpawnAreas = 2
+DefaultPlayerSpawnAreaNumber = 3
 
 ||DAYNIGHT
 --Entirely unnecessary for this scene

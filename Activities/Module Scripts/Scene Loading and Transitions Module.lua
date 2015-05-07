@@ -44,8 +44,9 @@ function ModularActivity:StartSceneLoading()
 	self.TransitionAreas = {}; --The various scene transition areas in the current scene,
 								--Values: area = the actual area, target = the scene to transition to,
 								--spawnarea = the area to spawn in after transition, constraints = any constraint functions for transition
-	self.SpawnAreas = {}; --The various player spawn areas in the current scene
-	self.NumberOfSpawnAreas = nil; --The number of predictably named spawn areas in the current scene
+	self.PlayerSpawnAreas = {}; --The various player spawn areas in the current scene
+	self.NumberOfPlayerSpawnAreas = nil; --The number of predictably named spawn areas in the current scene
+	self.DefaultPlayerSpawnAreaNumberNumber = nil; --The number of predictably named spawn areas in the current scene
 	
 	--DayNight variables - only used if self.DayNightIncludable is true
 	if self.DayNightIncludable then
@@ -95,8 +96,13 @@ function ModularActivity:StartSceneLoading()
 			["LootZombieSpawnAreas"] = function(self, val) self.NumberOfLootZombieSpawnAreas = val end,
 			["ShelterAreas"] = function(self, val) self.NumberOfShelterAreas = val end,
 			["AudioCivilizationAreas"] = function(self, val) self.NumberOfAudioCivilizationAreas = val end,
-			["AudioBeachAreas"] = function(self, val) self.NumberOfAudioBeachAreas = val end,
-			["SpawnAreas"] = function(self, val) self.NumberOfSpawnAreas = val end
+			["AudioBeachAreas"] = function(self, val) self.NumberOfAudioBeachAreas = val end
+		},
+		
+		["PLAYER SPAWNS"] = {
+			["LoadData"] = function (self, data, loadtable) self:AddSimpleValueFromData(data, loadtable) end,
+			["PlayerSpawnAreas"] = function(self, val) self.NumberOfPlayerSpawnAreas = val end,
+			["DefaultPlayerSpawnAreaNumber"] = function(self, val) self.DefaultPlayerSpawnAreaNumber = val end
 		},
 		
 		["DAYNIGHT"] = {
@@ -203,11 +209,11 @@ function ModularActivity:AddTransitionAreasFromData(data, loadtable)
 	end
 end
 --Load the spawn areas for the newly loaded scene
-function ModularActivity:LoadSceneSpawnAreas()
+function ModularActivity:LoadScenePlayerSpawnAreas()
 	--Load spawn areas for the new scene
-	self.SpawnAreas = {};
-	for i = 1, self.NumberOfSpawnAreas do
-		self.SpawnAreas[i] = SceneMan.Scene:GetArea("Spawn Area "..tostring(i));
+	self.PlayerSpawnAreas = {};
+	for i = 1, self.NumberOfPlayerSpawnAreas do
+		self.PlayerSpawnAreas[i] = SceneMan.Scene:GetArea("Player Spawn Area "..tostring(i));
 	end
 end
 --------------------
@@ -271,15 +277,16 @@ function ModularActivity:CheckTransitionConstraints(constraints)
 	return true;
 end
 --Transition scenes
-function ModularActivity:DoSceneTransition(target, spawnareanumber)
+function ModularActivity:DoSceneTransition(target, playerspawnareanum)
 	local stateandtime = self:RequestDayNight_GetCurrentStateAndTime() or {};
 	self.TransitionAreas = {};
 	self:SavePlayersForTransition();
 	
 	SceneMan:LoadScene(target, true); --Load the actual scene
+	self.Wrap = SceneMan.SceneWrapsX;
 	self:DoCleanupForTransition(); --Cleanup any leftovers from required modules that don't get re-instantiated
 	self:LoadScene(target); --Parse the scene datafiles
-	self:LoadSceneSpawnAreas(); --Get as areas the spawn areas for the scene, as defined in the datafile
+	self:LoadScenePlayerSpawnAreas(); --Get as areas the spawn areas for the scene, as defined in the datafile
 	
 	--v DO NOT TOUCH FOR MODULE CHANGES v--
 	self:DoExtraModuleInclusion();
@@ -289,7 +296,8 @@ function ModularActivity:DoSceneTransition(target, spawnareanumber)
 	--^ DO NOT TOUCH FOR MODULE CHANGES ^--
 
 	self:NotifyDayNight_SceneTransitionOccurred(stateandtime.cstate, stateandtime.ctime);
-	self:AddStartingPlayerActors(self.SpawnAreas[spawnareanumber]);
+	self:AddStartingPlayerActors(playerspawnareanum);
+	self.D = self.D + 1;
 end
 --Save players so they keep their stats on scene transitions
 function ModularActivity:SavePlayersForTransition()
@@ -328,13 +336,13 @@ function ModularActivity:SavePlayerForTransition(actor)
 	actor.ToDelete = true;
 end
 --Add starting player actors after a transition
-function ModularActivity:AddStartingPlayerActors(spawnarea)
+function ModularActivity:AddStartingPlayerActors(spawnareanum)
 	if #self.TransitionHumanTable == 0 then
 		self:CreateNewPlayerActors();
 	else
 		self:LoadPlayersAfterTransition();
 	end
-	self:SpawnPlayerActors(spawnarea);
+	self:SpawnPlayerActors(spawnareanum);
 end
 --Load players that were saved for the transition
 function ModularActivity:LoadPlayersAfterTransition()
@@ -353,19 +361,17 @@ function ModularActivity:LoadPlayersAfterTransition()
 			newactor:AttachEmitter(wound, Vector(RangeRand(-1,1),RangeRand(-newactor.Height/3, newactor.Height/3)), true); --TODO maybe come up with a better way of wound positioning? Get the original positions?
 		end
 		--Add inventory
-		local itemcreatetable = {HDFirearm = function(name) return CreateHDFirearm(name) end,
-								 TDExplosive = function(name) return CreateTDExplosive(name) end,
-								 HeldDevice = function(name) return CreateHeldDevice(name) end,
-								 ThrownDevice = function(name) return CreateThrownDevice(name) end}
+		local itemcreatetable = {HDFirearm = function(self, name) return CreateHDFirearm(name, self.RTE) end,
+								 TDExplosive = function(self, name) return CreateTDExplosive(name, self.RTE) end,
+								 HeldDevice = function(self, name) return CreateHeldDevice(name, self.RTE) end,
+								 ThrownDevice = function(self, name) return CreateThrownDevice(name, self.RTE) end}
 		for _, item in ipairs(humantable.inventory) do
-			local newitem = itemcreatetable[item.itype](item.name);
+			local newitem = itemcreatetable[item.itype](self, item.name);
 			newitem.Sharpness = item.sharpness;
 			newactor:AddInventoryItem(newitem);
 		end
 		----------------------------------------------------------------------------------------------------
-		self:AddPlayerToRespawnTable(newactor, humantable.player);
-		self:AddToPlayerTable(newactor);
-		self:NotifySust_SetActorSust(newactor.UniqueID, humantable.sust);
+		self:AddPlayerToRespawnTable(newactor, humantable.player, {sust = humantable.sust});
 	end
 	self.TransitionHumanTable = {};
 end

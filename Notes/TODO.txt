@@ -46,10 +46,8 @@
 • Fix crash to desktop with setting day/night longer than 60 seconds
 • Fix crash to desktop with coming back from leaving tunnels
 
-• BUGS - Dropping a lit light item seems to bug out, at least under certain circumstances, picking it back up completely kills the alert
-• BUGS - Fix weird issue where a huge number of alert arrows show up - since they won't use arrows in the long run this isn't necessary but it should be investigated
 • BUGS - Fix seagull noise spams sometimes, maybe when there are a bunch of zombies entering the beach area?
-• BUGS - Fix gun firing activity shitiness, fine tooth comb to see why it doesn't work properly all the time. May have to wait for next CC version. Also  using ammo when it works adds noise, this seems to be because it swaps to the gun and adds its noise
+• BUGS - Fix gun firing wherein using ammo when it works adds noise, this seems to be because it swaps to the gun and adds its noise
 
 • Make custom zombie AI (bleh)
 • Maybe allow behaviour targets to allow for different types of zombies, e.g. bloodhound zombie which would have a bonus to weight for human targets, or forgetful zombie which would have a mallus to weight for all targets and would change targets more often
@@ -67,13 +65,6 @@
 
 • Fix alert zombie spawning for underground maps, maybe don't spawn them at all?
 • Fix alert zombie spawning so it only applies to the thrown alert (i.e. don't spawn zombies when you're throwing a light item and again when it's actually thrown. The best way to do this is probably to either merge the alerts or make the initial alert be on the light item in the first place)
-• Fix new alert zombie attraction so, for mobile alerts it keeps checking if they should override targets until they stop moving, so a flare will keep trying to override until it hits the ground and sits
-
-• Decide for sure whether alerts should use lifetime or strength removal or both
-	The former would mean that after n seconds, an alert that's not being renewed would disappear, no matter how strong it was before
-	The latter would mean that alerts are drained of a constant amount of strength every frame and last until their old strength is fully drained, this also means that AIs wouldn't necessarily sit around removed alerts until they're gone
-	Combining the two would mean that alerts drain at such a speed that they always reach zero strength at the same time, regardless of how strong they were. It would be like the lifetime setup, except it has the targeting differences of the strength removal setup
-
 
 ----------------------------------------------------------------------
 ------------------------------Completed-------------------------------
@@ -102,3 +93,5 @@
 • Fixed crash to desktop that happens when scene is reset using C and there is more than one actor, this could potentially be the cause of some other crashes
 • Fixed alert merging so alerts no longer spawn weirdly delayed or in weird locations. Hopefully.
 • Fixed medkits causing duplicate player respawns, which let the player control many actors at once in a very wonky way.
+• Made alerts a lot more reliable, extensible and straightforward and modified them so they generally make more sense.
+• Fixed newly thrown alerts ability to override higher priority targets so they do so more naturally and keep doing so until they stop moving (only applies to the first throw at the moment).

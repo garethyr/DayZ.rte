@@ -34,6 +34,24 @@ function ModularActivity:RequestIcons_RemoveAllMeters()
 		self.MeterTable = {};
 	end
 end
+function ModularActivity:RequestAlerts_GetAlertParents(alert)
+	if self.IncludeAlerts then
+		return self:GetAlertParents(alert);
+	end
+	return {};
+end
+function ModularActivity:RequestAlerts_GetAlertCurrentStrength(alert)
+	if self.IncludeAlerts then
+		return alert.strength;
+	end
+	return 0;
+end
+function ModularActivity:RequestAlerts_GetBaseAlertStrength()
+	if self.IncludeAlerts then
+		return self.AlertBaseStrength;
+	end
+	return 0;
+end
 function ModularActivity:RequestAlerts_CheckForVisibleAlerts(pos, awarenessmod, ...) --awareness mod < 1 lowers awareness distance, > 1 raises it
 	if self.IncludeAlerts then
 		return self:CheckForVisibleAlerts(pos, awarenessmod, select(1, ...));
@@ -52,18 +70,6 @@ function ModularActivity:RequestAlerts_AllVisibleAlerts(pos, awarenessmod, ...) 
 	end
 	return {};
 end
-function ModularActivity:RequestAlerts_GetAlertCurrentStrength(alert)
-	if self.IncludeAlerts then
-		return alert.strength;
-	end
-	return 0;
-end
-function ModularActivity:RequestAlerts_GetBaseAlertStrength()
-	if self.IncludeAlerts then
-		return self.AlertBaseStrength;
-	end
-	return 0;
-end
 --Loot
 
 --Sustenance
@@ -80,7 +86,7 @@ function ModularActivity:IconsRequestAlerts_ActorActivityPercent(atype, actor)
 		if self.AlertTable[actor.UniqueID] ~= nil and self.AlertTable[actor.UniqueID][atype].strength > 0 then
 			return 1;
 		elseif self.HumanTable.Players[actor.UniqueID] ~= nil then
-			return self.HumanTable.Players[actor.UniqueID].activity[atype].total/self.AlertValue;
+			return self.HumanTable.Players[actor.UniqueID].activity[atype].total/self.ActorActvivityToAlertValue;
 		end
 	end
 	return 0;
@@ -215,14 +221,13 @@ function ModularActivity:AlertsNotifyMany_NewAlertAdded(alert)
 		for _, humantable in pairs(self.HumanTable) do
 			if humantable[alert.target.UniqueID] ~= nil then
 				humantable[alert.target.UniqueID].alert = alert;
-				print ("Human target for alert updated so it contains a reference to the alert")
 				break;
 			end
 		end
 	end
-	--Note: Spawning alert zombies is done elsewhere so the alert can keep track of its zombies
+	--This is done once for targetless alerts but is repeated multiple times elsewhere for targetted alerts like light items
 	if self.IncludeBehaviours then
-		self:ManageZombieBehaviourForNewAlert(alert);
+		self:ManageZombieOneTimeBehaviourForNewAlert(alert);
 	end
 end
 function ModularActivity:AlertsNotifyDayNight_LightEmittingItemAdded(item)

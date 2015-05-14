@@ -52,7 +52,6 @@ end
 --Actually create a single player
 function ModularActivity:CreateNewPlayerActor(player)
 	local actor = CreateAHuman("Survivor Black Reticle Actor" , self.RTE);
-	actor:AddInventoryItem(CreateHDFirearm("Medical Box" , self.RTE));
 	actor:AddInventoryItem(CreateHDFirearm("[DZ] .45 Revolver" , self.RTE));
 	actor:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
 	actor:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));

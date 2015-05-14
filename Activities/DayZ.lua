@@ -25,7 +25,7 @@ function DayZ:StartActivity()
 	------------------
 	--A table of humans, key is actor.UniqueId
 	--Keys - Values 
-	--actor, player - the human player controlling the actor; -1 for NPCs, alert - whether or not they have an alert on them and if so the alert, lightOn - whether their flashlight is on or off,
+	--actor, player - the human player controlling the actor; -1 for NPCs, lightOn - whether their flashlight is on or off,
 	--alert - false if they have no alert on them, or the alert they have on them, rounds - the number of rounds left in their gun if they have one (USED FOR ALERTS),
 	--activity - {sound - {current - current sound addition value, total - total sound level, timer - a timer for lowering their sound level}
 	--			  light - {current - current light addition value, total - total light level, timer - a timer for lowering their light level}}
@@ -56,7 +56,7 @@ function DayZ:StartActivity()
 	--Tracker for nights survived
 	self.NightsSurvived = -1; --Note: This count will be 1 less than it should if the game begins during night instead of day. This can be fixed if we keep these counters forever
 	
-	--Values for transitioning requirements TODO probably move this somewhere in future
+	--Values for transitioning requirements --TODO probably move this somewhere in future
 	self.HasBoat = false;
 	self.InHelicopter = false;
 	

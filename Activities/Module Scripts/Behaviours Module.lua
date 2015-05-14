@@ -40,9 +40,32 @@ function ModularActivity:CheckForNewZombieTargets()
 		--Get all the possible new targets
 		local possibletargets = {};
 		possibletargets.human = self:CheckForNearbyHumans(zombie.actor.Pos, 0, self.ZombieMaxTargetDistance) and self:NearestHuman(zombie.actor.Pos, 0, self.ZombieMaxTargetDistance) or nil;
-		--If the target is not higher priority (i.e. lower number) than alerts, look for a potential alert target
-		if origpriority >= self.ZombieTargetPriorityTable["alert"] and self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier, 0, self.ZombieMaxTargetDistance) then
-			possibletargets.alert = self:RequestAlerts_NearestVisibleAlert(zombie.actor.Pos, self.ZombieAlertAwarenessModifier, 0, self.ZombieMaxTargetDistance);
+		--If there are visible alerts, check if they can be used
+		if if self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier, 0, self.ZombieMaxTargetDistance) then
+			--Determine whether all alerts can be used or only those that are set to override target priority
+			local usealert = (origpriority >= self.ZombieTargetPriorityTable["alert"]) and true or false;
+			local alert = nil;
+			--If all alerts can be used, use the closest
+			if usealert then
+				alert = self:RequestAlerts_NearestVisibleAlert(zombie.actor.Pos, self.ZombieAlertAwarenessModifier, 0, self.ZombieMaxTargetDistance);
+			--Otherwise find all visible alerts, and if one's set to override, use that
+			else
+				local visiblealerts = RequestAlerts_AllVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier, 0, self.ZombieMaxTargetDistance);
+				for _, visiblealert in pairs(visiblealerts) do
+					local alertparents = RequestAlerts_GetAlertParents(visiblealert);
+					for _, parent in pairs(alertparents) do
+						if ToMOSRotating(parent):GetNumberValue("OverrideTargetPriority") == 1 then --TODO This should probably use the closest alert instead of the first overriding one it finds, maybe AllVisibleAlerts should sort them in order or should have a parameter to allow for sorting?
+							alert = visiblealert;
+							usealert = true;
+							break;
+						end
+					end
+					if usealert then
+						break;
+					end
+				end
+			end
+			possibletargets.alert = alert;
 		end
 		
 		--Iterate through all possible targets and get the most weighted one, as long as it's lower priority than the original target
@@ -160,25 +183,19 @@ end
 --------------------
 --ACTION FUNCTIONS--
 --------------------
---Set the alert as the target for any zombies whose current target has lower weight, priority is completely ignored
-function ModularActivity:ManageZombieBehaviourForNewAlert(alert)
-	-- print ("managing zombie behaviours for new alert")
+--Set the alert as the target for any zombies whose current target has lower weight, priority is completely ignored. Note that this method is done once when the alert is made, repeated override built into the regular targeting checks
+function ModularActivity:ManageZombieOneTimeBehaviourForNewAlert(alert)
 	for _, zombie in pairs(self.ZombieTable) do
-		-- print ("zombie table actor is "..tostring(zombie.actor).." with id "..tostring(zombie.actor.UniqueID).." and an "..zombie.target.ttype.." target");
 		local curweight = self:GetCurrentTargetWeightForZombie(zombie);
-		-- print("current target weight is "..tostring(curweight));
 		local alertweight = self:GetWeightOfTargetForZombie(zombie, alert, "alert");
-		-- print("alert target weight is "..tostring(alertweight));
 		if alertweight > curweight then
 			print (string.format("NEW ALERT caused zombie at %s to change target from %s with weight %d, to %s with weight %d", zombie.actor.Pos, zombie.target.ttype, curweight, "alert", alertweight));
-			-- ConsoleMan:SaveAllText("output")
 			self:SetZombieTarget(zombie.actor, alert, "alert", zombie.spawner);
 		end
 	end
 end
 --Return the weight of the zombie's current target
 function ModularActivity:GetCurrentTargetWeightForZombie(zombie)
-	--print ("Getting weight of current target for zombie at "..tostring(zombie.actor.Pos));
 	if zombie.target.ttype == "pos" then
 		return zombie.target.val.weight;
 	else
@@ -189,7 +206,6 @@ end
 function ModularActivity:GetWeightOfTargetForZombie(zombie, target, targettype)
 	local pos = zombie.actor.Pos;
 	local dist, weight = 0, 0;
-	--print ("Checking weight of target for zombie, for target "..tostring(target));
 	--Note that the weight of any target is 0 at or beyond max target distance, and can't be larger than max target weight
 	if target ~= nil and target ~= false  then
 		--Human target weight is based entirely on distance

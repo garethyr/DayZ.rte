@@ -5,20 +5,19 @@ function ModularActivity:StartAlerts()
 	-------------------
 	--ALERT CONSTANTS--
 	-------------------
-	--The alert value at which to change activity to alerts
-	self.AlertValue = 5000; -- default 5000
-	--The base value for alert lifetimes, in MS, only applies to alerts that aren't being renewed
-	self.AlertBaseLifetime = 10000;
 	--The base value for alert strengths, technically an arbitrary number but a lot is balanced to it
 	self.AlertBaseStrength = 10000;
 	--The limit for the strength of alerts (based on the base strength), to avoid ridiculous noise alerts and such
 	self.AlertStrengthLimit = 50000;
 	--The rate at which strength is removed from alerts that have missing parents, removed every frame and individually for each type
-	self.AlertStrengthRemoveSpeed = self.AlertValue/1000; --TODO decide if or how alert strength removal should work
+	self.AlertBaseStrengthRemoveSpeed = self.AlertBaseStrength/1000;
+	
+	--The alert value at which to change activity to alerts
+	self.ActorActvivityToAlertValue = 5000; -- default 5000
 	--The number of MS to wait after an actor shoots to start lowering his total activity
 	self.ActorActivityRemoveTime = 5000;
 	--The rate at which activity is removed from actors, removed every frame
-	self.ActorActivityRemoveSpeed = self.AlertValue/1000;
+	self.ActorActivityRemoveSpeed = self.ActorActvivityToAlertValue/1000;
 	
 	--The base merge distance for alerts with the same (or no) target
 	self.AlertBaseMergeDistance = 100;
@@ -41,12 +40,12 @@ function ModularActivity:StartAlerts()
 	self.VeryLowAlertZombieSpawnDistance = self:AlertsRequestSpawns_GetZombieMinSpawnDistance();
 	
 	--The default alert value for junk items when they hit the ground, each item can have a different value
-	self.JunkNoise = self.AlertValue*0.5;
+	self.JunkNoise = self.AlertBaseStrength*0.25;
 	--The alert value for flashlights, not relevant if they're not included
-	self.FlashlightAlertStrength = self.AlertValue;
+	self.FlashlightAlertStrength = self.ActorActvivityToAlertValue;
 	--A modifier for the light activity increase speed on light use, so they get slowed by some amount for balance. The actual speed is also based on the light's strength
 	self.LightActivityGainModifier = 0.02;
-	--The weapon alert value to compare strength with when making alerts (i.e. a weapon with 4 times this alert value will make an alert 4 times self.AlertValue)
+	--The weapon alert value to compare strength with when making alerts (i.e. a weapon with 4 times this alert value will make an alert 4 times self.ActorActvivityToAlertValue)
 	self.WeaponAlertStrengthComparator = "L"; --Ranges from N to VVH, see self.WeaponAlertTable for keys
 	--The factor to reduce the actor's activity by after a weapon alert is made (between 0 and 1)
 	self.WeaponAlertActivityReductionFactor = 0.5;
@@ -54,11 +53,23 @@ function ModularActivity:StartAlerts()
 	-----------------------
 	--STATIC ALERT TABLES--
 	-----------------------
-	--This table stores all junk items
-	self.JunkAlertTable = {["Empty Tin Can"] = self.JunkNoise, ["Empty Whiskey Bottle"] = self.JunkNoise, ["Empty Coke"] = self.JunkNoise, ["Empty Pepsi"] = self.JunkNoise, ["Empty Mountain Dew"] = self.JunkNoise};
+	--This table stores all alert making throwables and their values
+	self.ThrowableAlertValues = {
+		sound = {
+			["Empty Tin Can"] = {strength = self.JunkNoise, ismobile = false},
+			["Empty Whiskey Bottle"] = {strength = self.JunkNoise, ismobile = false},
+			["Empty Coke"] = {strength = self.JunkNoise, ismobile = false},
+			["Empty Pepsi"] = {strength = self.JunkNoise, ismobile = false},
+			["Empty Mountain Dew"] = {strength = self.JunkNoise, ismobile = false}
+		},
 	
-	--This table stores all light making throwables and their alert values
-	self.LightAlertTable = {["Red Chemlight"] = self.AlertBaseStrength, ["Green Chemlight"] = self.AlertBaseStrength, ["Blue Chemlight"] = self.AlertBaseStrength, ["Flare"] = self.AlertBaseStrength*1.5};
+		light = {
+			["Red Chemlight"] = {strength = self.AlertBaseStrength, ismobile = true},
+			["Green Chemlight"] = {strength = self.AlertBaseStrength, ismobile = true},
+			["Blue Chemlight"] = {strength = self.AlertBaseStrength, ismobile = true},
+			["Flare"] = {strength = self.AlertBaseStrength*1.5, ismobile = true}
+		}
+	}
 	
 	--This table stores all types of alerts and is used around the script for ease. If any alert types are added they should be updated here as well
 	self.AlertTypes = {"sound", "light"};
@@ -80,8 +91,8 @@ function ModularActivity:StartAlerts()
 	--A table of all alerts positions. Key is target.UniqueID when there's a target, or parent.UniqueID when there's exactly one parent and "ground"..self.AlertTableCounter+1 when there's not
 	--Keys - Values
 	--pos = the position, strength = the maximum of the alert's light and sound strengths, target = the actor the alert's on if there is one,
-	--light, sound = {strength = light/sound alert strength, savedstrength = stores for the alert type when it's deactivated by map effects,
-	--					timer = light/sound killtimer, parent = the creator of this alert type}
+	--strengthremovespeed = the amount of strength removed from all alert types above 0 every frame, slightly greater for stronger alerts,
+	--light, sound = {strength = light/sound alert strength, savedstrength = stores for the alert type when it's deactivated by map effects, parent = the creator of this alert type}
 	--zombie = {actors = {table of the alert zombie(s) on it if there are any}, timer = the timer for respawning the alert zombies, counts down from when any are dead}
 	self.AlertTable = {};
 	
@@ -104,6 +115,26 @@ end
 ----------------------
 --CREATION FUNCTIONS--
 ----------------------
+--Sets the key as the target's UniqueID if it's not nil, otherwise generates a name as the key
+function ModularActivity:GenerateKeyForNewAlert(target, alertvalues)
+	local key = nil;
+	--Alerts with targets use their target's UniqueID
+	if target ~= nil then
+		key = target.UniqueID;
+	--Alerts without targets use either their parent's UniqueID or a ground number
+	else
+		for _, atype in pairs(self.AlertTypes) do
+			if key == nil and alertvalues[atype].parent ~= nil then
+				key = alertvalues[atype].parent.UniqueID;
+			end
+		end
+		if key == nil then
+			key = "Ground"..tostring(self.AlertTableCounter);
+			self.AlertTableCounter = self.AlertTableCounter + 1;
+		end
+	end
+	return key;
+end
 --Add an alert based on parameter values or merge with any alerts on this target.
 function ModularActivity:AddAlert(pos, target, alertvalues)
 	--If we have an alert with this target, merge this into it
@@ -116,25 +147,14 @@ function ModularActivity:AddAlert(pos, target, alertvalues)
 	end
 
 	--Get the key for the new alert, based on its target.UniqueID, its parent.UniqueID or ground..self.AlertTableCounter
-	local key;
-	if target ~= nil then
-		key = target.UniqueID;
-	else
-		for _, atype in pairs(self.AlertTypes) do
-			if key == nil and alertvalues[atype].parent ~= nil then
-				key = alertvalues[atype].parent.UniqueID;
-			end
-		end
-		if key == nil then
-			key = "Ground"..tostring(self.AlertTableCounter);
-			self.AlertTableCounter = self.AlertTableCounter + 1;
-		end
-	end
+	local key = self:GenerateKeyForNewAlert(target, alertvalues);
 		
-	print ("ADD ALERT (Key: "..tostring(key)..") - Pos: "..tostring(pos)..", Type: "..(alertvalues.light.strength > 0 and "light" or "sound")..(target == nil and ", No Target" or ", "..target.PresetName)..", Strength: "..tostring(self:GetAlertStrength(alertvalues)));
+	print ("ADD ALERT (Key: "..tostring(key)..") - Pos: "..tostring(pos)..", Type: "..(alertvalues.light.strength > 0 and "light" or "sound")..", Target: "..(target == nil and "None" or target.PresetName)..", Strength: "..tostring(self:GetAlertStrength(alertvalues)));
 	--Add the alert to the table
 	self.AlertTable[key] = {
-		pos = Vector(pos.X, pos.Y), strength = self:GetAlertStrength(alertvalues), target = target, zombie = {actors = {}, timer = Timer()}
+		pos = Vector(pos.X, pos.Y), strength = self:GetAlertStrength(alertvalues), target = target,
+		strengthremovespeed = self:GetInitialStrengthRemovalSpeedForAlert(alertvalues),
+		zombie = {actors = {}, timer = Timer()}
 	};
 	self.AlertTable[key].zombie.timer.ElapsedSimTimeMS = self:GetZombieRespawnIntervalForAlert(self.AlertTable[key]) - 500; --Set the alert's zombie timer so it spawns zombies soon
 	--Add the alert's strength(s) to the table
@@ -143,15 +163,17 @@ function ModularActivity:AddAlert(pos, target, alertvalues)
 		self.AlertTable[key][atype] = {strength = alertvalues[atype].strength, savedstrength = 0, timer = Timer(), parent = alertvalues[atype].parent};
 		s = s..atype.." - ("..tostring(self.AlertTable[key][atype].strength)..","..tostring(self.AlertTable[key][atype].savedstrength).."); ";
 	end
-	print ("Newly added alert's strengths and savedstrengths are "..s);
 	--Set the target's alert in the human table
 	self:AlertsNotifyMany_NewAlertAdded(self.AlertTable[key]);
 	return self.AlertTable[key];
 end
 --Add a thrown item based on parameter values
-function ModularActivity:AddAlertItem(item, ismobile, light, sound)
-	print ("ADD "..(ismobile and "MOBILE" or "").." THROWN ITEM (Key: "..tostring(item.UniqueID)..") - "..item.PresetName..", light: "..tostring(light.strength)..", sound: "..tostring(sound.strength));
-	self.AlertItemTable[item.UniqueID] = {ismobile = ismobile, light = light, sound = sound};
+function ModularActivity:AddAlertItem(item, ismobile, alertvalues)
+	print ("ADD "..(ismobile and "MOBILE" or "").." THROWN ITEM (Key: "..tostring(item.UniqueID)..") - "..item.PresetName..", light: "..tostring(alertvalues.light.strength)..", sound: "..tostring(alertvalues.sound.strength));
+	self.AlertItemTable[item.UniqueID] = {ismobile = ismobile};
+	for _, atype in pairs(self.AlertTypes) do
+		self.AlertItemTable[item.UniqueID][atype] = alertvalues[atype];
+	end
 end
 --Make an alert from a thrown alert item, note that this is called from the item's script automatically when it's ready to become an alert
 function ModularActivity:AddAlertFromAlertItem(item)
@@ -214,6 +236,7 @@ function ModularActivity:MergeAlerts(alert1, alert2, key1, key2)
 		end
 	end
 	self:UpdateAlertStrength(toalert);
+	toalert.strengthremovespeed = self:GetInitialStrengthRemovalSpeedForAlert(toalert);
 	
 	self:MoveZombiesFromOneAlertToAnother(fromalert, toalert);
 	
@@ -226,6 +249,16 @@ end
 --Check if two alerts have the same target (or no target)
 function ModularActivity:AlertsHaveSameTarget(alert1, alert2)
 	return (alert1.target == nil and alert2.target == nil) or (alert1.target ~= nil and alert2.target ~= nil and alert1.target.UniqueID == alert2.target.UniqueID)
+end
+--Return a table of all non-nil parents from the alert
+function ModularActivity:GetAlertParents(alert)
+	local parenttable = {};
+	for _, atype in pairs(self.AlertTypes) do
+		if alert[atype].parent ~= nil then
+			parenttable[atype] = alert[atype].parent;
+		end
+	end
+	return parenttable;
 end
 --Safely update the total strength of an alert
 function ModularActivity:UpdateAlertStrength(alert)
@@ -241,15 +274,40 @@ function ModularActivity:GetAlertStrength(alert)
 	end
 	return strength;
 end
+--Return the calculated speed at which strength should be removed from an alert, slightly higher for 
+function ModularActivity:GetInitialStrengthRemovalSpeedForAlert(alert)
+	local strength = self:GetAlertStrength(alert);
+	return self.AlertBaseStrengthRemoveSpeed*math.sqrt(strength/self.AlertBaseStrength);
+end
+--Remove strength for all alert types with more than 0 for the alert 
+function ModularActivity:LowerAlertStrength(alert)
+	for _, atype in pairs(self.AlertTypes) do
+		if alert[atype].parent == nil then
+			alert[atype].strength = math.max(0, alert[atype].strength - alert.strengthremovespeed);
+		end
+	end
+	self:UpdateAlertStrength(alert);
+end
 --Return the safe strength for a weapon alert given the weapon's sound level
 function ModularActivity:GetWeaponAlertStrength(soundlevel)
-	return math.min(self.AlertStrengthLimit, self.AlertValue*soundlevel/self.WeaponAlertValues[self.WeaponAlertStrengthComparator]);
+	return math.min(self.AlertStrengthLimit, self.ActorActvivityToAlertValue*soundlevel/self.WeaponAlertValues[self.WeaponAlertStrengthComparator]);
 end
+--Return a table for use in making new alerts - makes default values for any types that aren't inputted, and uses the input for any that are
+function ModularActivity:GenerateAlertCreationTableFromValues(values)
+	local strengthstable = {};
+	for _, atype in pairs(self.AlertTypes) do
+		strengthstable[atype] = {strength = 0, parent = nil};
+	end
+	for atype, val in pairs(values) do
+		strengthstable[atype] = val;
+	end
+	return strengthstable;
+end
+--VISIBLE ALERT UTILITY FUNCTIONS--
 --Return the max distance at which an alert of certain strength can be seen
 function ModularActivity:AlertVisibilityDistance(alertstrength)
 	return alertstrength/self.AlertAwareness;
 end
---VISIBLE ALERT UTILITY FUNCTIONS--
 --Return true if there are any visible alerts more than mindist and less than maxdist away from pos
 --Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
 function ModularActivity:CheckForVisibleAlerts(pos, awarenessmod, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
@@ -391,16 +449,8 @@ function ModularActivity:DoAlerts()
 	--Clean the table before doing any alert stuff
 	self:DoAlertCleanup();
 	
-	--Update all alert strengths and mobile alert positions
-	for _, alert in pairs(self.AlertTable) do
-		self:UpdateAlertStrength(alert);
-		if alert.target ~= nil and MovableMan:ValidMO(alert.target) then
-			alert.pos = Vector(alert.target.Pos.X, alert.target.Pos.Y);
-		end
-	end
-	
 	--Add weapon sounds on firing
-	self:DoAlertHumanAddActivity();
+	self:DoAlertHumanManageActivity();
 	
 	--Run the general alert making often
 	self:DoAlertCreations();
@@ -419,16 +469,19 @@ end
 --------------------
 --Clean up the alert table for a variety of reasons
 function ModularActivity:DoAlertCleanup()
-	for k, alert in pairs(self.AlertTable) do
-		local notremoved = true;
+	for key, alert in pairs(self.AlertTable) do
+		--Remove dead targets and parents from alerts
+		self:RemoveDeadTargetOrParentsFromAlert(alert);
 		
-		--Check if the alert is over its lifetime
-		for _, atype in pairs(self.AlertTypes) do
-			if (alert[atype].strength > 0 or alert[atype].savedstrength > 0) and alert[atype].timer:IsPastSimMS(self.AlertBaseLifetime) then
-				alert[atype].strength = 0;
-				alert[atype].savedstrength = 0;
-			end
+		--Do alert strength removal
+		self:LowerAlertStrength(alert);
+		
+		--Update alert positions so they match their targets
+		if alert.target ~= nil and alert.target.ID ~= 255 and MovableMan:ValidMO(alert.target) then
+			alert.pos = Vector(alert.target.Pos.X, alert.target.Pos.Y);
 		end
+		
+		local notremoved = true;
 		
 		--Remove alert because no strength left, can't just use the updated strength value because we have to account for saved strength too
 		local hasstrength = #self.AlertTypes; --Iterate through all alert types and decrement for any that have no strength
@@ -442,44 +495,56 @@ function ModularActivity:DoAlertCleanup()
 			self:AlertsNotifyMany_DeadAlert(alert);
 			notremoved = false;
 			--Remove the alert
-			self.AlertTable[k] = nil;
+			self.AlertTable[key] = nil;
 			
 			
-			--TODO PRINTING DELETE
-			print ("REMOVED ALERT "..tostring(k).." WITH TARGET "..tostring(alert.target).." FROM POS "..tostring(alert.pos).."; "..tostring(self:NumberOfCurrentAlerts()).." alerts remain");
+			print ("REMOVED ALERT "..tostring(key).." WITH TARGET "..tostring(alert.target).." FROM POS "..tostring(alert.pos).."; "..tostring(self:NumberOfCurrentAlerts()).." alerts remain");
 		end
 		
-		--Handle changes in target for explosives (emitting items), dead target, target picked up or dropped
-		if notremoved and alert.target ~= nil and (alert.target.ClassName == "TDExplosive" or alert.target.ClassName == "Entity") and not MovableMan:ValidMO(alert.target) then
-			--Remove alerts for thrown alert items that are picked up, new ones get added to their holder
-			if alert.target.RootID ~= alert.target.ID and alert.target.ID ~= 255 and ToAttachable(alert.target):IsAttached() and alert.target.Sharpness < 3 then
-				print ("ALERT "..tostring(k).." AT POS "..tostring(alert.pos).." REMOVED BECAUSE PICKED UP - ID: "..tostring(alert.target.ID)..", ROOTID: "..tostring(alert.target.RootID)..", ROOTACTOR: "..tostring(MovableMan:GetMOFromID(alert.target.RootID)));
-				if self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID] ~= nil then
-					print ("Alert with same parent is at "..tostring(self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID].pos));
-				end
-				notremoved = false;
-				self.AlertTable[k] = nil;
-			--Otherwise the alert parent is dead so set its alert to nonmobile
-			elseif alert.target.ID == 255 then
-				print ("ALERT "..tostring(k).." AT POS "..tostring(alert.pos).." SET TO NON MOBILE - ID: "..tostring(alert.target.ID)..", ROOT: "..tostring(alert.target.RootID));
-				notremoved = false;
-				alert.target = nil;
-				for _, atype in pairs(self.AlertTypes) do
-					alert[atype].parent = nil;
+		--Removing alerts for thrown items that are picked up, new ones get added through activity to their holder
+		if notremoved and alert.target ~= nil and next(self:GetAlertParents(alert)) ~= nil then
+			if alert.target.ClassName == "TDExplosive" and not MovableMan:ValidMO(alert.target) then
+				if alert.target.RootID ~= alert.target.ID and alert.target.ID ~= 255 and ToAttachable(alert.target):IsAttached() and alert.target.Sharpness < 3 then
+					notremoved = false;
+					self.AlertTable[key] = nil;
+					
+					
+					
+					print ("ALERT "..tostring(key).." AT POS "..tostring(alert.pos).." REMOVED BECAUSE PICKED UP - ID: "..tostring(alert.target.ID)..", ROOTID: "..tostring(alert.target.RootID)..", ROOTACTOR: "..tostring(MovableMan:GetMOFromID(alert.target.RootID)));
+					if self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID] ~= nil then
+						print ("Alert with same parent is at "..tostring(self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID].pos));
+					end
 				end
 			end
 		end
 	end
 end
---Set the alert to be static if its actor is dead
+--Check if the target or any parents of the alert are dead, and if so, remove them
+function ModularActivity:RemoveDeadTargetOrParentsFromAlert(alert)
+	if alert.target ~= nil and (alert.target.ID == 255 or alert.target.ClassName == "Entity") then
+		alert.target = nil;
+	end
+	for _, atype in pairs(self.AlertTypes) do
+		if alert[atype].parent ~= nil and (alert[atype].parent.ID == 255 or alert[atype].parent.ClassName == "Entity") then
+			alert[atype].parent = nil;
+		end
+	end
+end
+--Set the alert to be static if its actor is dead and it has no living parents, or set its target as its parent
 function ModularActivity:MoveAlertFromDeadActor(alert)
-	alert.target = nil;
-	print("MOVE ALERT FROM DEAD ACTOR");
+	local foundparent = nil; --The living parent if there is one, otherwise nil
+	for _, atype in pairs(self.AlertTypes) do
+		foundparent = (alert[atype].parent.ID ~= 255 and alert[atype].parent.ClassName ~= "Entity" and MovableMan:ValidMO(alert[atype].parent)) and alert[atype].parent or nil;
+		alert[atype].parent = foundparent;
+		print(atype.." parent is "..tostring(foundparent));
+	end
+	alert.target = foundparent ~= nil and foundparent or nil;
+	print("MOVE ALERT FROM DEAD ACTOR, result is "..(foundparent ~= nil and "mobile" or "static"));
 end
 --Set alerts for actors whose activity timers have reset to be static and, if necessary, switch their type
-function ModularActivity:RemoveNonActiveActorAlert(alert, atype, actorID, actortype)
-	print ("REMOVE NON ACTIVE ALERT FROM TARGET "..(tostring(alert.target)..", PARENT "..tostring(alert[atype].parent)));
-	--If the alert has both sound and light, it has to be split
+function ModularActivity:RemoveNonActiveActorAlert(alert, atype, actorID)
+	print ("REMOVE NON ACTIVE ALERT FROM TARGET "..(tostring(alert.target)..", PARENT "..tostring(alert[atype].parent))); --TODO review how this works and fix it accordingly so it can work easily with already activated alerts
+	--Figure out how many types the alert has, if it has more than one it has to be split
 	local activetypes = 0;
 	for k, alerttype in pairs(self.AlertTypes) do
 		if alert[alerttype].strength > 0 or alert[alerttype].savedstrength > 0 then
@@ -496,13 +561,18 @@ function ModularActivity:RemoveNonActiveActorAlert(alert, atype, actorID, actort
 	
 	--Add the split off alert and remove it from the remained alert
 	alert[atype].strength = 0;
-	alert[atype].savedstrength = 0; --TODO Fix this removing the alert from a rethrown light item when it's dropped to ground from an actor NOTE: This may be because the parent is being set to nil, where parent is always the item making the alert and only target is the actor
+	alert[atype].savedstrength = 0;
 	alert[atype].parent = nil;
 	self:AddAlert(SceneMan:MovePointToGround(alert.pos, 10, 5), nil, types);
 	
 	--Remove the alert from the actor in the humantable if it only had one type
 	if activetypes <= 1 then
-		self.HumanTable[actortype][actorID].alert = false;
+		for _, humantable in pairs(self.HumanTable) do
+			if humantable[actorID] ~= nil then
+				humantable[actorID].alert = false;
+				break;
+			end
+		end
 	end
 end
 --Kill any dead held light items so they can't last forever
@@ -521,15 +591,15 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Deal with adding to humans' activity levels
-function ModularActivity:DoAlertHumanAddActivity()
-	for humankey, tables in pairs(self.HumanTable) do
-		for __, humantable in pairs(tables) do
+function ModularActivity:DoAlertHumanManageActivity()
+	for _, humantype in pairs(self.HumanTable) do
+		for __, humantable in pairs(humantype) do
 			local acttype = self:DoAlertHumanCheckCurrentActivity(humantable); --Check and update the actor's current activity levels
 			--If the human has an activity causing item, add to his activity value (as long as it's not at the limit) and reset its calm down timer
 			if acttype ~= false then
 				local item = ToHeldDevice(humantable.actor.EquippedItem);
 				if (acttype == "sound" and item:IsActivated() and humantable.rounds ~= ToHDFirearm(item).RoundInMagCount and not item:IsReloading()) or acttype == "light" then
-					humantable.activity[acttype].total = math.min(humantable.activity[acttype].total + humantable.activity[acttype].current, self.AlertValue);
+					humantable.activity[acttype].total = math.min(humantable.activity[acttype].total + humantable.activity[acttype].current, self.ActorActvivityToAlertValue);
 					humantable.activity[acttype].timer:Reset();
 					humantable.rounds = acttype == "sound" and ToHDFirearm(item).RoundInMagCount or humantable.rounds;
 				end
@@ -537,12 +607,25 @@ function ModularActivity:DoAlertHumanAddActivity()
 			
 			--Lower activity levels rapidly a little while after a period of no relevant activity increase
 			for atype, activity in pairs(humantable.activity) do
-				if activity.total > 0 and activity.timer:IsPastSimMS(self.ActorActivityRemoveTime) then
+                if activity.total > 0 and activity.timer:IsPastSimMS(self.ActorActivityRemoveTime) then
 					activity.total = math.max(activity.total - self.ActorActivityRemoveSpeed, 0);
+                    
+                    --If the actor has an alert of this type, remove that type from the alert (if it's only got one type it will be removed soon)
+                    if humantable.alert ~= false and humantable.alert[atype].strength > 0 then
+                        self:RemoveNonActiveActorAlert(humantable.alert, atype, humantable.actor.UniqueID);
+                    end
+                end
+
+			
+				if activity.total > 0 then
+					--Remove activity if the actor hasn't fired in a while
+					if activity.timer:IsPastSimMS(self.ActorActivityRemoveTime) then
+						activity.total = math.max(activity.total - self.ActorActivityRemoveSpeed, 0);
 					
-					--If the actor has an alert of this type, remove that type from the alert (if it's only got one type it will be removed soon)
-					if humantable.alert ~= false and humantable.alert[atype].strength > 0 then
-						self:RemoveNonActiveActorAlert(humantable.alert, atype, humantable.actor.UniqueID, humankey);
+						--If the actor has an alert of this type, remove that type from the alert (if it's only got one type it will be removed soon)
+						if humantable.alert ~= false and removealert and humantable.alert[atype].strength > 0 then
+							self:RemoveNonActiveActorAlert(humantable.alert, atype, humantable.actor.UniqueID);
+						end
 					end
 				end
 			end
@@ -558,16 +641,14 @@ function ModularActivity:DoAlertHumanCheckCurrentActivity(tab)
 			tab.activity.sound.current = self.WeaponAlertTable[item.PresetName];
 			return "sound";
 		--Set the light activity level for the actor if applicable
-		elseif self.LightAlertTable[item.PresetName] ~= nil and item.Sharpness > 0 then
-			--Make sure the light isn't past its lifetime but still being held, if it is it will be killed
-			if not self:RemoveDeadHeldAlertItem(item, "light", tab.actor) then
-				tab.activity.light.current = self.LightAlertTable[item.PresetName]*self.LightActivityGainModifier;
-				--Add the item to the light table if it's not in it already (i.e. it was previously not equipped but was swapped to)
-				if self:AlertsRequestDayNight_LightItemNotInTable(item) then
-					self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
-				end
-				return "light";
-			end
+		elseif self.LightAlertTable[item.PresetName] ~= nil and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
+			tab.activity.light.current = self.LightAlertTable[item.PresetName]*self.LightActivityGainModifier;
+			--Add the item to the light table if it's not in it already (i.e. it was previously not equipped but was swapped to)
+			if self:AlertsRequestDayNight_LightItemNotInTable(item) then --TODO should this be happening here? The item isn't emitting yet right?
+			--	self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
+			print ("light up")
+			end 
+			return "light";
 		--Set the light activity level for the actor if applicable
 		elseif tab.lightOn then
 			tab.activity.light.current = self.FlashlightAlertStrength*self.LightActivityGainModifier;
@@ -576,61 +657,86 @@ function ModularActivity:DoAlertHumanCheckCurrentActivity(tab)
 	end
 	return false;
 end
+--Return the strength of the alert to be made, given an alert type and a humantable entry, can be easily updated to handle more alert types
+function ModularActivity:GetDesiredAlertStrengthFromHuman(atype, humantable)
+	local item = humantable.actor.EquippedItem;
+	if atype == "light" then
+		local val = humantable.lightOn and self.FlashlightAlertStrength or 0;
+		val = (self.LightAlertTable[item.PresetName] and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0) and self.LightAlertTable[item.PresetName] or val;
+		return val ~= nil and val or 0;
+	elseif atype == "sound" then
+		return self:GetWeaponAlertStrength(humantable.activity.sound.current);
+	end
+	return 13579; --NOTE: This number is used here to indicate something screwed up in making alerts since putting 0 would be less helpful
+end
 
 --Make alerts for actor alerts and thrown entries for thrown alerting items
 function ModularActivity:DoAlertCreations()
-	--Do various alert creation things 
+	--Do alert creation from various means, and management of alerts currently targeting humans
 	for _, tables in pairs(self.HumanTable) do
-		for __, humantable in pairs(tables) do
+		for ID, humantable in pairs(tables) do
+			--Only try to create alerts if the actor has an equipped item
 			local item = humantable.actor.EquippedItem;
-			--Check for throwables
 			if item ~= nil then
-				--If we have a junk item that's not already in the thrown table and the actor's firing, add it to the thrown table
-				if self.JunkAlertTable[item.PresetName] ~= nil and self.AlertItemTable[item.UniqueID] == nil and humantable.actor:GetController():IsState(Controller.WEAPON_FIRE) then
-					self:AddAlertItem(item, false, {strength = 0, parent = nil},  {strength = self.JunkAlertTable[item.PresetName], parent = item});
-					
-				--If we have a light item that's not already in the thrown table and the actor's firing, add it to the thrown table
-				elseif self.LightAlertTable[item.PresetName] ~= nil and self.AlertItemTable[item.UniqueID] == nil and self.AlertTable[item.UniqueID] == nil and (humantable.actor:GetController():IsState(Controller.WEAPON_FIRE) or (item.Sharpness == 2 and humantable.actor:GetController():IsState(Controller.WEAPON_DROP))) then
-					self:AddAlertItem(item, true, {strength = self.LightAlertTable[item.PresetName], parent = item}, {strength = 0, parent = nil});
-					item.Sharpness = 3;
-					--ToAttachable(item):Detach();
-				
-				--If the actor's activity.sound.total is too high, make new noise alert; these alerts are NOT mobile
-				elseif humantable.activity.sound.total >= self.AlertValue and humantable.activity.sound.current > 0 then
-					--Make a temporary table of the alert's strengths so we can add the alert
-					local strengthstable = {};
+				local cancreate = true;
+				--Check for throwable items, create new alert items from them and remove old alerts if necessary
+				if cancreate then
+					for atype, throwabletable in pairs(self.ThrowableAlertValues) do
+						if throwabletable[item.PresetName] and self.AlertItemTable[item.UniqueID] == nil and self.AlertTable[item.UniqueID] == nil then
+							local usestate = ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") or 0;
+							if (humantable.actor:GetController():IsState(Controller.WEAPON_FIRE) and (usestate == 0 or usestate == 2)) or (humantable.actor:GetController():IsState(Controller.WEAPON_DROP) and usestate == 2) then
+								--Remove any alert on the actor that used the item, if it was already active
+								if humantable.alert then
+									self:RemoveNonActiveActorAlert(humantable.alert, atype, ID);
+								end
+								--Add the new alert
+								self:AddAlertItem(item, throwabletable[item.PresetName].ismobile, self:GenerateAlertCreationTableFromValues({[atype] = {strength = throwabletable[item.PresetName].strength, parent = item}}));
+								cancreate = false;
+							end
+						end
+					end
+				end	
+				--If we have no thrown items, we're potentially working with activity values - weapon firing or holding activated light items/flashlight
+				if cancreate then
 					for _, atype in pairs(self.AlertTypes) do
-						strengthstable[atype] = {strength = 0, parent = nil};
-					end
-					strengthstable.sound = {strength = self:GetWeaponAlertStrength(humantable.activity.sound.current), parent = nil};
-					self:AddAlert(humantable.actor.Pos, nil, strengthstable);
-					humantable.activity.sound.total = math.floor(humantable.activity.sound.total*self.WeaponAlertActivityReductionFactor); --Reduce the actor's sound activity total so we don't keep making alerts
-			
-				--If the actor's activity.light.total is too high and light is being made and it's not daytime, make new light alert; these alerts ARE mobile
-				elseif humantable.activity.light.total >= self.AlertValue and self.AlertIsDay == false and humantable.activity.light.current > 0 then
-					local lightstrength = humantable.lightOn and self.FlashlightAlertStrength or self.LightAlertTable[item.PresetName];
-					--If the actor doesn't have an alert, make one
-					if humantable.alert == false then
-						--Make a temporary table of the alert's strengths so we can add the alert
-						local strengthstable = {};
-						for _, atype in pairs(self.AlertTypes) do
-							strengthstable[atype] = {strength = 0, parent = nil};
+						if humantable.activity[atype].total >= self.ActorActvivityToAlertValue and humantable.activity[atype].current > 0 then
+							local alerttargetsactor = atype == "light" and true or false; --TODO this should be changed to be more extensible, allowing for mobile sound alerts
+							local makenewalert = (alerttargetsactor == false or humantable.alert == false) and true or false; --Flag for whether we're making a new alert or updating a current one
+							
+							--Determine the strength for the alert to be made or for the current alert to be updated to
+							local alertstrength = self:GetDesiredAlertStrengthFromHuman(atype, humantable);
+							
+							--If there's no alert or our alert-to-be doesn't target the actor, make a new one
+							if makenewalert then
+								--Setup alert creation values
+								local alertpos = humantable.actor.Pos;
+								local alerttarget = alerttargetsactor and humantable.actor or nil;
+								local alertparent = alerttargetsactor and item or nil;
+								
+								--Reduce the actor's activity total for the alert type, so it don't keep making alerts
+								humantable.activity[atype].total = atype == "light" and humantable.activity[atype].total - 1 or math.floor(humantable.activity[atype].total*self.WeaponAlertActivityReductionFactor);
+
+								--Generate an alert creation table for the alert-to-be
+								local strengthstable = self:GenerateAlertCreationTableFromValues({[atype] = {strength = alertstrength, parent = alertparent}});
+								
+								--Add the alert and pass it to the humantable if needed
+								local alert = self:AddAlert(alertpos, alerttarget, strengthstable);
+								humantable.alert = alerttargetsactor and alert or humantable.alert;
+								
+							--If there's an alert and our alert-to-be targets the actor, update its strength
+							else
+								local speed = humantable.alert.strengthremovespeed;
+								if humantable.alert[atype].strength > alertstrength + 2*speed then
+									humantable.alert[atype].strength = humantable.alert[atype].strength - speed;
+								elseif humantable.alert[atype].strength < alertstrength - 2*speed then
+									humantable.alert[atype].strength = humantable.alert[atype].strength + speed;
+								elseif humantable.alert[atype].strength <= alertstrength + 2*speed and humantable.alert[atype].strength >= alertstrength - 2*speed then
+									humantable.alert[atype].strength = alertstrength;
+								end
+							end
+							cancreate = false;
 						end
-						strengthstable.light = {strength = lightstrength, parent = item};
-						humantable.alert = self:AddAlert(humantable.actor.Pos, humantable.actor, strengthstable);
-					--Otherwise if the actor has an alert increase or decrease the alert's light.strength until it equals lightstrength
-					elseif humantable.alert ~= false and humantable.alert.light.strength ~= lightstrength then
-						local speed = self.ActorActivityRemoveSpeed*10;
-						if humantable.alert.light.strength > lightstrength + 2*speed then --TODO this bugs out if you're holding a lit flare and drop it, I guess it should be checking that the item is not nil again
-							humantable.alert.light.strength = humantable.alert.light.strength - speed;
-						elseif humantable.alert.light.strength < lightstrength - 2*speed then
-							humantable.alert.light.strength = humantable.alert.light.strength + speed;
-						elseif humantable.alert.light.strength <= lightstrength + 2*speed and humantable.alert.light.strength >= lightstrength - 2*speed then
-							humantable.alert.lightstrength = lightstrength;
-						end
-						self:UpdateAlertStrength(humantable.alert);
 					end
-					humantable.activity.light.total = humantable.activity.light.total - 1; --Lower the actor's total light activity by 1 so it doesn't cause false flags
 				end
 			end
 		end
@@ -640,19 +746,6 @@ end
 function ModularActivity:ManageAlerts() 
 	--General update loop
 	for k, alert in pairs(self.AlertTable) do
-		--Reset lifetimer on emitting items so the alert won't expire and have its strength set to 0
-		for _, atype in pairs(self.AlertTypes) do
-			--If the alert has a parent of that type, reset its timer
-			if MovableMan:ValidMO(alert[atype].parent) then
-				alert[atype].timer:Reset();
-				--print ("Resetting "..tostring(atype).." timer on alert "..tostring(k).." at pos "..tostring(alert.pos).." because parent is still alive");
-			--[[else
-				if alert[atype].strength > 0 then
-					alert[atype].strength = math.max(0, alert[atype].strength - AlertStrengthRemoveSpeed); --TODO decide if or how alert strength removal should work
-				end]]
-			end
-		end
-	
 		--Merge nearby alerts
 		for otherkey, otheralert in pairs(self.AlertTable) do --TODO alert merge range should depend on the number of alerts in total, more alerts means bigger range
 			if k ~= otherkey and self:AlertsHaveSameTarget(alert, otheralert) and SceneMan:ShortestDistance(alert.pos, otheralert.pos, self.Wrap).Magnitude < self:GetAlertMaxMergeDistance() then

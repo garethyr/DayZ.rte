@@ -352,6 +352,10 @@ function DayZ:UpdateActivity()
 		self:DoAlerts();
 	end
 	
+	if self.IncludeBehaviours then
+		self:DoDebugTargetDisplayForZombies();
+	end
+	
 	if self.GeneralLagTimer:IsPastSimMS(100) then
 		
 		--Deal with loot actions

@@ -10,7 +10,7 @@ function ModularActivity:StartSpawns()
 	self.ZombieSpawnInterval = 90000; --General purpose spawn interval used for various specific ones
 	self.ZombieSpawnMinDistance = FrameMan.PlayerScreenWidth/2 + 100; --Minimum spawn distance for all zombies, no specific minimum spawn should be less than this
 	self.ZombieSpawnMaxDistance = FrameMan.PlayerScreenWidth/2 + 300; --Maximum spawn distance for all zombies, specific maximum spawns can be greater than this
-	self.ZombieAlertAwarenessModifier = 1; --The modifier for zombie alert awareness range, < 1 is less aware, > 1 is more aware, so >1 would mean they detect alerts from longer distances
+	self.ZombieAlertAwarenessModifier = 1; --The modifier for zombie alert awareness range, < 1 is less aware, > 1 is more aware, so > 1 would mean they detect alerts from longer distances
 	
 	--Loot area zombies
 	self.SpawnLootZombieMaxGroupSize = 1; --The maximum number of loot zombies that will spawn for one area
@@ -38,10 +38,10 @@ end
 --Spawners: alert - the actual alert table value, "loot" - spawned for loot guarding
 --TargetTypes: human, alert, pos - the first is for any actor triggered spawn, the second for alert and the third for static position
 --Note that pos targets are passed in as a table: {pos = Vector(), weight = number}
-function ModularActivity:SpawnZombie(spawnpos, target, targettype, spawner)
+function ModularActivity:SpawnZombie(spawnpos, targetval, targettype, spawner)
 	if MovableMan:GetMOIDCount() <= self.MOIDLimit then
-		print (string.format("Spawning %s zombie at approximate %s %s for %s target", type(spawner) == "table" and "alert" or "loot", targettype == "alert" and "offset" or "position", tostring(spawnpos), targettype));
-		local targetpos = self:GetZombieTargetPos(target, targettype);
+		print (string.format("Spawning %s zombie at approximate %s %s for %s targetval", type(spawner) == "table" and "alert" or "loot", targettype == "alert" and "offset" or "position", tostring(spawnpos), targettype));
+		local targetpos = self:GetZombieTargetPos(targetval, targettype);
 		
 		local actor = CreateAHuman("[DZ] Zombie 1", self.RTE);
 --		actor:AddInventoryItem(CreateHDFirearm("Zombie Attack BG", self.RTE));
@@ -49,7 +49,7 @@ function ModularActivity:SpawnZombie(spawnpos, target, targettype, spawner)
 		actor.Team = self.ZombieTeam;
 		
 		--Alert zombies (i.e. those spawned from alerts) have to be positioned differently than loot zombies
-		--Note that spawner can be the same as target, but is not always
+		--Note that spawner can be the same as targetval, but is not always
 		if type(spawner) == "table" then --Table spawners are only alerts,
 			local offset = spawnpos;
 			actor.Pos = self:GetSafeRandomSpawnPosition(targetpos, offset, 10, true); --Less randomness and grounding on alert spawns
@@ -59,7 +59,7 @@ function ModularActivity:SpawnZombie(spawnpos, target, targettype, spawner)
 		print ("After safety adjustments, zombie spawned at "..tostring(actor.Pos));
 		
 		MovableMan:AddActor(actor);
-		self:SetZombieTarget(actor, target, targettype, spawner);
+		self:SetZombieTarget(actor, targetval, targettype, spawner);
 		
 		return actor; --In case the function caller needs a reference to the actor
 	end
@@ -132,8 +132,8 @@ function ModularActivity:GetSafeRandomSpawnPosition(spawnpos, offset, randomoffs
 end
 --Directly set a zombie's target, both human waypoints and zombie table target value
 --NOTE: Rewrites the zombie's zombietable entry since it's the easiest way to update everything
-function ModularActivity:SetZombieTarget(actor, target, targettype, spawner)
-	local targetpos = self:GetZombieTargetPos(target, targettype);
+function ModularActivity:SetZombieTarget(actor, targetval, targettype, spawner)
+	local targetpos = self:GetZombieTargetPos(targetval, targettype);
 	local startdist = math.floor(SceneMan:ShortestDistance(targetpos, actor.Pos, self.Wrap).Magnitude);
 	
 	actor.AIMode = Actor.AIMODE_SENTRY;
@@ -141,20 +141,24 @@ function ModularActivity:SetZombieTarget(actor, target, targettype, spawner)
 	
 	--Zombies with human targets get an MOWaypoint, those without get a SceneWaypoint nearby
 	if targettype == "human" then
-		actor:AddAIMOWaypoint(target);
+		actor:AddAIMOWaypoint(targetval);
 	else
 		actor:AddAISceneWaypoint(SceneMan:MovePointToGround(Vector(targetpos.X, targetpos.Y), 10, 5));
 	end
-	self:AddToZombieTable(actor, target, targettype, spawner, startdist);
+	self:AddToZombieTable(actor, targetval, targettype, spawner, startdist);
 	actor.AIMode = Actor.AIMODE_GOTO;
 	
 	return targetpos;
 end
 --Return a position for the target, based on what type of target it is
-function ModularActivity:GetZombieTargetPos(target, targettype)
-	local targetpos = target.pos; --Alert and pos targets use tables wherein pos is the position
+function ModularActivity:GetZombieTargetPos(targetval, targettype)
+	--Handle zombies without a target
+	if targetval == false then
+		return 0;
+	end
+	local targetpos = targetval.pos; --Alert and pos targets use tables wherein pos is the position
 	if targettype == "human" then
-		targetpos = target.Pos;
+		targetpos = targetval.Pos;
 	end
 	return targetpos;
 end

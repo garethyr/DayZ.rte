@@ -73,7 +73,7 @@ function ModularActivity:SortMaxAndMinArguments(dists)
 	return mindist, maxdist;
 end
 -----------------------------------------------------------------------------------------
--- Find the nearest human, more than mindist and less than maxdist to a point
+-- Find the nearest human, more than mindist and less than maxdist to a point. Returns nil if none found
 -----------------------------------------------------------------------------------------
 function ModularActivity:NearestHuman(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	local mindist, maxdist = self:SortMaxAndMinArguments({...});

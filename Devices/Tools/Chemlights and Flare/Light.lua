@@ -63,7 +63,9 @@ function Update(self)
 			end
 		--If it's not moving, set it to stop overriding target priority
 		else
-			self:SetNumberValue("OverrideTargetPriority", 0);
+			if self:GetNumberValue("OverrideTargetPriority") == 1 then
+				self:SetNumberValue("OverrideTargetPriority", 0);
+			end
 		end
 	end
 	self:SetNumberValue("UseState", self.State)

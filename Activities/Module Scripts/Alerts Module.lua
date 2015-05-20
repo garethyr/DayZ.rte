@@ -13,11 +13,11 @@ function ModularActivity:StartAlerts()
 	self.AlertBaseStrengthRemoveSpeed = self.AlertBaseStrength/1000;
 	
 	--The alert value at which to change activity to alerts
-	self.ActorActvivityToAlertValue = 5000; -- default 5000
+	self.ActorActivityToAlertValue = 5000;
 	--The number of MS to wait after an actor shoots to start lowering his total activity
 	self.ActorActivityRemoveTime = 5000;
 	--The rate at which activity is removed from actors, removed every frame
-	self.ActorActivityRemoveSpeed = self.ActorActvivityToAlertValue/1000;
+	self.ActorActivityRemoveSpeed = self.ActorActivityToAlertValue/1000;
 	
 	--The base merge distance for alerts with the same (or no) target
 	self.AlertBaseMergeDistance = 100;
@@ -27,26 +27,26 @@ function ModularActivity:StartAlerts()
 	self.AlertMaxMergeDistance = self.AlertBaseMergeDistance*5;
 	
 	--The number to divide the alert strength by when determining if actors are close enough to react. Greater number means less reactive.
-	self.AlertAwareness = 10;
-	--Not a very intuitive number, the vector magnitude difference at which actors will target alerts over other actors for spawning, etc.
-	--A bigger number will mean more priority given to alerts, if the number is big enough, they'll care more about alerts than actors, etc.
-	self.AlertPriorityFactor = 50; --TODO review the need and use of this, should probably be in behaviours???
+	self.AlertGeneralVisibilityDistanceModifier = 10;
 	
+	--The number of zombies a base strength alert will spawn, stronger alerts will spawn more zombies based on this while weaker ones will spawn fewer. Note that the number spawned will never be below 1
+	self.AlertBaseZombieCount = 1;
+	--The amount of deviation to allow when calculating the number of zombies to spawn for an alert
+	--E.g. an alert needing 100 strength to spawn 2 zombies but only having 95, could still spawn 2 zombies if the deviation is greater than 5
+	self.ZombieSpawnCountStrengthRequirementDeviation = self.AlertBaseStrength*.1;
+	--The approximate distance at which to spawn very zombies for weakest alerts, used as a base for calculation of other distances
+	self.AlertBaseZombieSpawnDistance = self:AlertsRequestSpawns_GetZombieMinSpawnDistance();
 	--The amount of time it takes for alert zombies to respawn.
-	self.AlertZombieSpawnInterval = self:AlertsRequestSpawns_GetZombieSpawnInterval()/3;
-	--The number of alert zombies a very high alert will spawn, used as a base for calculation of other strength alerts
-	self.VeryHighAlertNumberOfZombies = 3;
-	--The approximate distance at which to spawn very zombies for very low strength alerts, used as a base for calculation of other distances
-	self.VeryLowAlertZombieSpawnDistance = self:AlertsRequestSpawns_GetZombieMinSpawnDistance();
+	self.AlertBaseZombieSpawnInterval = self:AlertsRequestSpawns_GetZombieSpawnInterval()/3;
 	
 	--The default alert value for junk items when they hit the ground, each item can have a different value
 	self.JunkNoise = self.AlertBaseStrength*0.25;
 	--The alert value for flashlights, not relevant if they're not included
-	self.FlashlightAlertStrength = self.ActorActvivityToAlertValue;
-	--A modifier for the light activity increase speed on light use, so they get slowed by some amount for balance. The actual speed is also based on the light's strength
-	self.LightActivityGainModifier = 0.02;
-	--The weapon alert value to compare strength with when making alerts (i.e. a weapon with 4 times this alert value will make an alert 4 times self.ActorActvivityToAlertValue)
-	self.WeaponAlertStrengthComparator = "L"; --Ranges from N to VVH, see self.WeaponAlertTable for keys
+	self.FlashlightAlertStrength = self.ActorActivityToAlertValue;
+	--A modifier for how fast held items add activity to the actor holding them, the actual speed at which they add is also based on their activity strength
+	self.ActivatedHeldItemActivityGainModifier = 0.02;
+	--The weapon alert value to compare strength with when making alerts (i.e. a weapon with 4 times this alert value will make an alert 4 times self.ActorActivityToAlertValue)
+	self.WeaponAlertStrengthComparator = "L"; --Ranges from N to VVH, see self.WeaponActivityTable for keys
 	--The factor to reduce the actor's activity by after a weapon alert is made (between 0 and 1)
 	self.WeaponAlertActivityReductionFactor = 0.5;
 
@@ -54,7 +54,7 @@ function ModularActivity:StartAlerts()
 	--STATIC ALERT TABLES--
 	-----------------------
 	--This table stores all alert making throwables and their values
-	self.ThrowableAlertValues = {
+	self.ThrowableItemAlertValues = {
 		sound = {
 			["Empty Tin Can"] = {strength = self.JunkNoise, ismobile = false},
 			["Empty Whiskey Bottle"] = {strength = self.JunkNoise, ismobile = false},
@@ -75,12 +75,12 @@ function ModularActivity:StartAlerts()
 	self.AlertTypes = {"sound", "light"};
 	
 	--Weapon sound values (i.e. how much shooting adds) ordered from lowest (None) to highest (Very Very High), hunting knife with 0 sound is outside of this table
-	self.WeaponAlertValues = {N=100, VVL=250, VL=500, L=1000, LM=1650, M=2250, MH=3250, H=4500, VH=6000, VVH=10000}; -- default 10, 25, 50, 100, 150, 200, 250, 300, 350, 500
-	self.WeaponAlertTable = { --Note: weapons aren't separated by civilian/military for alerts since there's no need for that distinction here
+	self.WeaponActivityValues = {N=100, VVL=250, VL=500, L=1000, LM=1650, M=2250, MH=3250, H=4500, VH=6000, VVH=self.AlertStrengthLimit/self.ActorActivityToAlertValue};
+	self.WeaponActivityTable = { --Note: weapons aren't separated by civilian/military for alerts since there's no need for that distinction here
 		--Civilian weapon alert values
-		["Hunting Knife"] = 0, ["Crowbar"] = 0, ["Hatchet"] = 0, ["[DZ] Makarov PM"] = self.WeaponAlertValues.L, ["[DZ] .45 Revolver"] = self.WeaponAlertValues.LM, ["[DZ] M1911A1"] = self.WeaponAlertValues.LM, ["[DZ] Compound Crossbow"] = self.WeaponAlertValues.N, ["[DZ] MR43"] = self.WeaponAlertValues.M, ["[DZ] Winchester 1866"] = self.WeaponAlertValues.LM, ["[DZ] Lee Enfield"] = self.WeaponAlertValues.VH, ["[DZ] CZ 550"] = self.WeaponAlertValues.VH,
+		["Hunting Knife"] = 0, ["Crowbar"] = 0, ["Hatchet"] = 0, ["[DZ] Makarov PM"] = self.WeaponActivityValues.L, ["[DZ] .45 Revolver"] = self.WeaponActivityValues.LM, ["[DZ] M1911A1"] = self.WeaponActivityValues.LM, ["[DZ] Compound Crossbow"] = self.WeaponActivityValues.N, ["[DZ] MR43"] = self.WeaponActivityValues.M, ["[DZ] Winchester 1866"] = self.WeaponActivityValues.LM, ["[DZ] Lee Enfield"] = self.WeaponActivityValues.VH, ["[DZ] CZ 550"] = self.WeaponActivityValues.VH,
 		--Military weapons and their alert values
-		["[DZ] G17"] = self.WeaponAlertValues.L, ["[DZ] AKM"] = self.WeaponAlertValues.M, ["[DZ] M16A2"] = self.WeaponAlertValues.M, ["[DZ] MP5SD6"] = self.WeaponAlertValues.VVL, ["[DZ] M4A1 CCO SD"] = self.WeaponAlertValues.VL, ["[DZ] Mk 48 Mod 0"] = self.WeaponAlertValues.H, ["[DZ] M14 AIM"] = self.WeaponAlertValues.H, ["[DZ] M107"] = self.WeaponAlertValues.VH
+		["[DZ] G17"] = self.WeaponActivityValues.L, ["[DZ] AKM"] = self.WeaponActivityValues.M, ["[DZ] M16A2"] = self.WeaponActivityValues.M, ["[DZ] MP5SD6"] = self.WeaponActivityValues.VVL, ["[DZ] M4A1 CCO SD"] = self.WeaponActivityValues.VL, ["[DZ] Mk 48 Mod 0"] = self.WeaponActivityValues.H, ["[DZ] M14 AIM"] = self.WeaponActivityValues.H, ["[DZ] M107"] = self.WeaponActivityValues.VH
 	};
 	
 	------------------------
@@ -290,7 +290,7 @@ function ModularActivity:LowerAlertStrength(alert)
 end
 --Return the safe strength for a weapon alert given the weapon's sound level
 function ModularActivity:GetWeaponAlertStrength(soundlevel)
-	return math.min(self.AlertStrengthLimit, self.ActorActvivityToAlertValue*soundlevel/self.WeaponAlertValues[self.WeaponAlertStrengthComparator]);
+	return math.min(self.AlertStrengthLimit, self.ActorActivityToAlertValue*soundlevel/self.WeaponActivityValues[self.WeaponAlertStrengthComparator]);
 end
 --Return a table for use in making new alerts - makes default values for any types that aren't inputted, and uses the input for any that are
 function ModularActivity:GenerateAlertCreationTableFromValues(values)
@@ -306,7 +306,7 @@ end
 --VISIBLE ALERT UTILITY FUNCTIONS--
 --Return the max distance at which an alert of certain strength can be seen
 function ModularActivity:AlertVisibilityDistance(alertstrength)
-	return alertstrength/self.AlertAwareness;
+	return alertstrength/self.AlertGeneralVisibilityDistanceModifier;
 end
 --Return true if there are any visible alerts more than mindist and less than maxdist away from pos
 --Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
@@ -327,7 +327,8 @@ end
 --Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
 function ModularActivity:NearestVisibleAlert(pos, awarenessmod, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	mindist, maxdist = self:SortMaxAndMinArguments({...});
-	local dist, visdist, target = nil;
+	local dist, visdist, target;
+	local alerts = {};
 	
 	for _, alert in pairs(self.AlertTable) do
 		dist = SceneMan:ShortestDistance(pos, alert.pos, self.Wrap).Magnitude;
@@ -343,7 +344,8 @@ end
 --Visibility is affected by awarenessmod, where > 1 means alerts can be found from greater distance
 function ModularActivity:AllVisibleAlerts(pos, awarenessmod, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	mindist, maxdist = self:SortMaxAndMinArguments({...});
-	local dist, visdist, alerts = {};
+	local dist, visdist;
+	local alerts = {};
 	
 	for _, alert in pairs(self.AlertTable) do
 		dist = SceneMan:ShortestDistance(pos, alert.pos, self.Wrap).Magnitude;
@@ -420,26 +422,23 @@ function ModularActivity:GetCurrentNumberOfZombiesForAlert(alert)
 end;
 --Returns the number of zombies an alert should spawn based on its strength
 function ModularActivity:GetDesiredNumberOfZombiesForAlert(alert)
-	if (alert.strength <= self.WeaponAlertValues.M) then
-		return 1;
-	end
-	return math.floor(self.VeryHighAlertNumberOfZombies*alert.strength/(self.WeaponAlertValues.VH - self.WeaponAlertValues.VL)); --Subtract VL alert value from denominator to give leeway
+	return math.max(1, math.floor(self.AlertBaseZombieCount*(alert.strength + self.ZombieSpawnCountStrengthRequirementDeviation)/self.AlertBaseStrength));
 end
 --Returns a distance used to determine roughly where to spawn the zombie, which is then safety checked in spawns
 function ModularActivity:GetZombieSpawnDistanceOffsetForAlert(alert)
 	local i = 0;
-	if alert.strength >= self.WeaponAlertValues.M then
+	if alert.strength >= self.AlertBaseStrength then
 		i = 2;
-	elseif alert.strength >= self.WeaponAlertValues.L then
+	elseif alert.strength >= self.AlertBaseStrength * .5 then --TODO kill off this magic number, talk again with uber about how we should do this. Maybe there should be an overall table of alert strengths aside from weapon strengths
 		i = 1;
 	end
-	return self.VeryLowAlertZombieSpawnDistance + self.VeryLowAlertZombieSpawnDistance*0.5*i;
+	return self.AlertBaseZombieSpawnDistance + self.AlertBaseZombieSpawnDistance*0.5*i;
 end
 --Return the respawn interval for the given alert
 function ModularActivity:GetZombieRespawnIntervalForAlert(alert)
 	--TODO flesh this stuff out through discussion with uber, 
 	--	nicer to use a mathematical formula than arbitrary numbers found in Notes.txt
-	return self.AlertZombieSpawnInterval;
+	return self.AlertBaseZombieSpawnInterval;
 end
 --------------------
 --UPDATE FUNCTIONS--
@@ -461,8 +460,8 @@ function ModularActivity:DoAlerts()
 		self.AlertLagTimer:Reset();
 	end
 	
-	--Objective arrows are cleared every frame so this must always be run
-	self:MakeAlertArrows();
+	--Run alert display functions so players get a visual idea of their locations
+	self:DoAlertDisplay();
 end
 --------------------
 --DELETE FUNCTIONS--
@@ -599,7 +598,7 @@ function ModularActivity:DoAlertHumanManageActivity()
 			if acttype ~= false then
 				local item = ToHeldDevice(humantable.actor.EquippedItem);
 				if (acttype == "sound" and item:IsActivated() and humantable.rounds ~= ToHDFirearm(item).RoundInMagCount and not item:IsReloading()) or acttype == "light" then
-					humantable.activity[acttype].total = math.min(humantable.activity[acttype].total + humantable.activity[acttype].current, self.ActorActvivityToAlertValue);
+					humantable.activity[acttype].total = math.min(humantable.activity[acttype].total + humantable.activity[acttype].current, self.ActorActivityToAlertValue);
 					humantable.activity[acttype].timer:Reset();
 					humantable.rounds = acttype == "sound" and ToHDFirearm(item).RoundInMagCount or humantable.rounds;
 				end
@@ -637,22 +636,26 @@ function ModularActivity:DoAlertHumanCheckCurrentActivity(tab)
 	local item = tab.actor.EquippedItem;
 	if item ~= nil then
 		--Set the sound activity level for the actor if applicable
-		if self.WeaponAlertTable[item.PresetName] ~= nil then
-			tab.activity.sound.current = self.WeaponAlertTable[item.PresetName];
+		if self.WeaponActivityTable[item.PresetName] ~= nil then
+			tab.activity.sound.current = self.WeaponActivityTable[item.PresetName];
 			return "sound";
 		--Set the light activity level for the actor if applicable
-		elseif self.LightAlertTable[item.PresetName] ~= nil and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
-			tab.activity.light.current = self.LightAlertTable[item.PresetName]*self.LightActivityGainModifier;
-			--Add the item to the light table if it's not in it already (i.e. it was previously not equipped but was swapped to)
-			if self:AlertsRequestDayNight_LightItemNotInTable(item) then --TODO should this be happening here? The item isn't emitting yet right?
-			--	self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
-			print ("light up")
-			end 
+		elseif tab.lightOn then
+			tab.activity.light.current = self.FlashlightAlertStrength*self.ActivatedHeldItemActivityGainModifier;
 			return "light";
 		--Set the light activity level for the actor if applicable
-		elseif tab.lightOn then
-			tab.activity.light.current = self.FlashlightAlertStrength*self.LightActivityGainModifier;
-			return "light";
+		else
+			for atype, throwables in pairs(self.ThrowableItemAlertValues) do
+				if throwables[item.PresetName] ~= nil and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
+					tab.activity[atype].current = throwables[item.PresetName]*self.ActivatedHeldItemActivityGainModifier;
+					--Add the item to the light table if it's light emitting and not in it already (i.e. it was previously not equipped but was swapped to)
+					if atype == "light" and self:AlertsRequestDayNight_LightItemNotInTable(item) then --TODO should this be happening here? The item isn't emitting yet right?
+					--	self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
+						print ("light up")
+					end
+					return atype;
+				end
+			end
 		end
 	end
 	return false;
@@ -660,12 +663,14 @@ end
 --Return the strength of the alert to be made, given an alert type and a humantable entry, can be easily updated to handle more alert types
 function ModularActivity:GetDesiredAlertStrengthFromHuman(atype, humantable)
 	local item = humantable.actor.EquippedItem;
-	if atype == "light" then
-		local val = humantable.lightOn and self.FlashlightAlertStrength or 0;
-		val = (self.LightAlertTable[item.PresetName] and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0) and self.LightAlertTable[item.PresetName] or val;
-		return val ~= nil and val or 0;
-	elseif atype == "sound" then
+	--If it's a weapon, return the result of the calculation function
+	if item.ClassName == self.WeaponActivityTable[item.PresetName] ~= nil then
 		return self:GetWeaponAlertStrength(humantable.activity.sound.current);
+	--Otherwise it's a throwable, return its table value if it's activated, or 0 otherwise
+	else
+		local val = humantable.lightOn and self.FlashlightAlertStrength or 0;
+		val = (self.ThrowableItemAlertValues[atype][item.PresetName] and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0) and self.ThrowableItemAlertValues[atype][item.PresetName] or val;
+		return val ~= nil and val or 0;
 	end
 	return 13579; --NOTE: This number is used here to indicate something screwed up in making alerts since putting 0 would be less helpful
 end
@@ -681,7 +686,7 @@ function ModularActivity:DoAlertCreations()
 				local cancreate = true;
 				--Check for throwable items, create new alert items from them and remove old alerts if necessary
 				if cancreate then
-					for atype, throwabletable in pairs(self.ThrowableAlertValues) do
+					for atype, throwabletable in pairs(self.ThrowableItemAlertValues) do
 						if throwabletable[item.PresetName] and self.AlertItemTable[item.UniqueID] == nil and self.AlertTable[item.UniqueID] == nil then
 							local usestate = ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") or 0;
 							if (humantable.actor:GetController():IsState(Controller.WEAPON_FIRE) and (usestate == 0 or usestate == 2)) or (humantable.actor:GetController():IsState(Controller.WEAPON_DROP) and usestate == 2) then
@@ -699,9 +704,9 @@ function ModularActivity:DoAlertCreations()
 				--If we have no thrown items, we're potentially working with activity values - weapon firing or holding activated light items/flashlight
 				if cancreate then
 					for _, atype in pairs(self.AlertTypes) do
-						if humantable.activity[atype].total >= self.ActorActvivityToAlertValue and humantable.activity[atype].current > 0 then
+						if humantable.activity[atype].total >= self.ActorActivityToAlertValue and humantable.activity[atype].current > 0 then
 							local alerttargetsactor = atype == "light" and true or false; --TODO this should be changed to be more extensible, allowing for mobile sound alerts
-							local makenewalert = (alerttargetsactor == false or humantable.alert == false) and true or false; --Flag for whether we're making a new alert or updating a current one
+							local makenewalert = (alerttargetsactor == false or humantable.alert == false) and true or false; --Only make a new alert if it has none or this won't be targeted
 							
 							--Determine the strength for the alert to be made or for the current alert to be updated to
 							local alertstrength = self:GetDesiredAlertStrengthFromHuman(atype, humantable);
@@ -782,7 +787,7 @@ function ModularActivity:ManageAlertZombieSpawns(alert)
 	end
 end
 --Add objective points for alert positions
-function ModularActivity:MakeAlertArrows()
+function ModularActivity:DoAlertDisplay()
 	for _, players in pairs(self.HumanTable.Players) do
 		for __, alert in pairs(self.AlertTable) do
 			--Only add the points if the player is closer than the alert's strength divided by the awareness constant

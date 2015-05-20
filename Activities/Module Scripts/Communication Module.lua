@@ -86,7 +86,7 @@ function ModularActivity:IconsRequestAlerts_ActorActivityPercent(atype, actor)
 		if self.AlertTable[actor.UniqueID] ~= nil and self.AlertTable[actor.UniqueID][atype].strength > 0 then
 			return 1;
 		elseif self.HumanTable.Players[actor.UniqueID] ~= nil then
-			return self.HumanTable.Players[actor.UniqueID].activity[atype].total/self.ActorActvivityToAlertValue;
+			return self.HumanTable.Players[actor.UniqueID].activity[atype].total/self.ActorActivityToAlertValue;
 		end
 	end
 	return 0;

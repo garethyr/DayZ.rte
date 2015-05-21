@@ -178,7 +178,6 @@ function DayZ:DoExtraModuleInitialization()
 	end
 	if self.IncludeDayNight then
 		self:StartDayNight();
-		self:DayNightNotifyMany_DayNightCycle(); --Notify so everything that needs to knows the time of day
 	end
 	if self.IncludeFlashlight then
 		self:StartFlashlight(); --Does nothing, just to fill space so the order stays the same
@@ -198,6 +197,8 @@ function DayZ:DoExtraModuleInitialization()
 	if self.IncludeAlerts then
 		self:StartAlerts();
 	end
+	--Do any necessary initial notifications
+	self:DayNightNotifyMany_DayNightCycle(); --Notify so everything that needs to knows the time of day
 end
 -----------------------------------------------------------------------------------------
 -- Pause Activity

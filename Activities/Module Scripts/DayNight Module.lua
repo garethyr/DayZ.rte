@@ -108,8 +108,6 @@ function ModularActivity:DoDayNight()
 	
 	--Non-decorative day/night stuff
 	self:DoDayNightContinuousActions();
-	
-	--TODO: Remove light alerts during day, increase alert distances for zombies.
 end
 --------------------
 --DELETE FUNCTIONS--

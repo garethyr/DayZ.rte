@@ -103,11 +103,12 @@ function ModularActivity:StartAlerts()
 	--light, sound = {strength = light/sound alert to be strength, parent = the creator of this alert to be type (almost certainly the item)}
 	self.AlertItemTable = {};
 	
+	--A table for whether each type of alert is disabled or enabled
+	self.AlertTypesDisabledTable = {};
+	
 	------------------------------------
 	--VARIABLES USED FOR NOTIFICATIONS--
 	------------------------------------
-	self.AlertIsDay = nil;
-	self.AlertIsStorming = false; --TODO this should be nil, change if weather is implemented
 	
 	--Lag Timer
 	self.AlertLagTimer = Timer();
@@ -149,7 +150,7 @@ function ModularActivity:AddAlert(pos, target, alertvalues)
 	--Get the key for the new alert, based on its target.UniqueID, its parent.UniqueID or ground..self.AlertTableCounter
 	local key = self:GenerateKeyForNewAlert(target, alertvalues);
 		
-	print ("ADD ALERT (Key: "..tostring(key)..") - Pos: "..tostring(pos)..", Type: "..(alertvalues.light.strength > 0 and "light" or "sound")..", Target: "..(target == nil and "None" or target.PresetName)..", Strength: "..tostring(self:GetAlertStrength(alertvalues)));
+	print ("ADD ALERT (Key: "..tostring(key)..") - Pos: "..tostring(pos)..", Type: "..(alertvalues.light.strength > 0 and "light" or "sound")..", Target: "..(target == nil and "None" or target.PresetName));
 	--Add the alert to the table
 	self.AlertTable[key] = {
 		pos = Vector(pos.X, pos.Y), strength = self:GetAlertStrength(alertvalues), target = target,
@@ -161,8 +162,12 @@ function ModularActivity:AddAlert(pos, target, alertvalues)
 	local s = ""
 	for _, atype in pairs(self.AlertTypes) do
 		self.AlertTable[key][atype] = {strength = alertvalues[atype].strength, savedstrength = 0, timer = Timer(), parent = alertvalues[atype].parent};
+		if self.AlertTypesDisabledTable[atype] then
+			self.AlertTable[key][atype].strength, self.AlertTable[key][atype].savedstrength = self.AlertTable[key][atype].savedstrength, self.AlertTable[key][atype].strength;
+		end
 		s = s..atype.." - ("..tostring(self.AlertTable[key][atype].strength)..","..tostring(self.AlertTable[key][atype].savedstrength).."); ";
 	end
+	print("Newly added alert strengths are: "..s)
 	--Set the target's alert in the human table
 	self:AlertsNotifyMany_NewAlertAdded(self.AlertTable[key]);
 	return self.AlertTable[key];
@@ -284,6 +289,7 @@ function ModularActivity:LowerAlertStrength(alert)
 	for _, atype in pairs(self.AlertTypes) do
 		if alert[atype].parent == nil then
 			alert[atype].strength = math.max(0, alert[atype].strength - alert.strengthremovespeed);
+			alert[atype].savedstrength = math.max(0, alert[atype].savedstrength - alert.strengthremovespeed);
 		end
 	end
 	self:UpdateAlertStrength(alert);
@@ -392,7 +398,7 @@ function ModularActivity:AlertHasZombies(alert)
 end
 --Returns true if the alert has 0 zombies or less zombies than it should for its strength
 function ModularActivity:AlertIsMissingZombies(alert)
-	if alert.zombie ~= false then
+	if alert.zombie ~= false and alert.strength > 0 then
 		--Check for an empty table
 		if not self:AlertHasZombies(alert) then
 			return true;
@@ -439,6 +445,24 @@ function ModularActivity:GetZombieRespawnIntervalForAlert(alert)
 	--TODO flesh this stuff out through discussion with uber, 
 	--	nicer to use a mathematical formula than arbitrary numbers found in Notes.txt
 	return self.AlertBaseZombieSpawnInterval;
+end
+--Set whether an alert of a certain type should be disabled or enabled
+function ModularActivity:SetDisabledAlertType(atype, isdisabled)
+	self.AlertTypesDisabledTable[atype] = isdisabled;
+	--Disable any alerts of the inputted type
+	if isdisabled then
+		for _, alert in pairs(self.AlertTable) do
+			alert[atype].savedstrength, alert[atype].strength = alert[atype].strength, 0;
+		end
+	--Reenable any alerts of the inputted type, set its zombie timer to its interval so it checks whether or not it needs to spawn zombies
+	elseif not isdisabled then
+		for _, alert in pairs(self.AlertTable) do
+			if alert[atype].savedstrength > 0 then
+				alert[atype].strength, alert[atype].savedstrength = alert[atype].savedstrength, 0;
+				alert.zombie.timer.ElapsedSimTimeMS = self:GetZombieRespawnIntervalForAlert(alert);
+			end
+		end
+	end
 end
 --------------------
 --UPDATE FUNCTIONS--
@@ -728,15 +752,17 @@ function ModularActivity:DoAlertCreations()
 								local alert = self:AddAlert(alertpos, alerttarget, strengthstable);
 								humantable.alert = alerttargetsactor and alert or humantable.alert;
 								
-							--If there's an alert and our alert-to-be targets the actor, update its strength
+							--If there's an alert and our alert-to-be targets the actor, and this strength type isn't disabled, update its strength
 							else
-								local speed = humantable.alert.strengthremovespeed;
-								if humantable.alert[atype].strength > alertstrength + 2*speed then
-									humantable.alert[atype].strength = humantable.alert[atype].strength - speed;
-								elseif humantable.alert[atype].strength < alertstrength - 2*speed then
-									humantable.alert[atype].strength = humantable.alert[atype].strength + speed;
-								elseif humantable.alert[atype].strength <= alertstrength + 2*speed and humantable.alert[atype].strength >= alertstrength - 2*speed then
-									humantable.alert[atype].strength = alertstrength;
+								if self.AlertTypesDisabledTable[atype] ~= true then
+									local speed = humantable.alert.strengthremovespeed;
+									if humantable.alert[atype].strength > alertstrength + 2*speed then
+										humantable.alert[atype].strength = humantable.alert[atype].strength - speed;
+									elseif humantable.alert[atype].strength < alertstrength - 2*speed then
+										humantable.alert[atype].strength = humantable.alert[atype].strength + speed;
+									elseif humantable.alert[atype].strength <= alertstrength + 2*speed and humantable.alert[atype].strength >= alertstrength - 2*speed then
+										humantable.alert[atype].strength = alertstrength;
+									end
 								end
 							end
 							cancreate = false;

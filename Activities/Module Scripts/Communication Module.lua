@@ -189,7 +189,7 @@ end
 --DayNight
 function ModularActivity:DayNightNotifyMany_DayNightCycle()
 	if self.IncludeAlerts then
-		self.AlertIsDay = not self.DayNightIsNight;
+		self:SetDisabledAlertType("light", not self.DayNightIsNight);
 	end
 	if self.IncludeAudio then
 		local soundtype = self.DayNightIsNight and "night" or "day";

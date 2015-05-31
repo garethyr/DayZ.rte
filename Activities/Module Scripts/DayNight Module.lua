@@ -37,10 +37,16 @@ function ModularActivity:StartDayNight()
 	self.CelestialBodyWidthVariance = FrameMan.PlayerScreenWidth + 64; --The x distance the celestial body will travel throughout the day, best left as FrameMan.PlayerScreenWidth + CelestialBody's Size*2 so it travels the full screen
 	self.CelestialBodyHeight = 100; --The lowest height for the celestial body, where it starts and ends its arc
 	self.CelestialBodyHeightVariance = 75 --The maximum height the celestial body rises, the peak of its arc (making it greater than self.CelestialBodyHeight will send it off the screen)
-	self.CelestialBodyPathSmoothness = 0.1; --The smoothness/flatness of the path the celestial body travels, any number above 1 will have no effect
+	self.CelestialBodyPathSmoothness = 0.05; --The smoothness/flatness of the path the celestial body travels, any number above 1 will have no effect
 	self.CelestialBodyRevealSize = 96; --The width and height of the box of fog the moon will reveal, must be bigger than the moon to work well
 	self.CelestialBodySunFrameTotal = self.CelestialBodySunFrameTotal; --The number of frames the sun goes through
 	self.CelestialBodyMoonFrameTotal = self.CelestialBodyMoonFrameTotal; --The number of frames the moon goes through
+	
+	----------------------
+	--DAYNIGHT VARIABLES--
+	----------------------
+	self.CelestialBodyScreenToUse = 0; --The screen to use for celestial body positioning, updated based on which players are dead
+	--TODO when it comes out, remove this since each player will have their own celestial body visible only to them. OR if it won't happen, make it check update itself to follow the lowest number living player
 	
 	---------------------------
 	--DYNAMIC DAYNIGHT TABLES--
@@ -61,7 +67,7 @@ end
 --Add the correct celestial body
 function ModularActivity:AddCelestialBody()
 	self.CelestialBody = CreateMOSRotating(self.CelestialBodyName[self.DayNightIsNight], self.RTE);
-	self.CelestialBody.Pos = self:GetCelestialBodyOffset();
+	self.CelestialBody.Pos = self:GetCelestialBodyOffset(self.CelestialBodyScreenToUse);
 	MovableMan:AddParticle(self.CelestialBody);
 end
 --------------------
@@ -98,7 +104,7 @@ function ModularActivity:DoDayNight()
 			self:AddCelestialBody();
 		end
 		--Move the celestial body (accounting for gravity), stopping its rotationg and changing its frame
-		self.CelestialBody.Pos = self:GetCelestialBodyOffset();
+		self.CelestialBody.Pos = self:GetCelestialBodyOffset(self.CelestialBodyScreenToUse);
 		self.CelestialBody.Pos.Y = self.CelestialBody.Pos.Y-((SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs)/3);
 		self.CelestialBody.Vel.Y = self.CelestialBody.Vel.Y - SceneMan.GlobalAcc.Y*TimerMan.DeltaTimeSecs;
 		self.CelestialBody.RotAngle = 0;
@@ -224,25 +230,23 @@ function ModularActivity:DoDayNightContinuousActions()
 	end
 end
 --Return the correct position for the celestial body
-function ModularActivity:GetCelestialBodyOffset()
-	local actor = self:GetControlledActor(0);
-	local pos = (actor ~= nil and actor.ClassName == "AHuman") and actor.Pos or Vector(0, 0); --TODO this should be reworked so it's not dumb
-	
+function ModularActivity:GetCelestialBodyOffset(screen)
 	local completion = self.DayNightTimer.ElapsedSimTimeMS/self.DayNightInterval;
+	local posx, posy, offsetx, offsety, ylessnum, ygreaternum;
 	
-	local minposx = pos.X - self.CelestialBodyWidthVariance/2;
-	local posx = minposx + self.CelestialBodyWidthVariance*completion;
+	offsetx = SceneMan:GetOffset(screen).X + FrameMan.PlayerScreenWidth/2 - self.CelestialBodyWidthVariance/2;
+	posx = offsetx + self.CelestialBodyWidthVariance*completion;
 	
-	local offsety = self.CelestialBodyHeightVariance;
-	local lessnum = 0.5 - self.CelestialBodyPathSmoothness*0.5;
-	local greaternum = 0.5 + self.CelestialBodyPathSmoothness*0.5;
-	if completion < lessnum then
-		offsety = self.CelestialBodyHeightVariance*((1/lessnum)*completion);
-	elseif completion > greaternum then
-		offsety = self.CelestialBodyHeightVariance*(greaternum/completion);
-	end
-		
-	local posy = self.CelestialBodyHeight - offsety;
+	offsety = self.CelestialBodyHeightVariance;
+	ylessnum = 0.5 - self.CelestialBodyPathSmoothness*0.5;
+	ygreaternum = 0.5 + self.CelestialBodyPathSmoothness*0.5;
+	if completion < ylessnum then
+		offsety = self.CelestialBodyHeightVariance*((1/ylessnum)*completion);
+	elseif completion > ygreaternum then
+		offsety = self.CelestialBodyHeightVariance*(ygreaternum/completion);
+	end	
+	posy = self.CelestialBodyHeight - offsety;
+	
 	return Vector(posx, posy);
 end
 --Return the correct frame for the celestial body, based on the time of day/night

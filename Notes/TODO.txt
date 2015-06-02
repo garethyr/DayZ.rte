@@ -70,7 +70,6 @@
 
 • Fix bugs
 	1. Flashlight alerts can get set to 0 strength when made during the day and (maybe) there's another disabled light alert (e.g flare) around
-	2. Extra zombies spawn when an alert is moved to ground, probably because of the way it is handled. Look into this to be 100% certain that it's happening
 
 ----------------------------------------------------------------------
 ------------------------------Completed-------------------------------
@@ -103,3 +102,5 @@
 • Fixed newly thrown alerts ability to override higher priority targets so they do so more naturally and keep doing so until they stop moving (only applies to the first throw at the moment).
 • Made alert zombie spawning more reasonable and sensible, so it can be balanced properly, instead of confusedly.
 • Made light alerts disappear during day and reappear at night and did set up so it'll be easy to make other alert types do the same thing under certain circumstances (e.g. sound alerts during storms).
+• Made celestial bodies' positions be based on the player's screen position instead of actor position, so they're less jerky and works better on map edges.
+• Fixed bug where extra zombies would spawn when alerts on actors change to non-targeted alerts.

@@ -116,7 +116,7 @@ end
 ----------------------
 --CREATION FUNCTIONS--
 ----------------------
---Sets the key as the target's UniqueID if it's not nil, otherwise generates a name as the key
+--Returns a key that is the target's or, failing that, parent's UniqueID if it's not nil, otherwise generates a name as the key
 function ModularActivity:GenerateKeyForNewAlert(target, alertvalues)
 	local key = nil;
 	--Alerts with targets use their target's UniqueID
@@ -135,6 +135,15 @@ function ModularActivity:GenerateKeyForNewAlert(target, alertvalues)
 		end
 	end
 	return key;
+end
+--Sets an alert's key in the table to a newly generated key for the target
+function ModularActivity:GenerateNewKeyForAlertWithNewTarget(oldkey, target)
+	if self.AlertTable[oldkey] ~= nil then
+		local alert = self.AlertTable[oldkey];
+		local newkey = self:GenerateKeyForNewAlert(target, alert);
+		self.AlertTable[newkey] = alert;
+		self.AlertTable[oldkey] = nil;
+	end
 end
 --Add an alert based on parameter values or merge with any alerts on this target.
 function ModularActivity:AddAlert(pos, target, alertvalues)
@@ -363,9 +372,9 @@ function ModularActivity:AllVisibleAlerts(pos, awarenessmod, ...) --Optional arg
 	return alerts;
 end
 --ALERT ZOMBIE UTILITY FUNCTIONS--
---Moves all zombies from fromalert to toalert, updating their zombie table entries accordingly
+--Moves all zombies from fromalert to toalert, updating their zombie table information accordingly
 function ModularActivity:MoveZombiesFromOneAlertToAnother(fromalert, toalert)
-	if self.IncludeSpawns then
+	if self.IncludeSpawns and fromalert.zombie ~= false then
 		local added = false; --If any zombies are added to toalert, set a flag so we reset toalert's zombie spawn timer
 		--Move any zombies on fromalert to toalert
 		for ID, actor in pairs(fromalert.zombie.actors) do
@@ -373,8 +382,8 @@ function ModularActivity:MoveZombiesFromOneAlertToAnother(fromalert, toalert)
 			--Make sure we only do stuff and set flags if we actually have a table entry and it has a valid zombie
 			if zombie ~= nil and MovableMan:IsActor(zombie.actor) then
 				added = true;
-				toalert.zombie.actors[ID] = actor; --Set the alert table value
-				--If the zombie's target is still the alert, use the set target function
+				toalert.zombie.actors[ID] = actor;
+				--If the zombie's target is still the alert, use the set target function to set it as the new alert
 				if zombie.target == fromalert then
 					self:SetZombieTarget(zombie.actor, toalert, "alert", toalert);
 				--If the zombie's target is not the alert, just change the zombie's parent to the new alert but leave its target untouched
@@ -387,6 +396,15 @@ function ModularActivity:MoveZombiesFromOneAlertToAnother(fromalert, toalert)
 		if added then
 			toalert.zombie.timer:Reset();
 		end
+		--Remove the zombies from fromalert
+		fromalert.zombie.actors = {};
+		fromalert.zombie.timer:Reset();
+	end
+end
+--Shares a table of alert zombies between two alerts, does not update zombie table information at all
+function ModularActivity:ShareZombiesBetweenTwoAlerts(fromalert, toalert)
+	if self.IncludeSpawns and fromalert.zombie ~= false then
+		toalert.zombie.actors = fromalert.zombie.actors;
 	end
 end
 --Returns true if an alert has zombies, does not check if the zombies exist
@@ -405,7 +423,7 @@ function ModularActivity:AlertIsMissingZombies(alert)
 		--Check for full complement of zombies
 		else
 			local n = 0;
-			for _, zombie in pairs(alert.zombie.actors) do
+			for _, actor in pairs(alert.zombie.actors) do
 				n = n+1;
 			end
 			if n < self:GetDesiredNumberOfZombiesForAlert(alert) then
@@ -529,14 +547,21 @@ function ModularActivity:DoAlertCleanup()
 			if alert.target.ClassName == "TDExplosive" and not MovableMan:ValidMO(alert.target) then
 				if alert.target.RootID ~= alert.target.ID and alert.target.ID ~= 255 and ToAttachable(alert.target):IsAttached() and alert.target.Sharpness < 3 then
 					notremoved = false;
-					self.AlertTable[key] = nil;
+					local actorTarget = MovableMan:GetMOFromID(alert.target.RootID);
+					alert.target = actorTarget;
+					self:GenerateNewKeyForAlertWithNewTarget(key, alert.target);
+					for _, humantable in pairs(self.HumanTable) do
+						if humantable[actorTarget.UniqueID] ~= nil then
+							humantable[actorTarget.UniqueID].alert = alert;
+						end
+					end
 					
 					
 					
 					print ("ALERT "..tostring(key).." AT POS "..tostring(alert.pos).." REMOVED BECAUSE PICKED UP - ID: "..tostring(alert.target.ID)..", ROOTID: "..tostring(alert.target.RootID)..", ROOTACTOR: "..tostring(MovableMan:GetMOFromID(alert.target.RootID)));
-					if self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID] ~= nil then
-						print ("Alert with same parent is at "..tostring(self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID].pos));
-					end
+					--if self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID] ~= nil then
+					--	print ("Alert with same parent is at "..tostring(self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID].pos));
+					--end
 				end
 			end
 		end
@@ -557,7 +582,7 @@ end
 function ModularActivity:MoveAlertFromDeadActor(alert)
 	local foundparent = nil; --The living parent if there is one, otherwise nil
 	for _, atype in pairs(self.AlertTypes) do
-		foundparent = (alert[atype].parent.ID ~= 255 and alert[atype].parent.ClassName ~= "Entity" and MovableMan:ValidMO(alert[atype].parent)) and alert[atype].parent or nil;
+		foundparent = (alert[atype].parent ~= nil and alert[atype].parent.ID ~= 255 and alert[atype].parent.ClassName ~= "Entity" and MovableMan:ValidMO(alert[atype].parent)) and alert[atype].parent or nil;
 		alert[atype].parent = foundparent;
 		print(atype.." parent is "..tostring(foundparent));
 	end
@@ -566,10 +591,10 @@ function ModularActivity:MoveAlertFromDeadActor(alert)
 end
 --Set alerts for actors whose activity timers have reset to be static and, if necessary, switch their type
 function ModularActivity:RemoveNonActiveActorAlert(alert, atype, actorID)
-	print ("REMOVE NON ACTIVE ALERT FROM TARGET "..(tostring(alert.target)..", PARENT "..tostring(alert[atype].parent))); --TODO review how this works and fix it accordingly so it can work easily with already activated alerts
+	print ("REMOVE NON ACTIVE ALERT FROM TARGET "..(tostring(alert.target)..", PARENT "..tostring(alert[atype].parent)));
 	--Figure out how many types the alert has, if it has more than one it has to be split
 	local activetypes = 0;
-	for k, alerttype in pairs(self.AlertTypes) do
+	for _, alerttype in pairs(self.AlertTypes) do
 		if alert[alerttype].strength > 0 or alert[alerttype].savedstrength > 0 then
 			activetypes = activetypes + 1;
 		end
@@ -580,13 +605,15 @@ function ModularActivity:RemoveNonActiveActorAlert(alert, atype, actorID)
 	for _, alerttype in pairs (self.AlertTypes) do
 		types[alerttype] = (alerttype == atype) and {strength = alert[atype].strength, parent = nil} or {strength = 0, parent = nil};
 	end
-	count = 0;
 	
 	--Add the split off alert and remove it from the remained alert
 	alert[atype].strength = 0;
 	alert[atype].savedstrength = 0;
 	alert[atype].parent = nil;
-	self:AddAlert(SceneMan:MovePointToGround(alert.pos, 10, 5), nil, types);
+	local newalert = self:AddAlert(SceneMan:MovePointToGround(alert.pos, 10, 5), nil, types);
+	
+	--Share any zombies between the two alerts, so no random extra zombies spawn
+	self:ShareZombiesBetweenTwoAlerts(alert, newalert);
 	
 	--Remove the alert from the actor in the humantable if it only had one type
 	if activetypes <= 1 then
@@ -597,6 +624,7 @@ function ModularActivity:RemoveNonActiveActorAlert(alert, atype, actorID)
 			end
 		end
 	end
+	print ("Result is old alert with strength "..tostring(alert[atype].strength).." and new alert with strength "..tostring(newalert[atype].strength))
 end
 --Kill any dead held light items so they can't last forever
 function ModularActivity:RemoveDeadHeldAlertItem(item, atype, actor)
@@ -638,19 +666,6 @@ function ModularActivity:DoAlertHumanManageActivity()
                         self:RemoveNonActiveActorAlert(humantable.alert, atype, humantable.actor.UniqueID);
                     end
                 end
-
-			
-				if activity.total > 0 then
-					--Remove activity if the actor hasn't fired in a while
-					if activity.timer:IsPastSimMS(self.ActorActivityRemoveTime) then
-						activity.total = math.max(activity.total - self.ActorActivityRemoveSpeed, 0);
-					
-						--If the actor has an alert of this type, remove that type from the alert (if it's only got one type it will be removed soon)
-						if humantable.alert ~= false and removealert and humantable.alert[atype].strength > 0 then
-							self:RemoveNonActiveActorAlert(humantable.alert, atype, humantable.actor.UniqueID);
-						end
-					end
-				end
 			end
 		end
 	end
@@ -670,12 +685,11 @@ function ModularActivity:DoAlertHumanCheckCurrentActivity(tab)
 		--Set the light activity level for the actor if applicable
 		else
 			for atype, throwables in pairs(self.ThrowableItemAlertValues) do
-				if throwables[item.PresetName] ~= nil and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
-					tab.activity[atype].current = throwables[item.PresetName]*self.ActivatedHeldItemActivityGainModifier;
+				if throwables[item.PresetName] ~= nil and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
+					tab.activity[atype].current = throwables[item.PresetName].strength*self.ActivatedHeldItemActivityGainModifier;
 					--Add the item to the light table if it's light emitting and not in it already (i.e. it was previously not equipped but was swapped to)
-					if atype == "light" and self:AlertsRequestDayNight_LightItemNotInTable(item) then --TODO should this be happening here? The item isn't emitting yet right?
-					--	self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
-						print ("light up")
+					if atype == "light" and self:AlertsRequestDayNight_LightItemNotInTable(item) then
+						self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
 					end
 					return atype;
 				end
@@ -688,12 +702,14 @@ end
 function ModularActivity:GetDesiredAlertStrengthFromHuman(atype, humantable)
 	local item = humantable.actor.EquippedItem;
 	--If it's a weapon, return the result of the calculation function
-	if item.ClassName == self.WeaponActivityTable[item.PresetName] ~= nil then
+	if self.WeaponActivityTable[item.PresetName] ~= nil then
 		return self:GetWeaponAlertStrength(humantable.activity.sound.current);
 	--Otherwise it's a throwable, return its table value if it's activated, or 0 otherwise
 	else
 		local val = humantable.lightOn and self.FlashlightAlertStrength or 0;
-		val = (self.ThrowableItemAlertValues[atype][item.PresetName] and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0) and self.ThrowableItemAlertValues[atype][item.PresetName] or val;
+		if self.ThrowableItemAlertValues[atype][item.PresetName] ~= nil and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
+			val = self.ThrowableItemAlertValues[atype][item.PresetName].strength;
+		end
 		return val ~= nil and val or 0;
 	end
 	return 13579; --NOTE: This number is used here to indicate something screwed up in making alerts since putting 0 would be less helpful
@@ -715,9 +731,9 @@ function ModularActivity:DoAlertCreations()
 							local usestate = ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") or 0;
 							if (humantable.actor:GetController():IsState(Controller.WEAPON_FIRE) and (usestate == 0 or usestate == 2)) or (humantable.actor:GetController():IsState(Controller.WEAPON_DROP) and usestate == 2) then
 								--Remove any alert on the actor that used the item, if it was already active
-								if humantable.alert then
-									self:RemoveNonActiveActorAlert(humantable.alert, atype, ID);
-								end
+								--if humantable.alert then
+								--	self:RemoveNonActiveActorAlert(humantable.alert, atype, ID); --TODO decide if to reenable this, should thrown activated light items' alert leftovers drop to ground immediately or act like flashlights
+								--end
 								--Add the new alert
 								self:AddAlertItem(item, throwabletable[item.PresetName].ismobile, self:GenerateAlertCreationTableFromValues({[atype] = {strength = throwabletable[item.PresetName].strength, parent = item}}));
 								cancreate = false;
@@ -752,7 +768,7 @@ function ModularActivity:DoAlertCreations()
 								local alert = self:AddAlert(alertpos, alerttarget, strengthstable);
 								humantable.alert = alerttargetsactor and alert or humantable.alert;
 								
-							--If there's an alert and our alert-to-be targets the actor, and this strength type isn't disabled, update its strength
+							--If there's an alert and our alert-to-be targets the actor, and this strength type isn't disabled, simply update its strength and, if necessary, parent
 							else
 								if self.AlertTypesDisabledTable[atype] ~= true then
 									local speed = humantable.alert.strengthremovespeed;
@@ -763,6 +779,10 @@ function ModularActivity:DoAlertCreations()
 									elseif humantable.alert[atype].strength <= alertstrength + 2*speed and humantable.alert[atype].strength >= alertstrength - 2*speed then
 										humantable.alert[atype].strength = alertstrength;
 									end
+								end
+								--If the alert already on the actor has no parent for this type, set the parent to the item
+								if humantable.alert[atype].parent == nil then
+									humantable.alert[atype].parent = alerttargetsactor and item or nil;
 								end
 							end
 							cancreate = false;

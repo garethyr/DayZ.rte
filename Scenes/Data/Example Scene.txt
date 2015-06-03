@@ -1,0 +1,57 @@
+//A few general notes, comments can be defined at any time by either // or --, either way, anything following the comment on that line will be ignored.
+//Multiline comments do not exist and probably won't be implemented since it's not worth the trouble I think
+//The file is divided into sections which define specific information. These sections are specified by their headers which are always prefixed by ||.
+//The headers are important and care should be taken that they don't have any typos, cause those might cause silent failures
+//Note that headers and their sections can be entirely omitted if they're not used, e.g. DayNight in an indoor/underground scene doesn't have to even show up in the file because it's not used.
+
+||MODULE INCLUSIONS			//These are all the modules that should be included for this particular scene, they're either on (true) or off (false), pretty straightforward.
+Loot = true				//Usually they'll all be on but in some cases, such as loot spawning in the tunnels scene, some may be disabled.
+Sustenance = true
+Spawns = true
+DayNight = true
+Flashlight = true
+Icons = true
+Behaviours = true
+Audio = true
+Alerts = true
+
+||GENERAL				//These define all the general things that don't fit in elsewhere
+IsOutside = true			//This defines whether the scene is outside and should have visible celestial bodies or is inside, e.g. in a cave, tunnel, skyscraper, etc.
+LeftMostSpawn = 200			//This defines how close to the scene's left boundary actors can spawn, so a value of 10 means they can't spawn at a position less than 10.
+RightMostSpawn = 1250			//This defines how close to the scene's right boundary actors can spawn, so a value of 10 means they can't spawn at a position greater than width_of_scene - 10.
+					//The above two are use currently for zombie safety so they don't fall off randomly and have to be figured out manually on a scene by scene basis.
+
+||AREA NUMBERS				//These define the number of each type of area. They need to match up with the number in the actual scene but otherwise they're self-explanatory. 
+CivilianLootAreas = 33
+HospitalLootAreas = 8
+MilitaryLootAreas = 17
+LootZombieSpawnAreas = 26
+ShelterAreas = 20
+AudioCivilizationAreas = 5
+AudioBeachAreas = 2
+
+||PLAYER SPAWNS				//These define the number of player spawn areas and the default area to spawn players to if they're not coming from a transition. The numbers need to match up with the actual scene.
+PlayerSpawnAreas = 4
+DefaultPlayerSpawnAreaNumber = 3
+
+||DAYNIGHT				//These define various day/night values, note that if the scene is underground they can be left entirely blank.
+BackgroundChanges = true		//This defines whether the background changes or not as day turns to night and vice-versa
+BackgroundTotal = 3			//This defines the total number of backgrounds for each day/night cycle. So a value of 3 means 3 different backgrounds for day and 3 different backgrounds for night.
+CelestialBodies = true			//This defines whether celestial bodies, i.e. the sun and moon, should exist or not
+SunFrameTotal = 1			//This defines the number of frames for the sun in this scene
+MoonFrameTotal = 1			//This defines the number of frames for the moon in this scene
+
+||AUDIO					//This defines all scene specific audio values
+DefaultAudioType = Nature		//This defines the default audio type, i.e. the random noises that play when no specific random noises should be playing. This should be the type which covers the largest amount of space on the map.
+
+||TRANSITION AREAS			//These define all transition areas and any constraints on transitions for the scene
+Transition Area 1 = Chernarus Tunnels 1	//There should be as many Transition Area definitions here as there are transition areas in the scene and they should always be formatted in this particular way
+	Spawn Area = 1
+Transition Area 2 = Chernarus Tunnels 1	//This defines the map a transition area transitions to, it should be the exact name of the scene as written in its ini
+	Spawn Area = 2			//This defines the spawn area a transition area links to, so this transition would go to spawn area 2 of the Chernarus Tunnels 1 Scene
+Transition Area 3 = Ocean
+	Spawn Area = 1
+	Constraints = HAS BOAT		//This defines a transition constraint name to check for, if the constraint fails, the transition will not even be attempted. The actual logic of these constraints has to be handled in lua, this just tells the game what constraint (if any) to use for the transition.
+Transition Area 4 = Helicopter		//For example, the above constraint is HAS BOAT which makes the lua check whether or not the player has the boat and only transition if he/she does.
+	Spawn Area = 1
+	Constraints = IN HELICOPTER

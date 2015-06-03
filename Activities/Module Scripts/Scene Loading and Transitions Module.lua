@@ -85,7 +85,7 @@ function ModularActivity:StartSceneLoading()
 			["LoadData"] = function (self, data, loadtable) self:AddSimpleValueFromData(data, loadtable) end,
 			["IsOutside"] = function(self, val) self.IsOutside = val end,
 			["LeftMostSpawn"] = function(self, val) self.LeftMostSpawn = val end,
-			["RightMostSpawn"] = function(self, val) self.RightMostSpawn = val end
+			["RightMostSpawn"] = function(self, val) self.RightMostSpawn = SceneMan.Scene.Width - val end
 		},
 		
 		["AREA NUMBERS"] = {

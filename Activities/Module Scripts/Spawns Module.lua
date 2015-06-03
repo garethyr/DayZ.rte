@@ -113,7 +113,7 @@ function ModularActivity:GetSafeRandomSpawnPosition(spawnpos, offset, randomoffs
 	--See if the offset spawnpos is viable in either direction (i.e. not near humans and within the map specific outer side spawn boundaries)
 	for i = -1, 1, 2 do --Try offseting by positive and negative offset + randoffset
 		resultpos = Vector(spawnpos.X + offset*i + randoffset, spawnpos.Y);
-		if self:CheckForNearbyHumans(resultpos, 0, self.ZombieSpawnMinDistance) == false and resultpos.X > self.LeftMostSpawn and resultpos.Y < self.RightMostSpawn then
+		if self:CheckForNearbyHumans(resultpos, 0, self.ZombieSpawnMinDistance) == false and resultpos.X > self.LeftMostSpawn and resultpos.X < self.RightMostSpawn then
 			viable = true;
 			break;
 		end

@@ -732,11 +732,8 @@ function ModularActivity:DoAlertCreations()
 						if throwabletable[item.PresetName] and self.AlertItemTable[item.UniqueID] == nil and self.AlertTable[item.UniqueID] == nil then
 							local usestate = ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") or 0;
 							if (humantable.actor:GetController():IsState(Controller.WEAPON_FIRE) and (usestate == 0 or usestate == 2)) or (humantable.actor:GetController():IsState(Controller.WEAPON_DROP) and usestate == 2) then
-								--Remove any alert on the actor that used the item, if it was already active
-								--if humantable.alert then
-								--	self:RemoveNonActiveActorAlert(humantable.alert, atype, ID); --TODO decide if to reenable this, should thrown activated light items' alert leftovers drop to ground immediately or act like flashlights
-								--end
-								--Add the new alert
+								--Add the new alert item
+								--TODO add zombie sharing to this
 								self:AddAlertItem(item, throwabletable[item.PresetName].ismobile, self:GenerateAlertCreationTableFromValues({[atype] = {strength = throwabletable[item.PresetName].strength, parent = item}}));
 								cancreate = false;
 							end
@@ -747,9 +744,11 @@ function ModularActivity:DoAlertCreations()
 				if cancreate then
 					for _, atype in pairs(self.AlertTypes) do
 						if humantable.activity[atype].total >= self.ActorActivityToAlertValue and humantable.activity[atype].current > 0 then
-							local alerttargetsactor = atype == "light" and true or false;
 							
-							--local alerttargetsactor = (humantable.lightOn or self.ThrowableItemAlertValues[item.PresetName].ismobile) and true or false; --TODO put this in, test it
+							local alerttargetsactor = false;
+							if humantable.lightOn or (self.ThrowableItemAlertValues[atype][item.PresetName]~= nil and self.ThrowableItemAlertValues[atype][item.PresetName].ismobile) then
+								alerttargetsactor = true;
+							end
 							local makenewalert = (alerttargetsactor == false or humantable.alert == false) and true or false; --Only make a new alert if it has none or this won't be targeted
 							
 							--Determine the strength for the alert to be made or for the current alert to be updated to

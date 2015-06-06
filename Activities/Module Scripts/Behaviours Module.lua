@@ -242,7 +242,7 @@ end
 function ModularActivity:DoDebugTargetDisplayForZombies()
 	for _, zombie in pairs(self.ZombieTable) do
 		local targetpos = self:GetZombieTargetPos(zombie.target.val, zombie.target.ttype);
-		local st = targetpos == 0 and "Zombie has no target" or "Zombie has "..tostring(zombie.target.ttype).." target"
+		local st = targetpos == 0 and "Zombie has no target" or "Zombie has "..tostring(zombie.target.ttype).." target with weight "..tostring(self:GetCurrentTargetWeightForZombie(zombie, zombie.target.val, zombie.target.ttype));
 		st = st.."\nPos: "..tostring(self:GetZombieTargetPos(zombie.target.val, zombie.target.ttype));
 		if zombie.target.ttype == "alert" then
 			local alert = zombie.target.val;

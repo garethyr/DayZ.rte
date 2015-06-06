@@ -548,20 +548,22 @@ function ModularActivity:DoAlertCleanup()
 				if alert.target.RootID ~= alert.target.ID and alert.target.ID ~= 255 and ToAttachable(alert.target):IsAttached() and alert.target.Sharpness < 3 then
 					notremoved = false;
 					local actorTarget = MovableMan:GetMOFromID(alert.target.RootID);
-					alert.target = actorTarget;
-					self:GenerateNewKeyForAlertWithNewTarget(key, alert.target);
 					for _, humantable in pairs(self.HumanTable) do
 						if humantable[actorTarget.UniqueID] ~= nil then
-							humantable[actorTarget.UniqueID].alert = alert;
+							--If the human has no alert, move this alert to him
+							if humantable[actorTarget.UniqueID].alert == false then
+								print ("ALERT "..tostring(key).." AT POS "..tostring(alert.pos).." MOVED TO ACTOR BECAUSE PICKED UP - ID: "..tostring(alert.target.ID)..", ROOTID: "..tostring(alert.target.RootID)..", ROOTACTOR: "..tostring(MovableMan:GetMOFromID(alert.target.RootID)));
+								alert.target = actorTarget;
+								self:GenerateNewKeyForAlertWithNewTarget(key, alert.target);
+								humantable[actorTarget.UniqueID].alert = alert;
+							--Otherwise, move zombies from this alert to the human's alert and remove delete this alert
+							else
+								print ("ALERT "..tostring(key).." AT POS "..tostring(alert.pos).." DELETED BECAUSE PICKED UP - ID: "..tostring(alert.target.ID)..", ROOTID: "..tostring(alert.target.RootID)..", ROOTACTOR: "..tostring(MovableMan:GetMOFromID(alert.target.RootID)));
+								self:MoveZombiesFromOneAlertToAnother(alert, humantable[actorTarget.UniqueID].alert);
+								self.AlertTable[key] = nil;
+							end
 						end
 					end
-					
-					
-					
-					print ("ALERT "..tostring(key).." AT POS "..tostring(alert.pos).." REMOVED BECAUSE PICKED UP - ID: "..tostring(alert.target.ID)..", ROOTID: "..tostring(alert.target.RootID)..", ROOTACTOR: "..tostring(MovableMan:GetMOFromID(alert.target.RootID)));
-					--if self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID] ~= nil then
-					--	print ("Alert with same parent is at "..tostring(self.AlertTable[MovableMan:GetMOFromID(alert.target.RootID).UniqueID].pos));
-					--end
 				end
 			end
 		end
@@ -745,7 +747,9 @@ function ModularActivity:DoAlertCreations()
 				if cancreate then
 					for _, atype in pairs(self.AlertTypes) do
 						if humantable.activity[atype].total >= self.ActorActivityToAlertValue and humantable.activity[atype].current > 0 then
-							local alerttargetsactor = atype == "light" and true or false; --TODO this should be changed to be more extensible, allowing for mobile sound alerts
+							local alerttargetsactor = atype == "light" and true or false;
+							
+							--local alerttargetsactor = (humantable.lightOn or self.ThrowableItemAlertValues[item.PresetName].ismobile) and true or false; --TODO put this in, test it
 							local makenewalert = (alerttargetsactor == false or humantable.alert == false) and true or false; --Only make a new alert if it has none or this won't be targeted
 							
 							--Determine the strength for the alert to be made or for the current alert to be updated to
@@ -770,19 +774,20 @@ function ModularActivity:DoAlertCreations()
 								
 							--If there's an alert and our alert-to-be targets the actor, and this strength type isn't disabled, simply update its strength and, if necessary, parent
 							else
-								if self.AlertTypesDisabledTable[atype] ~= true then
-									local speed = humantable.alert.strengthremovespeed;
+								if self.AlertTypesDisabledTable[atype] ~= true and alertstrength > 0 then
+									local speed = humantable.alert.strengthremovespeed*10;
 									if humantable.alert[atype].strength > alertstrength + 2*speed then
 										humantable.alert[atype].strength = humantable.alert[atype].strength - speed;
 									elseif humantable.alert[atype].strength < alertstrength - 2*speed then
 										humantable.alert[atype].strength = humantable.alert[atype].strength + speed;
-									elseif humantable.alert[atype].strength <= alertstrength + 2*speed and humantable.alert[atype].strength >= alertstrength - 2*speed then
+									--Once the alert's strength is close to what it should be, stabilize it and set its parent to the item
+									elseif humantable.alert[atype].strength ~= alertstrength and humantable.alert[atype].strength <= alertstrength + 2*speed and humantable.alert[atype].strength >= alertstrength - 2*speed then
 										humantable.alert[atype].strength = alertstrength;
+										--If this alert targets the actor and the alert already on the actor's parent is not this item, set the parent to the item
+										if alerttargetsactor and humantable.alert[atype].parent.UniqueID ~= item.UniqueID then
+											humantable.alert[atype].parent = item;
+										end
 									end
-								end
-								--If the alert already on the actor has no parent for this type, set the parent to the item
-								if humantable.alert[atype].parent == nil then
-									humantable.alert[atype].parent = alerttargetsactor and item or nil;
 								end
 							end
 							cancreate = false;

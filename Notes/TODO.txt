@@ -68,9 +68,6 @@
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar) --SHOULD THIS STILL BE A THING? I THINK FLASHLIGHT SHOULD CAUSE ALERTS.
 
 • Fix recursive GetSafeRandomSpawn causing infinite loops so it can be uncommented
-• Fix infinite alert making by picking up and throwing/dropping alert items (e.g. flares and stuff)
-	Probably best to add another parameter to AlertItemTable and its create function that takes a zombie actor table or an alert ID to use as zombies or share zombies with (do both for multi-purpose use), this would then be used when the actual alert is spawned
-
 
 ----------------------------------------------------------------------
 ------------------------------Completed-------------------------------
@@ -105,3 +102,4 @@
 • Made light alerts disappear during day and reappear at night and did set up so it'll be easy to make other alert types do the same thing under certain circumstances (e.g. sound alerts during storms).
 • Made celestial bodies' positions be based on the player's screen position instead of actor position, so they're less jerky and works better on map edges.
 • Fixed bug where extra zombies would spawn when alerts on actors change to non-targeted alerts.
+• Fixed the ability to make an absurd number of zombies by picking up and dropping/throwing activated alert items (e.g. flares and stuff).

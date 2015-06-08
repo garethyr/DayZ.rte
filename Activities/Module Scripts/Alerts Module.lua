@@ -101,6 +101,7 @@ function ModularActivity:StartAlerts()
 	--Keys - Values
 	--ismobile = a flag for whether or not this will be a mobile alert (i.e. one with a target),
 	--light, sound = {strength = light/sound alert to be strength, parent = the creator of this alert to be type (almost certainly the item)}
+	--zombievalue = either a table of zombie actors to treat as this alert's zombies or the key for an alert to share zombies from so when this item becomes an alert it shares that alert's zombies
 	self.AlertItemTable = {};
 	
 	--A table for whether each type of alert is disabled or enabled
@@ -182,25 +183,33 @@ function ModularActivity:AddAlert(pos, target, alertvalues)
 	return self.AlertTable[key];
 end
 --Add a thrown item based on parameter values
-function ModularActivity:AddAlertItem(item, ismobile, alertvalues)
-	print ("ADD "..(ismobile and "MOBILE" or "").." THROWN ITEM (Key: "..tostring(item.UniqueID)..") - "..item.PresetName..", light: "..tostring(alertvalues.light.strength)..", sound: "..tostring(alertvalues.sound.strength));
-	self.AlertItemTable[item.UniqueID] = {ismobile = ismobile};
+function ModularActivity:AddAlertItem(item, ismobile, alertvalues, zombievalue)
+	print ("ADD "..(ismobile and "MOBILE" or "").." THROWN ITEM (Key: "..tostring(item.UniqueID)..") - "..item.PresetName..", light: "..tostring(alertvalues.light.strength)..", sound: "..tostring(alertvalues.sound.strength)..", zombievalue: "..(type(zombievalue) == "table" and "table of zombies" or tostring(zombievalue)));
+	self.AlertItemTable[item.UniqueID] = {ismobile = ismobile, zombievalue = zombievalue};
 	for _, atype in pairs(self.AlertTypes) do
 		self.AlertItemTable[item.UniqueID][atype] = alertvalues[atype];
 	end
 end
 --Make an alert from a thrown alert item, note that this is called from the item's script automatically when it's ready to become an alert
 function ModularActivity:AddAlertFromAlertItem(item)
-	local tab = self.AlertItemTable[item.UniqueID];
+	local itemtable = self.AlertItemTable[item.UniqueID];
 	local strengthstable = {};
 	local keepparent = (not item.ToDelete) and true or false; --Set a flag to change all parents to nil if the item is dead
 	for _, atype in pairs(self.AlertTypes) do
-		tab[atype].parent = keepparent and tab[atype].parent or nil;
-		strengthstable[atype] = tab[atype];
+		itemtable[atype].parent = keepparent and itemtable[atype].parent or nil;
+		strengthstable[atype] = itemtable[atype];
 	end
-	self:AddAlert(item.Pos, tab.ismobile and item or nil, strengthstable);
+	local alert = self:AddAlert(item.Pos, itemtable.ismobile and item or nil, strengthstable);
+	--Do zombie actions as needed, if zombievalue is a table then set this alert's zombie actors as that table, otherwise share zombies from the alert whose key is zombievalue
+	if type(itemtable.zombievalue) == "table" then
+		print ("zombievalue is table so setting zombie actors to table")
+		alert.zombie.actors = itemtable.zombievalue;
+	else
+		print ("zombievalue is "..tostring(itemtable.zombievalue)..", so sharing zombies from "..(self.AlertTable[itemtable.zombievalue] == nil and "nil" or "table"))
+		self:ShareZombiesBetweenTwoAlerts(self.AlertTable[itemtable.zombievalue], alert);
+	end
 	--Notify day/night about the item if it's got light strength
-	if tab.light.strength > 0 then
+	if itemtable.light.strength > 0 and self:AlertsRequestDayNight_LightItemNotInTable(item) then
 		self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
 	end
 	--Remove the item from the alert item table
@@ -403,7 +412,7 @@ function ModularActivity:MoveZombiesFromOneAlertToAnother(fromalert, toalert)
 end
 --Shares a table of alert zombies between two alerts, does not update zombie table information at all
 function ModularActivity:ShareZombiesBetweenTwoAlerts(fromalert, toalert)
-	if self.IncludeSpawns and fromalert.zombie ~= false then
+	if self.IncludeSpawns and fromalert ~= nil and fromalert.zombie ~= false and toalert ~= nil then
 		toalert.zombie.actors = fromalert.zombie.actors;
 	end
 end
@@ -651,7 +660,8 @@ function ModularActivity:DoAlertHumanManageActivity()
 			--If the human has an activity causing item, add to his activity value (as long as it's not at the limit) and reset its calm down timer
 			if acttype ~= false then
 				local item = ToHeldDevice(humantable.actor.EquippedItem);
-				if (acttype == "sound" and item:IsActivated() and humantable.rounds ~= ToHDFirearm(item).RoundInMagCount and not item:IsReloading()) or acttype == "light" then
+				--If the item is a weapon that is firing or is not a weapon, add to the human's activity total
+				if (self.WeaponActivityTable[item.PresetName] ~= nil and item:IsActivated() and humantable.rounds ~= ToHDFirearm(item).RoundInMagCount and not item:IsReloading()) or self.WeaponActivityTable[item.PresetName] == nil then
 					humantable.activity[acttype].total = math.min(humantable.activity[acttype].total + humantable.activity[acttype].current, self.ActorActivityToAlertValue);
 					humantable.activity[acttype].timer:Reset();
 					humantable.rounds = acttype == "sound" and ToHDFirearm(item).RoundInMagCount or humantable.rounds;
@@ -673,26 +683,22 @@ function ModularActivity:DoAlertHumanManageActivity()
 	end
 end
 --Check for activity causing items/weapons to update activity current value
-function ModularActivity:DoAlertHumanCheckCurrentActivity(tab)
-	local item = tab.actor.EquippedItem;
+function ModularActivity:DoAlertHumanCheckCurrentActivity(humantable)
+	local item = humantable.actor.EquippedItem;
 	if item ~= nil then
 		--Set the sound activity level for the actor if applicable
 		if self.WeaponActivityTable[item.PresetName] ~= nil then
-			tab.activity.sound.current = self.WeaponActivityTable[item.PresetName];
+			humantable.activity.sound.current = self.WeaponActivityTable[item.PresetName];
 			return "sound";
 		--Set the light activity level for the actor if applicable
-		elseif tab.lightOn then
-			tab.activity.light.current = self.FlashlightAlertStrength*self.ActivatedHeldItemActivityGainModifier;
+		elseif humantable.lightOn then
+			humantable.activity.light.current = self.FlashlightAlertStrength*self.ActivatedHeldItemActivityGainModifier;
 			return "light";
 		--Set the light activity level for the actor if applicable
 		else
 			for atype, throwables in pairs(self.ThrowableItemAlertValues) do
 				if throwables[item.PresetName] ~= nil and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
-					tab.activity[atype].current = throwables[item.PresetName].strength*self.ActivatedHeldItemActivityGainModifier;
-					--Add the item to the light table if it's light emitting and not in it already (i.e. it was previously not equipped but was swapped to)
-					if atype == "light" and self:AlertsRequestDayNight_LightItemNotInTable(item) then
-						self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
-					end
+					humantable.activity[atype].current = throwables[item.PresetName].strength*self.ActivatedHeldItemActivityGainModifier;
 					return atype;
 				end
 			end
@@ -725,16 +731,22 @@ function ModularActivity:DoAlertCreations()
 			--Only try to create alerts if the actor has an equipped item
 			local item = humantable.actor.EquippedItem;
 			if item ~= nil then
+				local usestate = ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") or 0;
+			
+			--Add the item to the light table if it's light emitting and not in it already (i.e. it was previously not equipped but was swapped to)
+				if atype == "light" and  usestate == 2 and self:AlertsRequestDayNight_LightItemNotInTable(item) then
+					self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
+				end
+			
 				local cancreate = true;
 				--Check for throwable items, create new alert items from them and remove old alerts if necessary
 				if cancreate then
 					for atype, throwabletable in pairs(self.ThrowableItemAlertValues) do
 						if throwabletable[item.PresetName] and self.AlertItemTable[item.UniqueID] == nil and self.AlertTable[item.UniqueID] == nil then
-							local usestate = ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") or 0;
 							if (humantable.actor:GetController():IsState(Controller.WEAPON_FIRE) and (usestate == 0 or usestate == 2)) or (humantable.actor:GetController():IsState(Controller.WEAPON_DROP) and usestate == 2) then
 								--Add the new alert item
-								--TODO add zombie sharing to this
-								self:AddAlertItem(item, throwabletable[item.PresetName].ismobile, self:GenerateAlertCreationTableFromValues({[atype] = {strength = throwabletable[item.PresetName].strength, parent = item}}));
+								self:AddAlertItem(item, throwabletable[item.PresetName].ismobile, self:GenerateAlertCreationTableFromValues({[atype] = {strength = throwabletable[item.PresetName].strength, parent = item}}), humantable.actor.UniqueID);
+								humantable.activity[atype].total = 0; --Zero the human's total activity for this type so the script doesn't try to make more alerts for him if he's holding another activity generating item
 								cancreate = false;
 							end
 						end
@@ -743,8 +755,7 @@ function ModularActivity:DoAlertCreations()
 				--If we have no thrown items, we're potentially working with activity values - weapon firing or holding activated light items/flashlight
 				if cancreate then
 					for _, atype in pairs(self.AlertTypes) do
-						if humantable.activity[atype].total >= self.ActorActivityToAlertValue and humantable.activity[atype].current > 0 then
-							
+						if humantable.activity[atype].total >= self.ActorActivityToAlertValue and humantable.activity[atype].current > 0 then							
 							local alerttargetsactor = false;
 							if humantable.lightOn or (self.ThrowableItemAlertValues[atype][item.PresetName]~= nil and self.ThrowableItemAlertValues[atype][item.PresetName].ismobile) then
 								alerttargetsactor = true;
@@ -761,7 +772,7 @@ function ModularActivity:DoAlertCreations()
 								local alerttarget = alerttargetsactor and humantable.actor or nil;
 								local alertparent = alerttargetsactor and item or nil;
 								
-								--Reduce the actor's activity total for the alert type, so it don't keep making alerts
+								--Reduce the actor's activity total for the alert type, so it doesn't keep making alerts
 								humantable.activity[atype].total = atype == "light" and humantable.activity[atype].total - 1 or math.floor(humantable.activity[atype].total*self.WeaponAlertActivityReductionFactor);
 
 								--Generate an alert creation table for the alert-to-be

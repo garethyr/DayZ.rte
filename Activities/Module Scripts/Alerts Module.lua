@@ -49,6 +49,13 @@ function ModularActivity:StartAlerts()
 	self.WeaponAlertStrengthComparator = "L"; --Ranges from N to VVH, see self.WeaponActivityTable for keys
 	--The factor to reduce the actor's activity by after a weapon alert is made (between 0 and 1)
 	self.WeaponAlertActivityReductionFactor = 0.5;
+	
+	--The radius of an alert with strength of self.AlertBaseStrength, weaker alerts have smaller circles and stronger ones have larger circles
+	self.AlertIconBaseRadius = 10;
+	--A table of colours for alerts, check the palette to see what the colour each number corresponds to
+	self.AlertIconColours = {centrefill = 253, ismobile = 12, onactor = 147, sound = 197, light = 122};
+	--The size of any extra circles outside of the alert type displays, the actual size scales with alert radius to a point
+	self.AlertIconExtraCircleSize = 3;
 
 	-----------------------
 	--STATIC ALERT TABLES--
@@ -107,10 +114,9 @@ function ModularActivity:StartAlerts()
 	--A table for whether each type of alert is disabled or enabled
 	self.AlertTypesDisabledTable = {};
 	
-	------------------------------------
-	--VARIABLES USED FOR NOTIFICATIONS--
-	------------------------------------
-	
+	---------------
+	--OTHER STUFF--
+	---------------
 	--Lag Timer
 	self.AlertLagTimer = Timer();
 end
@@ -287,7 +293,7 @@ end
 function ModularActivity:UpdateAlertStrength(alert)
 	alert.strength = math.min(self:GetAlertStrength(alert), self.AlertStrengthLimit);
 end
---Return the safe total strength given input light and sound strength
+--Return the total strength given input light and sound strength
 function ModularActivity:GetAlertStrength(alert)
 	local strength = 0;
 	for _, atype in pairs(self.AlertTypes) do
@@ -512,7 +518,7 @@ function ModularActivity:DoAlerts()
 	end
 	
 	--Run alert display functions so players get a visual idea of their locations
-	self:DoAlertDisplay();
+	self:DoAlertIconDisplay();
 end
 --------------------
 --DELETE FUNCTIONS--
@@ -848,29 +854,59 @@ function ModularActivity:ManageAlertZombieSpawns(alert)
 	end
 end
 --Add objective points for alert positions
-function ModularActivity:DoAlertDisplay()
-	for _, players in pairs(self.HumanTable.Players) do
-		for __, alert in pairs(self.AlertTable) do
-			--Only add the points if the player is closer than the alert's strength divided by the awareness constant
-			if SceneMan:ShortestDistance(alert.pos, players.actor.Pos, self.Wrap).Magnitude <  self:AlertVisibilityDistance(alert.strength) then
-				--Modify alert's location and change the displayed text if it's mobile
-				local pos = alert.pos;
-				local st = "";
-				if alert.target ~= nil then
-					pos = alert.target.AboveHUDPos - Vector(0, 100);
-					st = "Mobile ";
+function ModularActivity:DoAlertIconDisplay()
+	if self.IncludeIcons then
+		local xmult = function(screen) if FrameMan.HSplit and (screen == 1 or screen == 3) then return 1 else return 0 end end --Return a multiplier for screen X positioning, based on the current player
+		local ymult = function(screen) if FrameMan.VSplit and (screen == 2 or screen == 3) then return 1 else return 0 end end --Return a multiplier for screen Y positioning, based on the current player
+		for _, playertable in pairs(self.HumanTable.Players) do
+			for __, alert in pairs(self.AlertTable) do
+				--Only add the points if the player is closer than the alert's strength divided by the awareness constant
+				if SceneMan:ShortestDistance(alert.pos, playertable.actor.Pos, self.Wrap).Magnitude < self:AlertVisibilityDistance(alert.strength) then
+					--Get the alert's information so the icon can change accordingly
+					local ismobile = alert.target ~= nil;
+					local onactor = ismobile and alert.target.UniqueID == playertable.actor.UniqueID;
+					local strength = self:GetAlertStrength(alert);
+					local radius = self.AlertIconBaseRadius*math.sqrt(strength/self.AlertBaseStrength);
+					local iconpos = ismobile and Vector(alert.pos.X, alert.target.BoundingBox.Corner.Y - 25) or Vector(alert.pos.X, alert.pos.Y - 25);
+					--Move the icon position so it's constrained within the player's screen
+					local areacentre = Vector(FrameMan.PlayerScreenWidth*0.5 + FrameMan.PlayerScreenWidth*xmult(playertable.player) + SceneMan:GetOffset(playertable.player).X, FrameMan.PlayerScreenHeight*0.5 + FrameMan.PlayerScreenHeight*ymult(playertable.player) + SceneMan:GetOffset(playertable.player).Y);
+					iconpos = self:GetPositionConstrainedInArea(areacentre, iconpos, FrameMan.PlayerScreenWidth - (radius+5), FrameMan.PlayerScreenHeight - (radius+5));
+					
+					--Determine the circles that need to be drawn
+					local circles = {};
+					if ismobile then
+						local sizeaddition = math.max(self.AlertIconExtraCircleSize*0.5, math.min(self.AlertIconExtraCircleSize*2, (self.AlertIconExtraCircleSize*radius/self.AlertIconBaseRadius)));
+						print (sizeaddition)
+						circles[#circles+1] = onactor and {colourtype = "onactor", radius = radius + sizeaddition} or {colourtype = "ismobile", radius = radius + sizeaddition};
+					end
+					local outercircles = #circles;
+					for i, atype in ipairs(self.AlertTypes) do
+						if alert[atype].strength > 0 then
+							circles[#circles+1] = {colourtype = atype, radius = radius/(#circles - outercircles + 1)};
+						end
+					end
+					circles[#circles+1] = {colourtype = "centrefill", radius = radius/(#circles - outercircles + 2)}
+					
+					--Draw the icon circles
+					for i, circle in ipairs(circles) do
+						local colour = self.AlertIconColours[circle.colourtype] ~= nil and self.AlertIconColours[circle.colourtype] or 0;
+						FrameMan:DrawCircleFillPrimitive(iconpos, circle.radius, colour);
+					end
+					
+					--Add the objective point
+					--self:AddObjectivePoint(st.." Alert", pos, self.PlayerTeam, GameActivity.ARROWDOWN);
+					--self:AddObjectivePoint(st.." Alert\nStrength: "..tostring(math.ceil(alert.strength/1000)).."\nPos: "..tostring(alert.pos).."\nBase Pull Distance: "..tostring(self:AlertVisibilityDistance(alert.strength)).."\nTarget: "..tostring(alert.target)..(alert.light.parent == nil and "" or ("\nLight Parent: "..tostring(alert.light.parent)))..(alert.sound.parent == nil and "" or ("\nSound Parent: "..tostring(alert.sound.parent))), pos, self.PlayerTeam, GameActivity.ARROWDOWN);
 				end
-				--Set the displayed alert type
-				if alert.light.strength > 0 and alert.sound.strength > 0 then
-					st = st.."Light and Sound";
-				else
-					st = alert.light.strength > 0 and "Light" or "Sound";
-				end
-				
-				--Add the objective point
-				--self:AddObjectivePoint(st.." Alert", pos, self.PlayerTeam, GameActivity.ARROWDOWN);
-				self:AddObjectivePoint(st.." Alert\nStrength: "..tostring(math.ceil(alert.strength/1000)).."\nPos: "..tostring(alert.pos).."\nBase Pull Distance: "..tostring(self:AlertVisibilityDistance(alert.strength)).."\nTarget: "..tostring(alert.target)..(alert.light.parent == nil and "" or ("\nLight Parent: "..tostring(alert.light.parent)))..(alert.sound.parent == nil and "" or ("\nSound Parent: "..tostring(alert.sound.parent))), pos, self.PlayerTeam, GameActivity.ARROWDOWN);
 			end
 		end
 	end
+end
+--TODO write descriptions and move to util module
+function ModularActivity:GetPositionConstrainedInArea(areacentre, pos, areawidth, areaheight)
+	local box = Box(Vector(areacentre.X - areawidth/2, areacentre.Y - areaheight/2), Vector(areacentre.X + areawidth/2, areacentre.Y + areaheight/2));
+	return self:GetPositionConstrainedInBox(pos, box);
+end
+function ModularActivity:GetPositionConstrainedInBox(pos, box)
+	--print ("Pos | Box: ("..tostring(pos.X).." | "..(pos.X < box.Center.X and tostring(box.Corner.X) or tostring(box.Corner.X + box.Width))..","..tostring(pos.Y).." | "..(pos.Y < box.Center.Y and tostring(box.Corner.Y) or tostring(box.Corner.Y + box.Height)));
+	return box:GetWithinBox(pos);
 end

@@ -4,7 +4,7 @@
 function DayZ:StartActivity()
 	--Remove the starting GO banner
 	for i = 0, 3 do
-		local banner = self:GetBanner(GUIBanner.YELLOW, i):HideText(-1,-1);
+		self:GetBanner(GUIBanner.YELLOW, i):HideText(-1,-1);
 	end
 
 	--------------------
@@ -70,7 +70,7 @@ function DayZ:StartActivity()
 	self.UnknownTeam = Activity.TEAM_4;
    	self.ZombieTeam = -1;
 	
-	--Lag Timers
+	--Lag Timer
 	self.GeneralLagTimer = Timer();
 	
 	--------------------

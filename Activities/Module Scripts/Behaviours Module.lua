@@ -253,6 +253,6 @@ function ModularActivity:DoDebugTargetDisplayForZombies()
 			local dist = SceneMan:ShortestDistance(zombie.actor.Pos, targetpos, self.Wrap).X;
 			arrow = dist < 0 and GameActivity.ARROWLEFT or (dist > 0 and GameActivity.ARROWRIGHT or arrow);
 		end
-		self:AddObjectivePoint(st, zombie.actor.AboveHUDPos - Vector(0, 50), self.PlayerTeam, arrow);
+		self:AddObjectivePoint(st, zombie.actor.Pos - Vector(0, 50), self.PlayerTeam, arrow);
 	end
 end

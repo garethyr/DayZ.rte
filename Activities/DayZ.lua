@@ -285,7 +285,15 @@ function DayZ:UpdateActivity()
 		end
 		print("Waiting Respawns: "..tostring(#self.PlayerRespawnTable));
 		if (DayZHumanWoundTable) then
-			print ("Wounds: "..tostring(#DayZHumanWoundTable));
+			count = 0;
+			for k, v in pairs (DayZHumanWoundTable) do
+				for k2, v2 in pairs(v.wounds) do
+					count = count + 1;
+				end
+			end
+			print ("Wounds: "..tostring(count));
+		else
+			print ("Wounds: No Wound Table");
 		end
 		if self.IncludeAlerts then
 			count = 0;

@@ -28,6 +28,7 @@ function ModularActivity:StartSceneLoading()
 	
 	--General multi-purpose variables
 	self.IsOutside = nil; --Used to determine if the current map is outside, i.e. true means daynight, weather, celestial bodies, no BG changes. False means none of those and permanent darkness (though daynight time still passes)
+	self.SpawnAlertZombies = true; --Determines whether the scene will spawn zombies for alerts, useful for scenes where only situation specific zombies should be spawned
 	self.LeftMostSpawn = 0; --Number of pixels away from the left side of the map that zombies or npcs can spawn
 	self.RightMostSpawn = SceneMan.SceneWidth; --Number of pixels away from the right side of the map that zombies or npcs can spawn
 	
@@ -84,6 +85,7 @@ function ModularActivity:StartSceneLoading()
 		["GENERAL"] = {
 			["LoadData"] = function (self, data, loadtable) self:AddSimpleValueFromData(data, loadtable) end,
 			["IsOutside"] = function(self, val) self.IsOutside = val end,
+			["SpawnAlertZombies"] = function(self, val) self.SpawnAlertZombies = val end,
 			["LeftMostSpawn"] = function(self, val) self.LeftMostSpawn = val end,
 			["RightMostSpawn"] = function(self, val) self.RightMostSpawn = SceneMan.Scene.Width - val end
 		},
@@ -315,7 +317,9 @@ function ModularActivity:SavePlayerForTransition(actor)
 	end
 	--Add the player's wounds
 	if DayZHumanWoundTable ~= nil and DayZHumanWoundTable[actor.UniqueID] ~= nil then
-		self.TransitionHumanTable[#self.TransitionHumanTable].wounds = DayZHumanWoundTable[actor.UniqueID].wounds;
+		for ID, wound in pairs(DayZHumanWoundTable[actor.UniqueID].wounds) do
+			table.insert(self.TransitionHumanTable[#self.TransitionHumanTable].wounds, {name = wound.PresetName, offset = wound.ParentOffset});
+		end
 		DayZHumanWoundTable[actor.UniqueID] = nil;
 	end
 	--Add the player's equipped item
@@ -356,9 +360,11 @@ function ModularActivity:LoadPlayersAfterTransition()
 		newactor.AIMode = Actor.AIMODE_SENTRY;
 		newactor.HUDVisible = false;
 		--Attach wounds
-		for _, wound in pairs(humantable.wounds) do
-			local wound = CreateAEmitter(wound.PresetName);
-			newactor:AttachEmitter(wound, Vector(RangeRand(-1,1),RangeRand(-newactor.Height/3, newactor.Height/3)), true); --TODO maybe come up with a better way of wound positioning? Get the original positions?
+		for _, tablewound in pairs(humantable.wounds) do
+			local wound = CreateAEmitter(tablewound.name);
+			if wound ~= nil and wound.ClassName ~= "Entity" then
+				newactor:AttachEmitter(wound, tablewound.offset, true);
+			end
 		end
 		--Add inventory
 		local itemcreatetable = {HDFirearm = function(self, name) return CreateHDFirearm(name, self.RTE) end,

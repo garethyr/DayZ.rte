@@ -48,7 +48,6 @@
 
 • BUGS - Fix seagull noise spams sometimes, maybe when there are a bunch of zombies entering the beach area?
 • BUGS - Use B32 features to detect when weapons are used with perfect accuracy, and apply that to all weapon use scripts
-• BUGS - Fix alert zombie spawning for underground maps, maybe don't spawn them at all?
 
 • Make custom zombie AI (bleh)
 • Maybe allow behaviour targets to allow for different types of zombies, e.g. bloodhound zombie which would have a bonus to weight for human targets, or forgetful zombie which would have a mallus to weight for all targets and would change targets more often
@@ -68,6 +67,7 @@
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar) --SHOULD THIS STILL BE A THING? I THINK FLASHLIGHT SHOULD CAUSE ALERTS.
 
 • Fix recursive GetSafeRandomSpawn causing infinite loops so it can be uncommented
+• Look into oddities with alert spawning in tunnels map, alerts seem to sometimes not spawn after throwing and picking up and rethrowing a light item. Also doublecheck light alerts being disabled during day on transition back aboveground.
 
 ----------------------------------------------------------------------
 ------------------------------Completed-------------------------------
@@ -103,3 +103,6 @@
 • Made celestial bodies' positions be based on the player's screen position instead of actor position, so they're less jerky and works better on map edges.
 • Fixed bug where extra zombies would spawn when alerts on actors change to non-targeted alerts.
 • Fixed the ability to make an absurd number of zombies by picking up and dropping/throwing activated alert items (e.g. flares and stuff).
+• Added alert display system that shows alerts around players.
+• Fixed zombie spawning underground/under objects so they more reliably spawn at the correct height
+• Allowed alert zombie spawning to be disabled in the scene datafile to allow for maps where only special zombies should spawn

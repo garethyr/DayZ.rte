@@ -1,3 +1,8 @@
+ZOMBIE AI:
+	Have moods that influence their behaviours and sounds, i.e. angry zombie will sprint and yell, idle zombie will moan quietly and wander around, etc. Talk to uber for different moods
+	Other than that, take base ai and cut out a lot of junk - no need for golddig ai mode or looking for weapons to pick up or aiming stuff or any of that - just charge at enemies (set mood to angry for sprint)
+	
+
 ALERT ZOMBIE SPAWNS AND BEHAVIOURS:
 
 Note: Need to allow for zombies with flag to set the distance at which they start sprinting to a target. The actual sprinting will be taken care of by their ai script

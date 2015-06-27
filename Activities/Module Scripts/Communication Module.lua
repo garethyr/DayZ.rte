@@ -128,7 +128,7 @@ function ModularActivity:AlertsRequestSpawns_GetZombieSpawnInterval()
 	return 0;
 end
 function ModularActivity:AlertsRequestSpawns_SpawnAlertZombie(alert, offset)
-	if self.IncludeSpawns then
+	if self.IncludeSpawns and self.SpawnAlertZombies then
 		return self:SpawnZombie(offset, alert, "alert", alert); --args: (spawnpos, target, targettype, spawner), offset used instead of position for alerts
 	end
 	return false;

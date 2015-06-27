@@ -867,7 +867,7 @@ function ModularActivity:DoAlertIconDisplay()
 					local onactor = ismobile and alert.target.UniqueID == playertable.actor.UniqueID;
 					local strength = self:GetAlertStrength(alert);
 					local radius = self.AlertIconBaseRadius*math.sqrt(strength/self.AlertBaseStrength);
-					local iconpos = ismobile and Vector(alert.pos.X, alert.target.BoundingBox.Corner.Y - 25) or Vector(alert.pos.X, alert.pos.Y - 25);
+					local iconpos = ismobile and Vector(alert.pos.X, ToMOSprite(alert.target).BoundingBox.Corner.Y - 25) or Vector(alert.pos.X, alert.pos.Y - 25);
 					--Move the icon position so it's constrained within the player's screen
 					local areacentre = Vector(FrameMan.PlayerScreenWidth*0.5 + FrameMan.PlayerScreenWidth*xmult(playertable.player) + SceneMan:GetOffset(playertable.player).X, FrameMan.PlayerScreenHeight*0.5 + FrameMan.PlayerScreenHeight*ymult(playertable.player) + SceneMan:GetOffset(playertable.player).Y);
 					iconpos = self:GetPositionConstrainedInArea(areacentre, iconpos, FrameMan.PlayerScreenWidth - (radius+5), FrameMan.PlayerScreenHeight - (radius+5));
@@ -876,7 +876,6 @@ function ModularActivity:DoAlertIconDisplay()
 					local circles = {};
 					if ismobile then
 						local sizeaddition = math.max(self.AlertIconExtraCircleSize*0.5, math.min(self.AlertIconExtraCircleSize*2, (self.AlertIconExtraCircleSize*radius/self.AlertIconBaseRadius)));
-						print (sizeaddition)
 						circles[#circles+1] = onactor and {colourtype = "onactor", radius = radius + sizeaddition} or {colourtype = "ismobile", radius = radius + sizeaddition};
 					end
 					local outercircles = #circles;
@@ -900,13 +899,4 @@ function ModularActivity:DoAlertIconDisplay()
 			end
 		end
 	end
-end
---TODO write descriptions and move to util module
-function ModularActivity:GetPositionConstrainedInArea(areacentre, pos, areawidth, areaheight)
-	local box = Box(Vector(areacentre.X - areawidth/2, areacentre.Y - areaheight/2), Vector(areacentre.X + areawidth/2, areacentre.Y + areaheight/2));
-	return self:GetPositionConstrainedInBox(pos, box);
-end
-function ModularActivity:GetPositionConstrainedInBox(pos, box)
-	--print ("Pos | Box: ("..tostring(pos.X).." | "..(pos.X < box.Center.X and tostring(box.Corner.X) or tostring(box.Corner.X + box.Width))..","..tostring(pos.Y).." | "..(pos.Y < box.Center.Y and tostring(box.Corner.Y) or tostring(box.Corner.Y + box.Height)));
-	return box:GetWithinBox(pos);
 end

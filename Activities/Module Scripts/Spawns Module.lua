@@ -123,10 +123,23 @@ function ModularActivity:GetSafeRandomSpawnPosition(spawnpos, offset, randomoffs
 	--	local humanactor = self:NearestHuman(resultpos, 0, self.ZombieSpawnMinDistance);
 	--	resultpos = self:GetSafeRandomSpawnPosition(humanactor.Pos, self.ZombieSpawnMinDistance, randomoffsetrange, movetoground);
 	--end
-		
 	--Move the point to ground if necessary
 	if movetoground then
-		resultpos = SceneMan:MovePointToGround(Vector(resultpos.X, 0), 10, 0);
+		local movefromair, movefromresult = Vector(0, 0), Vector(0, 0);
+		--For outside maps, default to the move from air method but also calculated move from result to see which is better
+		if self.IsOutside then
+			movefromair = SceneMan:MovePointToGround(Vector(resultpos.X, 0), 10, 5);
+			resultpos = movefromair;
+		end
+		movefromresult = SceneMan:MovePointToGround(resultpos, 10, 5);
+		--If move from air is notably above move from result it's probably hitting a roof or something, so use move from result as long as it's not underground
+		if movefromresult.Y - movefromair.Y > 10 then
+			if SceneMan:FindAltitude(movefromresult, 20, 2) > 1 then
+				resultpos = movefromresult;
+			else
+				resultpos = movefromair.Y == 0 and SceneMan:MovePointToGround(Vector(resultpos.X, 0), 10, 5) or movefromair;
+			end
+		end
 	end
 	return resultpos;
 end
@@ -143,7 +156,7 @@ function ModularActivity:SetZombieTarget(actor, targetval, targettype, spawner)
 	if targettype == "human" then
 		actor:AddAIMOWaypoint(targetval);
 	else
-		actor:AddAISceneWaypoint(SceneMan:MovePointToGround(Vector(targetpos.X, targetpos.Y), 10, 5));
+		actor:AddAISceneWaypoint(SceneMan:MovePointToGround(targetpos, 10, 5));
 	end
 	self:AddToZombieTable(actor, targetval, targettype, spawner, startdist);
 	actor.AIMode = Actor.AIMODE_GOTO;

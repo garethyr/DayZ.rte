@@ -17,6 +17,7 @@ Alerts = true
 
 ||GENERAL				//These define all the general things that don't fit in elsewhere
 IsOutside = true			//This defines whether the scene is outside and should have visible celestial bodies or is inside, e.g. in a cave, tunnel, skyscraper, etc.
+SpawnAlertZombies = true		//This defines whether zombies willl spawn from thrown alerts in the scene, defaults to true if left empty
 LeftMostSpawn = 200			//This defines how close to the scene's left boundary actors can spawn, so a value of 10 means they can't spawn at a position less than 10.
 RightMostSpawn = 1250			//This defines how close to the scene's right boundary actors can spawn, so a value of 10 means they can't spawn at a position greater than width_of_scene - 10.
 					//The above two are use currently for zombie safety so they don't fall off randomly and have to be figured out manually on a scene by scene basis.

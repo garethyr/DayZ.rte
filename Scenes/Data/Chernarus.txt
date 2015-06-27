@@ -11,6 +11,7 @@ Alerts = true
 
 ||GENERAL
 IsOutside = true
+SpawnAlertZombies = true
 LeftMostSpawn = 200
 RightMostSpawn = 1250
 

@@ -73,6 +73,22 @@ function ModularActivity:SortMaxAndMinArguments(dists)
 	return mindist, maxdist;
 end
 -----------------------------------------------------------------------------------------
+-- Return true if there is a human more than mindist and less than maxdist away from the passed in pos
+-----------------------------------------------------------------------------------------
+function ModularActivity:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+	local mindist, maxdist = self:SortMaxAndMinArguments({...});
+	local dist;
+	for _, humantable in pairs(self.HumanTable) do
+		for __, v in pairs(humantable) do
+			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
+			if dist >= mindist and dist <= maxdist then
+				return true;
+			end
+		end
+	end
+	return false;
+end
+-----------------------------------------------------------------------------------------
 -- Find the nearest human, more than mindist and less than maxdist to a point. Returns nil if none found
 -----------------------------------------------------------------------------------------
 function ModularActivity:NearestHuman(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
@@ -90,20 +106,14 @@ function ModularActivity:NearestHuman(pos, ...) --Optional args: [1] - Minimum d
 	return target;
 end
 -----------------------------------------------------------------------------------------
--- Return true if there is a human more than mindist and less than maxdist away from the passed in pos
+-- Get the inputted position constrained inside the inputted box/area
 -----------------------------------------------------------------------------------------
-function ModularActivity:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
-	local mindist, maxdist = self:SortMaxAndMinArguments({...});
-	local dist;
-	for _, humantable in pairs(self.HumanTable) do
-		for __, v in pairs(humantable) do
-			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
-			if dist >= mindist and dist <= maxdist then
-				return true;
-			end
-		end
-	end
-	return false;
+function ModularActivity:GetPositionConstrainedInArea(areacentre, pos, areawidth, areaheight)
+	local box = Box(Vector(areacentre.X - areawidth/2, areacentre.Y - areaheight/2), Vector(areacentre.X + areawidth/2, areacentre.Y + areaheight/2));
+	return self:GetPositionConstrainedInBox(pos, box);
+end
+function ModularActivity:GetPositionConstrainedInBox(pos, box)
+	return box:GetWithinBox(pos);
 end
 -----------------------------------------------------------------------------------------
 -- Functions for adding actors to all active mission tables, for convenient updating

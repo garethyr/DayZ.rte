@@ -22,9 +22,11 @@ function Destroy(self)
 		if next(DayZHumanWoundTable) == nil or ToGameActivity(ActivityMan:GetActivity()):ActivityOver() then
 			DayZHumanWoundTable = nil;
 		else
-			DayZHumanWoundTable[self.Parent.UniqueID].wounds[self.UniqueID] = nil;
-			if next(DayZHumanWoundTable[self.Parent.UniqueID].wounds) == nil then
-				DayZHumanWoundTable[self.Parent.UniqueID] = nil;
+			if DayZHumanWoundTable[self.Parent.UniqueID] ~= nil then
+				DayZHumanWoundTable[self.Parent.UniqueID].wounds[self.UniqueID] = nil;
+				if next(DayZHumanWoundTable[self.Parent.UniqueID].wounds) == nil then
+					DayZHumanWoundTable[self.Parent.UniqueID] = nil;
+				end
 			end
 		end
 	end

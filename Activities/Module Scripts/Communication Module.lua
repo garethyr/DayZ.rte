@@ -4,6 +4,7 @@
 ------------
 --REQUESTS--
 ------------
+function ModularActivity:____REQUESTS____() end --Used for organization of notepad++ function list
 function ModularActivity:RequestSustenance_AddToSustenanceTable(actor)
 	if self.IncludeSustenance then
 		self:AddToSustenanceTable(actor);
@@ -143,6 +144,7 @@ end
 -----------------
 --NOTIFICATIONS--
 -----------------
+function ModularActivity:____NOTIFICATIONS____() end --Used for organization of notepad++ function list
 --Main
 function ModularActivity:NotifyMany_DeadHuman(humantype, player, ID, alert)
 	if self.IncludeSustenance and self.SustTable[ID] ~= nil then
@@ -179,6 +181,11 @@ function ModularActivity:NotifyDayNight_SceneTransitionOccurred(isnight, current
 		self:DayNightResetBackgroundPosition();
 	end
 end
+function ModularActivity:NotifyAlerts_UpdateDisabledAlertTypes()
+	if self.IncludeAlerts then
+		self:UpdateDisabledAlertTypes();
+	end
+end
 
 --Loot
 
@@ -189,7 +196,7 @@ end
 --DayNight
 function ModularActivity:DayNightNotifyMany_DayNightCycle()
 	if self.IncludeAlerts then
-		self:SetDisabledAlertType("light", not self.DayNightIsNight);
+		self:NotifyAlerts_UpdateDisabledAlertTypes();
 	end
 	if self.IncludeAudio then
 		local soundtype = self.DayNightIsNight and "night" or "day";

@@ -46,8 +46,7 @@
 • Fix crash to desktop with setting day/night longer than 60 seconds
 • Fix crash to desktop with coming back from leaving tunnels
 
-• BUGS - Fix seagull noise spams sometimes, maybe when there are a bunch of zombies entering the beach area?
-• BUGS - Use B32 features to detect when weapons are used with perfect accuracy, and apply that to all weapon use scripts
+• Use B32 features to detect when weapons are used with perfect accuracy, and apply that to all weapon use scripts
 
 • Make custom zombie AI (bleh)
 • Maybe allow behaviour targets to allow for different types of zombies, e.g. bloodhound zombie which would have a bonus to weight for human targets, or forgetful zombie which would have a mallus to weight for all targets and would change targets more often
@@ -67,8 +66,7 @@
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar) --SHOULD THIS STILL BE A THING? I THINK FLASHLIGHT SHOULD CAUSE ALERTS.
 
 • Fix recursive GetSafeRandomSpawn causing infinite loops so it can be uncommented
-• Look into oddities with alert spawning in tunnels map, alerts seem to sometimes not spawn after throwing and picking up and rethrowing a light item. Also doublecheck light alerts being disabled during day on transition back aboveground.
-
+• Fix bug where light alerts on actor made during the day never seem to disappear. Might require scene transition?
 ----------------------------------------------------------------------
 ------------------------------Completed-------------------------------
 ----------------------------------------------------------------------
@@ -106,3 +104,4 @@
 • Added alert display system that shows alerts around players.
 • Fixed zombie spawning underground/under objects so they more reliably spawn at the correct height
 • Allowed alert zombie spawning to be disabled in the scene datafile to allow for maps where only special zombies should spawn
+• Fixed bug where localized sounds (e.g. seagulls) would spam incessantly when the player actor was not actually selected

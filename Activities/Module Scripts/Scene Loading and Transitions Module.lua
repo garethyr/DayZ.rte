@@ -299,6 +299,7 @@ function ModularActivity:DoSceneTransition(target, playerspawnareanum)
 
 	self:NotifyDayNight_SceneTransitionOccurred(stateandtime.cstate, stateandtime.ctime);
 	self:AddStartingPlayerActors(playerspawnareanum);
+	self:NotifyAlerts_UpdateDisabledAlertTypes();
 	self.D = self.D + 1;
 end
 --Save players so they keep their stats on scene transitions

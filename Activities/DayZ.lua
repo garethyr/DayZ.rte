@@ -253,7 +253,6 @@ function DayZ:UpdateActivity()
 		self:StartActivity();
 	end
 	if UInputMan:KeyPressed(2) then
-		print ("This key does nothing right now");
 		for k, v in pairs(self.HumanTable.Players) do
 			v.actor.Pos.X = math.min(v.actor.Pos.X + 600, SceneMan.SceneWidth-50);
 		end

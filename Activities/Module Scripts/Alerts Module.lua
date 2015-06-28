@@ -46,7 +46,7 @@ function ModularActivity:StartAlerts()
 	--A modifier for how fast held items add activity to the actor holding them, the actual speed at which they add is also based on their activity strength
 	self.ActivatedHeldItemActivityGainModifier = 0.02;
 	--The weapon alert value to compare strength with when making alerts (i.e. a weapon with 4 times this alert value will make an alert 4 times self.ActorActivityToAlertValue)
-	self.WeaponAlertStrengthComparator = "L"; --Ranges from N to VVH, see self.WeaponActivityTable for keys
+	self.WeaponAlertStrengthComparator = "L"; --Ranges from N to VVH, see self.WeaponActivityValues for keys
 	--The factor to reduce the actor's activity by after a weapon alert is made (between 0 and 1)
 	self.WeaponAlertActivityReductionFactor = 0.5;
 	
@@ -60,8 +60,17 @@ function ModularActivity:StartAlerts()
 	-----------------------
 	--STATIC ALERT TABLES--
 	-----------------------
+	--This table stores all types of alerts and is used around the script for ease. If any alert types are added they should be updated here as well
+	self.AlertTypes = {"sound", "light"};
+	
+	--This table stores specific alert types that aren't directly covered in other tables, note that each entry can have multiple types
+	self.SpecificAlertTypes = {
+		["Flashlight"] = {"light"},
+		["Weapon"] = {"sound"} --TODO integrate this table more deeply, particularly the weapon part
+	};
+	
 	--This table stores all alert making throwables and their values
-	self.ThrowableItemAlertValues = {
+	self.ThrowableItemAlertValues = { --TODO change throwable table so the atype is contained in the table and just the item is the key, so throwables could have multiple alert types
 		sound = {
 			["Empty Tin Can"] = {strength = self.JunkNoise, ismobile = false},
 			["Empty Whiskey Bottle"] = {strength = self.JunkNoise, ismobile = false},
@@ -76,18 +85,15 @@ function ModularActivity:StartAlerts()
 			["Blue Chemlight"] = {strength = self.AlertBaseStrength, ismobile = true},
 			["Flare"] = {strength = self.AlertBaseStrength*1.5, ismobile = true}
 		}
-	}
-	
-	--This table stores all types of alerts and is used around the script for ease. If any alert types are added they should be updated here as well
-	self.AlertTypes = {"sound", "light"};
+	};
 	
 	--Weapon sound values (i.e. how much shooting adds) ordered from lowest (None) to highest (Very Very High), hunting knife with 0 sound is outside of this table
-	self.WeaponActivityValues = {N=100, VVL=250, VL=500, L=1000, LM=1650, M=2250, MH=3250, H=4500, VH=6000, VVH=self.AlertStrengthLimit/self.ActorActivityToAlertValue};
-	self.WeaponActivityTable = { --Note: weapons aren't separated by civilian/military for alerts since there's no need for that distinction here
+	self.WeaponActivityLevels = {N=100, VVL=250, VL=500, L=1000, LM=1650, M=2250, MH=3250, H=4500, VH=6000, VVH=self.AlertStrengthLimit/self.ActorActivityToAlertValue};
+	self.WeaponActivityValues = { --Note: weapons aren't separated by civilian/military for alerts since there's no need for that distinction here
 		--Civilian weapon alert values
-		["Hunting Knife"] = 0, ["Crowbar"] = 0, ["Hatchet"] = 0, ["[DZ] Makarov PM"] = self.WeaponActivityValues.L, ["[DZ] .45 Revolver"] = self.WeaponActivityValues.LM, ["[DZ] M1911A1"] = self.WeaponActivityValues.LM, ["[DZ] Compound Crossbow"] = self.WeaponActivityValues.N, ["[DZ] MR43"] = self.WeaponActivityValues.M, ["[DZ] Winchester 1866"] = self.WeaponActivityValues.LM, ["[DZ] Lee Enfield"] = self.WeaponActivityValues.VH, ["[DZ] CZ 550"] = self.WeaponActivityValues.VH,
+		["Hunting Knife"] = 0, ["Crowbar"] = 0, ["Hatchet"] = 0, ["[DZ] Makarov PM"] = self.WeaponActivityLevels.L, ["[DZ] .45 Revolver"] = self.WeaponActivityLevels.LM, ["[DZ] M1911A1"] = self.WeaponActivityLevels.LM, ["[DZ] Compound Crossbow"] = self.WeaponActivityLevels.N, ["[DZ] MR43"] = self.WeaponActivityLevels.M, ["[DZ] Winchester 1866"] = self.WeaponActivityLevels.LM, ["[DZ] Lee Enfield"] = self.WeaponActivityLevels.VH, ["[DZ] CZ 550"] = self.WeaponActivityLevels.VH,
 		--Military weapons and their alert values
-		["[DZ] G17"] = self.WeaponActivityValues.L, ["[DZ] AKM"] = self.WeaponActivityValues.M, ["[DZ] M16A2"] = self.WeaponActivityValues.M, ["[DZ] MP5SD6"] = self.WeaponActivityValues.VVL, ["[DZ] M4A1 CCO SD"] = self.WeaponActivityValues.VL, ["[DZ] Mk 48 Mod 0"] = self.WeaponActivityValues.H, ["[DZ] M14 AIM"] = self.WeaponActivityValues.H, ["[DZ] M107"] = self.WeaponActivityValues.VH
+		["[DZ] G17"] = self.WeaponActivityLevels.L, ["[DZ] AKM"] = self.WeaponActivityLevels.M, ["[DZ] M16A2"] = self.WeaponActivityLevels.M, ["[DZ] MP5SD6"] = self.WeaponActivityLevels.VVL, ["[DZ] M4A1 CCO SD"] = self.WeaponActivityLevels.VL, ["[DZ] Mk 48 Mod 0"] = self.WeaponActivityLevels.H, ["[DZ] M14 AIM"] = self.WeaponActivityLevels.H, ["[DZ] M107"] = self.WeaponActivityLevels.VH
 	};
 	
 	------------------------
@@ -320,7 +326,24 @@ function ModularActivity:LowerAlertStrength(alert)
 end
 --Return the safe strength for a weapon alert given the weapon's sound level
 function ModularActivity:GetWeaponAlertStrength(soundlevel)
-	return math.min(self.AlertStrengthLimit, self.ActorActivityToAlertValue*soundlevel/self.WeaponActivityValues[self.WeaponAlertStrengthComparator]);
+	return math.min(self.AlertStrengthLimit, self.ActorActivityToAlertValue*soundlevel/self.WeaponActivityLevels[self.WeaponAlertStrengthComparator]);
+end
+--Return whether or not the equipped item is an alert making item as well as its alert type
+function ModularActivity:ItemCanMakeAlert(item, lighton)
+	if item ~= nil then
+		if lighton then
+			return true, self.SpecificAlertTypes.Flashlight;
+		elseif self.WeaponActivityValues[item.PresetName] ~= nil then
+			return true, self.SpecificAlertTypes.Weapon;
+		else
+			for atype, throwabletable in pairs(self.ThrowableItemAlertValues) do
+				if throwabletable[item.PresetName] ~= nil then
+					return true, {atype};
+				end
+			end
+		end
+	end
+	return false;
 end
 --Return a table for use in making new alerts - makes default values for any types that aren't inputted, and uses the input for any that are
 function ModularActivity:GenerateAlertCreationTableFromValues(values)
@@ -478,6 +501,14 @@ function ModularActivity:GetZombieRespawnIntervalForAlert(alert)
 	--TODO flesh this stuff out through discussion with uber, 
 	--	nicer to use a mathematical formula than arbitrary numbers found in Notes.txt
 	return self.AlertBaseZombieSpawnInterval;
+end
+--Update which types of alerts are disabled/enabled so it matches the current state of the environmental factors that affect it
+function ModularActivity:UpdateDisabledAlertTypes()
+	if self.IncludeDayNight and not self.DayNightIsNight and self.IsOutside then
+		self:SetDisabledAlertType("light", true);
+	else
+		self:SetDisabledAlertType("light", false);
+	end
 end
 --Set whether an alert of a certain type should be disabled or enabled
 function ModularActivity:SetDisabledAlertType(atype, isdisabled)
@@ -667,7 +698,7 @@ function ModularActivity:DoAlertHumanManageActivity()
 			if acttype ~= false then
 				local item = ToHeldDevice(humantable.actor.EquippedItem);
 				--If the item is a weapon that is firing or is not a weapon, add to the human's activity total
-				if (self.WeaponActivityTable[item.PresetName] ~= nil and item:IsActivated() and humantable.rounds ~= ToHDFirearm(item).RoundInMagCount and not item:IsReloading()) or self.WeaponActivityTable[item.PresetName] == nil then
+				if (self.WeaponActivityValues[item.PresetName] ~= nil and item:IsActivated() and humantable.rounds ~= ToHDFirearm(item).RoundInMagCount and not item:IsReloading()) or self.WeaponActivityValues[item.PresetName] == nil then
 					humantable.activity[acttype].total = math.min(humantable.activity[acttype].total + humantable.activity[acttype].current, self.ActorActivityToAlertValue);
 					humantable.activity[acttype].timer:Reset();
 					humantable.rounds = acttype == "sound" and ToHDFirearm(item).RoundInMagCount or humantable.rounds;
@@ -693,8 +724,8 @@ function ModularActivity:DoAlertHumanCheckCurrentActivity(humantable)
 	local item = humantable.actor.EquippedItem;
 	if item ~= nil then
 		--Set the sound activity level for the actor if applicable
-		if self.WeaponActivityTable[item.PresetName] ~= nil then
-			humantable.activity.sound.current = self.WeaponActivityTable[item.PresetName];
+		if self.WeaponActivityValues[item.PresetName] ~= nil then
+			humantable.activity.sound.current = self.WeaponActivityValues[item.PresetName];
 			return "sound";
 		--Set the light activity level for the actor if applicable
 		elseif humantable.lightOn then
@@ -716,7 +747,7 @@ end
 function ModularActivity:GetDesiredAlertStrengthFromHuman(atype, humantable)
 	local item = humantable.actor.EquippedItem;
 	--If it's a weapon, return the result of the calculation function
-	if self.WeaponActivityTable[item.PresetName] ~= nil then
+	if self.WeaponActivityValues[item.PresetName] ~= nil then
 		return self:GetWeaponAlertStrength(humantable.activity.sound.current);
 	--Otherwise it's a throwable, return its table value if it's activated, or 0 otherwise
 	else
@@ -736,18 +767,20 @@ function ModularActivity:DoAlertCreations()
 		for ID, humantable in pairs(tables) do
 			--Only try to create alerts if the actor has an equipped item
 			local item = humantable.actor.EquippedItem;
-			if item ~= nil then
-				local usestate = ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") or 0;
-			
-			--Add the item to the light table if it's light emitting and not in it already (i.e. it was previously not equipped but was swapped to)
-				if atype == "light" and  usestate == 2 and self:AlertsRequestDayNight_LightItemNotInTable(item) then
-					self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
-				end
-			
-				local cancreate = true;
-				--Check for throwable items, create new alert items from them and remove old alerts if necessary
-				if cancreate then
-					for atype, throwabletable in pairs(self.ThrowableItemAlertValues) do
+			local itemcanmakealert, atypes = self:ItemCanMakeAlert(item, humantable.lightOn)
+			if itemcanmakealert then
+				for __, atype in pairs(atypes) do --TODO think about how this would or wouldn't work with items that actually have multiple atypes (both thrown and not held/fired)
+					local usestate = ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") or 0;
+				
+					--Add the item to the light table if it's light emitting and not in it already (i.e. it was previously not equipped but was swapped to)
+					if atype == "light" and  usestate == 2 and self:AlertsRequestDayNight_LightItemNotInTable(item) then
+						self:AlertsNotifyDayNight_LightEmittingItemAdded(item);
+					end
+				
+					local cancreate = true;
+					--Check for throwable items, create new alert items from them and remove old alerts if necessary
+					if cancreate then
+						local throwabletable = self.ThrowableItemAlertValues[atype];
 						if throwabletable[item.PresetName] and self.AlertItemTable[item.UniqueID] == nil and self.AlertTable[item.UniqueID] == nil then
 							if (humantable.actor:GetController():IsState(Controller.WEAPON_FIRE) and (usestate == 0 or usestate == 2)) or (humantable.actor:GetController():IsState(Controller.WEAPON_DROP) and usestate == 2) then
 								--Add the new alert item
@@ -756,29 +789,30 @@ function ModularActivity:DoAlertCreations()
 								cancreate = false;
 							end
 						end
-					end
-				end	
-				--If we have no thrown items, we're potentially working with activity values - weapon firing or holding activated light items/flashlight
-				if cancreate then
-					for _, atype in pairs(self.AlertTypes) do
+					end	
+					--If we have no thrown items, we're potentially working with activity values - weapon firing or holding activated light items/flashlight
+					if cancreate then
 						if humantable.activity[atype].total >= self.ActorActivityToAlertValue and humantable.activity[atype].current > 0 then							
 							local alerttargetsactor = false;
 							if humantable.lightOn or (self.ThrowableItemAlertValues[atype][item.PresetName]~= nil and self.ThrowableItemAlertValues[atype][item.PresetName].ismobile) then
 								alerttargetsactor = true;
 							end
-							local makenewalert = (alerttargetsactor == false or humantable.alert == false) and true or false; --Only make a new alert if it has none or this won't be targeted
+							--Only make a new alert if the human has none or this won't be targeted
+							local makenewalert = (alerttargetsactor == false or humantable.alert == false) and true or false;
 							
 							--Determine the strength for the alert to be made or for the current alert to be updated to
 							local alertstrength = self:GetDesiredAlertStrengthFromHuman(atype, humantable);
-							
+														
 							--If there's no alert or our alert-to-be doesn't target the actor, make a new one
 							if makenewalert then
+								print (atype.." alert creation, total activity is "..tostring(humantable.activity[atype].total)..", current activity is "..tostring(humantable.activity[atype].current));
+
 								--Setup alert creation values
 								local alertpos = humantable.actor.Pos;
 								local alerttarget = alerttargetsactor and humantable.actor or nil;
 								local alertparent = alerttargetsactor and item or nil;
 								
-								--Reduce the actor's activity total for the alert type, so it doesn't keep making alerts
+								--Reduce the actor's activity total for the alert type, so it doesn't keep making alerts --TODO maybe only have to do it for weapons?
 								humantable.activity[atype].total = atype == "light" and humantable.activity[atype].total - 1 or math.floor(humantable.activity[atype].total*self.WeaponAlertActivityReductionFactor);
 
 								--Generate an alert creation table for the alert-to-be

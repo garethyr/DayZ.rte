@@ -97,13 +97,12 @@ end
 --CREATION FUNCTIONS--
 ----------------------
 --Add an audio emitter to the table
-function ModularActivity:AudioAddLocalizedSound(actor, areaname)
+function ModularActivity:AudioAddLocalizedSound(actor, player, areaname)
 	local choice = math.random(1, self.AudioLocalizedSoundDefinitionTable[areaname].size);
 	local emitter = CreateAEmitter(self.AudioLocalizedSoundDefinitionTable[areaname][choice], self.RTE);
 	emitter.Pos = actor.Pos;
 	MovableMan:AddParticle(emitter);
 	
-	local player = actor:GetController().Player;
 	--Remake the table if it got completely removed cause its actor died
 	if self.AudioLocalizedSoundTable[player] == nil then
 		self.AudioLocalizedSoundTable[player] = {target = actor, timer = Timer()};
@@ -182,14 +181,13 @@ end
 --LOCAL--
 --Deal with local sounds, add them and move them as necessary
 function ModularActivity:AudioDoLocalSounds()
-	for i = 0, Activity.MAXPLAYERCOUNT do
-		if self:PlayerHuman(i) then
-			local tab = self.AudioLocalizedSoundTable[i];
+	for ID, playertable in pairs(self.HumanTable.Players) do
+		if playertable.player ~= nil then
+			local tab = self.AudioLocalizedSoundTable[playertable.player];
 			if tab == nil or (tab ~= nil and tab.timer:IsPastSimMS(tab.interval)) then
-				local actor = self:GetControlledActor(i);
-				if actor ~= nil and actor.ClassName == "AHuman" then
-					local areaname = self:GetActorAudioArea(actor);
-					self:AudioAddLocalizedSound(actor, areaname);
+				if playertable.actor ~= nil and playertable.actor.ClassName == "AHuman" then
+					local areaname = self:GetActorAudioArea(playertable.actor);
+					self:AudioAddLocalizedSound(playertable.actor, playertable.player, areaname);
 				end
 			else
 				if MovableMan:IsParticle(tab.sound) and MovableMan:IsActor(tab.target) then

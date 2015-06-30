@@ -129,6 +129,7 @@ end
 ----------------------
 --CREATION FUNCTIONS--
 ----------------------
+function ModularActivity:____ALERTS_CREATION_FUNCTIONS____() end
 --Returns a key that is the target's or, failing that, parent's UniqueID if it's not nil, otherwise generates a name as the key
 function ModularActivity:GenerateKeyForNewAlert(target, alertvalues)
 	local key = nil;
@@ -230,6 +231,7 @@ end
 ---------------------
 --UTILITY FUNCTIONS--
 ---------------------
+function ModularActivity:____ALERTS_UTILITY_FUNCTIONS____() end
 --GENERAL UTILITY FUNCTIONS--
 function ModularActivity:NumberOfCurrentAlerts()
 	local count = 0;
@@ -356,7 +358,60 @@ function ModularActivity:GenerateAlertCreationTableFromValues(values)
 	end
 	return strengthstable;
 end
+--DISABLING ALERT UTILITY FUNCTIONS--
+function ModularActivity:____ALERTS_DISABLE_FUNCTIONS____() end
+--Update which types of alerts are disabled/enabled so it matches the current state of the environmental factors that affect it
+function ModularActivity:UpdateDisabledAlertTypes()
+	if self.IncludeDayNight and not self.DayNightIsNight and self.IsOutside then
+		self:SetDisabledAlertType("light", true);
+	else
+		self:SetDisabledAlertType("light", false);
+	end
+end
+--Set whether an alert of a certain type should be disabled or enabled
+function ModularActivity:SetDisabledAlertType(atype, isdisabled)
+	self.AlertTypesDisabledTable[atype] = isdisabled;
+	--Disable any alerts of the inputted type
+	if isdisabled then
+		for _, alert in pairs(self.AlertTable) do
+			alert[atype].savedstrength, alert[atype].strength = alert[atype].strength, 0;
+		end
+	--Reenable any alerts of the inputted type, set its zombie timer to its interval so it checks whether or not it needs to spawn zombies
+	elseif not isdisabled then
+		for _, alert in pairs(self.AlertTable) do
+			if alert[atype].savedstrength > 0 then
+				alert[atype].strength, alert[atype].savedstrength = alert[atype].savedstrength, 0;
+				alert.zombie.timer.ElapsedSimTimeMS = self:GetZombieRespawnIntervalForAlert(alert);
+			end
+		end
+	end
+end
+--Check whether or not any of the entered types are disabled
+function ModularActivity:AnyAlertTypeDisabled(atypes)
+	if type(atypes) ~= "table" then
+		atypes = {atypes};
+	end
+	for _, atype in pairs(atypes) do
+		if self.AlertTypesDisabledTable[atype] == true then
+			return true;
+		end
+	end
+	return false;
+end
+--Check whether or not all of the entered types are disabled
+function ModularActivity:AllAlertTypesDisabled(atypes)
+	if type(atypes) ~= "table" then
+		atypes = {atypes};
+	end
+	for _, atype in pairs(atypes) do
+		if self.AlertTypesDisabledTable[atype] ~= true then
+			return false;
+		end
+	end
+	return true;
+end
 --VISIBLE ALERT UTILITY FUNCTIONS--
+function ModularActivity:____ALERTS_VISIBILITY_FUNCTIONS____() end
 --Return the max distance at which an alert of certain strength can be seen
 function ModularActivity:AlertVisibilityDistance(alertstrength)
 	return alertstrength/self.AlertGeneralVisibilityDistanceModifier;
@@ -410,6 +465,7 @@ function ModularActivity:AllVisibleAlerts(pos, awarenessmod, ...) --Optional arg
 	return alerts;
 end
 --ALERT ZOMBIE UTILITY FUNCTIONS--
+function ModularActivity:____ALERTS_ZOMBIE_FUNCTIONS____() end
 --Moves all zombies from fromalert to toalert, updating their zombie table information accordingly
 function ModularActivity:MoveZombiesFromOneAlertToAnother(fromalert, toalert)
 	if self.IncludeSpawns and fromalert.zombie ~= false then
@@ -502,35 +558,10 @@ function ModularActivity:GetZombieRespawnIntervalForAlert(alert)
 	--	nicer to use a mathematical formula than arbitrary numbers found in Notes.txt
 	return self.AlertBaseZombieSpawnInterval;
 end
---Update which types of alerts are disabled/enabled so it matches the current state of the environmental factors that affect it
-function ModularActivity:UpdateDisabledAlertTypes()
-	if self.IncludeDayNight and not self.DayNightIsNight and self.IsOutside then
-		self:SetDisabledAlertType("light", true);
-	else
-		self:SetDisabledAlertType("light", false);
-	end
-end
---Set whether an alert of a certain type should be disabled or enabled
-function ModularActivity:SetDisabledAlertType(atype, isdisabled)
-	self.AlertTypesDisabledTable[atype] = isdisabled;
-	--Disable any alerts of the inputted type
-	if isdisabled then
-		for _, alert in pairs(self.AlertTable) do
-			alert[atype].savedstrength, alert[atype].strength = alert[atype].strength, 0;
-		end
-	--Reenable any alerts of the inputted type, set its zombie timer to its interval so it checks whether or not it needs to spawn zombies
-	elseif not isdisabled then
-		for _, alert in pairs(self.AlertTable) do
-			if alert[atype].savedstrength > 0 then
-				alert[atype].strength, alert[atype].savedstrength = alert[atype].savedstrength, 0;
-				alert.zombie.timer.ElapsedSimTimeMS = self:GetZombieRespawnIntervalForAlert(alert);
-			end
-		end
-	end
-end
 --------------------
 --UPDATE FUNCTIONS--
 --------------------
+function ModularActivity:____ALERTS_UPDATE_FUNCTIONS____() end
 --Main alert function, increases sound upon firing, transfers alert to locations, runs everything else
 function ModularActivity:DoAlerts()
 	--Clean the table before doing any alert stuff
@@ -554,6 +585,7 @@ end
 --------------------
 --DELETE FUNCTIONS--
 --------------------
+function ModularActivity:____ALERTS_DELETE_FUNCTIONS____() end
 --Clean up the alert table for a variety of reasons
 function ModularActivity:DoAlertCleanup()
 	for key, alert in pairs(self.AlertTable) do
@@ -649,10 +681,7 @@ function ModularActivity:RemoveNonActiveActorAlert(alert, atype, actorID)
 	end
 	
 	--Get the alert strength and parent for this specific type
-	local types = {};
-	for _, alerttype in pairs (self.AlertTypes) do
-		types[alerttype] = (alerttype == atype) and {strength = alert[atype].strength, parent = nil} or {strength = 0, parent = nil};
-	end
+	local types = self:GenerateAlertCreationTableFromValues({[atype] = {strength = math.max(alert[atype].strength, alert[atype].savedstrength), parent = nil}});
 	
 	--Add the split off alert and remove it from the remained alert
 	alert[atype].strength = 0;
@@ -689,6 +718,7 @@ end
 --------------------
 --ACTION FUNCTIONS--
 --------------------
+function ModularActivity:____ALERTS_ACTION_FUNCTIONS____() end
 --Deal with adding to humans' activity levels
 function ModularActivity:DoAlertHumanManageActivity()
 	for _, humantype in pairs(self.HumanTable) do
@@ -708,10 +738,11 @@ function ModularActivity:DoAlertHumanManageActivity()
 			--Lower activity levels rapidly a little while after a period of no relevant activity increase
 			for atype, activity in pairs(humantable.activity) do
                 if activity.total > 0 and activity.timer:IsPastSimMS(self.ActorActivityRemoveTime) then
+					print ("draining "..atype.." activity for "..tostring(humantable.actor));
 					activity.total = math.max(activity.total - self.ActorActivityRemoveSpeed, 0);
                     
                     --If the actor has an alert of this type, remove that type from the alert (if it's only got one type it will be removed soon)
-                    if humantable.alert ~= false and humantable.alert[atype].strength > 0 then
+                    if humantable.alert ~= false and (humantable.alert[atype].strength > 0 or humantable.alert[atype].savedstrength > 0) then
                         self:RemoveNonActiveActorAlert(humantable.alert, atype, humantable.actor.UniqueID);
                     end
                 end
@@ -724,17 +755,17 @@ function ModularActivity:DoAlertHumanCheckCurrentActivity(humantable)
 	local item = humantable.actor.EquippedItem;
 	if item ~= nil then
 		--Set the sound activity level for the actor if applicable
-		if self.WeaponActivityValues[item.PresetName] ~= nil then
+		if self:AnyAlertTypeDisabled(self.SpecificAlertTypes.Weapon) == false and self.WeaponActivityValues[item.PresetName] ~= nil then
 			humantable.activity.sound.current = self.WeaponActivityValues[item.PresetName];
 			return "sound";
 		--Set the light activity level for the actor if applicable
-		elseif humantable.lightOn then
+		elseif self:AnyAlertTypeDisabled(self.SpecificAlertTypes.Flashlight) == false and humantable.lightOn then
 			humantable.activity.light.current = self.FlashlightAlertStrength*self.ActivatedHeldItemActivityGainModifier;
 			return "light";
 		--Set the light activity level for the actor if applicable
 		else
 			for atype, throwables in pairs(self.ThrowableItemAlertValues) do
-				if throwables[item.PresetName] ~= nil and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
+				if throwables[item.PresetName] ~= nil and self:AnyAlertTypeDisabled(atype) == false and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
 					humantable.activity[atype].current = throwables[item.PresetName].strength*self.ActivatedHeldItemActivityGainModifier;
 					return atype;
 				end
@@ -759,7 +790,6 @@ function ModularActivity:GetDesiredAlertStrengthFromHuman(atype, humantable)
 	end
 	return 13579; --NOTE: This number is used here to indicate something screwed up in making alerts since putting 0 would be less helpful
 end
-
 --Make alerts for actor alerts and thrown entries for thrown alerting items
 function ModularActivity:DoAlertCreations()
 	--Do alert creation from various means, and management of alerts currently targeting humans
@@ -824,7 +854,7 @@ function ModularActivity:DoAlertCreations()
 								
 							--If there's an alert and our alert-to-be targets the actor, and this strength type isn't disabled, simply update its strength and, if necessary, parent
 							else
-								if self.AlertTypesDisabledTable[atype] ~= true and alertstrength > 0 then
+								if self:AnyAlertTypeDisabled(atype) and alertstrength > 0 then
 									local speed = humantable.alert.strengthremovespeed*10;
 									if humantable.alert[atype].strength > alertstrength + 2*speed then
 										humantable.alert[atype].strength = humantable.alert[atype].strength - speed;

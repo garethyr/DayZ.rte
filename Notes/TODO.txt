@@ -66,7 +66,6 @@
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar) --SHOULD THIS STILL BE A THING? I THINK FLASHLIGHT SHOULD CAUSE ALERTS.
 
 • Fix recursive GetSafeRandomSpawn causing infinite loops so it can be uncommented
-• Fix bug where light alerts on actor made during the day never seem to disappear. Might require scene transition?
 ----------------------------------------------------------------------
 ------------------------------Completed-------------------------------
 ----------------------------------------------------------------------

@@ -11,7 +11,7 @@ function Create(self)
 			self.Parent = actor;
 		end
 	end
-	if DayZHumanWoundTable[self.Parent.UniqueID] == nil then
+	if self.Parent ~= nil and DayZHumanWoundTable[self.Parent.UniqueID] == nil then
 		DayZHumanWoundTable[self.Parent.UniqueID] = {actor = self.Parent, wounds = {}};
 	end
 	DayZHumanWoundTable[self.Parent.UniqueID].wounds[self.UniqueID] = self;
@@ -22,7 +22,7 @@ function Destroy(self)
 		if next(DayZHumanWoundTable) == nil or ToGameActivity(ActivityMan:GetActivity()):ActivityOver() then
 			DayZHumanWoundTable = nil;
 		else
-			if DayZHumanWoundTable[self.Parent.UniqueID] ~= nil then
+			if self.Parent ~= nil and DayZHumanWoundTable[self.Parent.UniqueID] ~= nil then
 				DayZHumanWoundTable[self.Parent.UniqueID].wounds[self.UniqueID] = nil;
 				if next(DayZHumanWoundTable[self.Parent.UniqueID].wounds) == nil then
 					DayZHumanWoundTable[self.Parent.UniqueID] = nil;

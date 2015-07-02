@@ -41,18 +41,18 @@ function Update(self)
 			return;
 		end
 		--Do the item effects
-		ToGameActivity(ActivityMan:GetActivity()):AddObjectivePoint(tostring(self.BatteryLevel).."  "..tostring(self.Parent.Sharpness), Vector(self.Parent.Pos.X, self.Parent.Pos.Y - 100), self.Parent.Team, GameActivity.ARROWDOWN);
+		--ToGameActivity(ActivityMan:GetActivity()):AddObjectivePoint(tostring(self.BatteryLevel).."  "..tostring(self.Parent.Sharpness), Vector(self.Parent.Pos.X, self.Parent.Pos.Y - 100), self.Parent.Team, GameActivity.ARROWDOWN);
 
 		--Swap on/off
 		if self:IsActivated() then-- and self.State == 0 then
-			--if self.ClickTimer:IsPastSimMS(100) then
+			if self.ClickTimer:IsPastSimMS(500) then
 				if self.Parent.Sharpness == 0 then
 					self.Parent.Sharpness = 1;
 				else
 					self.Parent.Sharpness = 0;
 				end
-			--	self.ClickTimer:Reset();
-			--end
+				self.ClickTimer:Reset();
+			end
 			--self.State = 1;
 		--else
 		--	self.State = 0;

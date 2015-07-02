@@ -14,7 +14,7 @@ function ModularActivity:DoFlashlights()
 	for _, humantable in pairs(self.HumanTable) do
 		for k, v in pairs(humantable) do
 			--Flag for the flashlight on or off based on its actor's sharpness
-			v.lightOn = (v.actor.Sharpness == 1);
+			v.lightOn = (v.actor.Sharpness > 0);
 			
 			--Stop the player from dropping the flashlight
 			if v.actor.EquippedItem ~= nil and v.actor.EquippedItem.PresetName == "Flashlight" then

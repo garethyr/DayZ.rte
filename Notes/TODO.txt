@@ -47,6 +47,8 @@
 • Fix crash to desktop with coming back from leaving tunnels
 
 • Use B32 features to detect when weapons are used with perfect accuracy, and apply that to all weapon use scripts
+• Update the flashlight so it uses new scripts and is more useable
+• Fix used items so their action disabling actually works (i.e can't swap away from the weapon or fire it again or anything)
 
 • Make custom zombie AI (bleh)
 • Maybe allow behaviour targets to allow for different types of zombies, e.g. bloodhound zombie which would have a bonus to weight for human targets, or forgetful zombie which would have a mallus to weight for all targets and would change targets more often

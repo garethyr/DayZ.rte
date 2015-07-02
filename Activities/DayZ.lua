@@ -360,10 +360,6 @@ function DayZ:UpdateActivity()
 		self:DoAlerts();
 	end
 	
-	if self.IncludeBehaviours then
-		self:DoDebugTargetDisplayForZombies();
-	end
-	
 	if self.GeneralLagTimer:IsPastSimMS(100) then
 		
 		--Deal with loot actions
@@ -408,6 +404,10 @@ function DayZ:DoActorChecksAndCleanup()
 				self:NotifyMany_DeadHuman(humantype, v.player, ID, v.alert);
 				humantable[ID] = nil;
 			else
+				--Make sure the player is switched to the actor
+				if not v.actor:IsPlayerControlled() then
+					SceneMan:SetScrollTarget(v.actor.Pos, 1, true, v.player);
+				end
 				--Reset the actor's round count if he changes weapons in any way
 				local c = v.actor:GetController();
 				if c:IsState(Controller.WEAPON_DROP) or c:IsState(Controller.WEAPON_PICKUP) or c:IsState(Controller.WEAPON_CHANGE_PREV) or c:IsState(Controller.WEAPON_CHANGE_NEXT) then

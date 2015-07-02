@@ -129,7 +129,7 @@ end
 ----------------------
 --CREATION FUNCTIONS--
 ----------------------
-function ModularActivity:____ALERTS_CREATION_FUNCTIONS____() end
+function ModularActivity:____ALERT_CREATION____() end
 --Returns a key that is the target's or, failing that, parent's UniqueID if it's not nil, otherwise generates a name as the key
 function ModularActivity:GenerateKeyForNewAlert(target, alertvalues)
 	local key = nil;
@@ -231,7 +231,7 @@ end
 ---------------------
 --UTILITY FUNCTIONS--
 ---------------------
-function ModularActivity:____ALERTS_UTILITY_FUNCTIONS____() end
+function ModularActivity:____ALERT_UTILITY____() end
 --GENERAL UTILITY FUNCTIONS--
 function ModularActivity:NumberOfCurrentAlerts()
 	local count = 0;
@@ -359,7 +359,7 @@ function ModularActivity:GenerateAlertCreationTableFromValues(values)
 	return strengthstable;
 end
 --DISABLING ALERT UTILITY FUNCTIONS--
-function ModularActivity:____ALERTS_DISABLE_FUNCTIONS____() end
+function ModularActivity:____ALERT_DISABLING____() end
 --Update which types of alerts are disabled/enabled so it matches the current state of the environmental factors that affect it
 function ModularActivity:UpdateDisabledAlertTypes()
 	if self.IncludeDayNight and not self.DayNightIsNight and self.IsOutside then
@@ -387,7 +387,7 @@ function ModularActivity:SetDisabledAlertType(atype, isdisabled)
 	end
 end
 --Check whether or not any of the entered types are disabled
-function ModularActivity:AnyAlertTypeDisabled(atypes)
+function ModularActivity:AnyOfAlertTypesDisabled(atypes)
 	if type(atypes) ~= "table" then
 		atypes = {atypes};
 	end
@@ -399,7 +399,7 @@ function ModularActivity:AnyAlertTypeDisabled(atypes)
 	return false;
 end
 --Check whether or not all of the entered types are disabled
-function ModularActivity:AllAlertTypesDisabled(atypes)
+function ModularActivity:AllOfAlertTypesDisabled(atypes)
 	if type(atypes) ~= "table" then
 		atypes = {atypes};
 	end
@@ -411,7 +411,7 @@ function ModularActivity:AllAlertTypesDisabled(atypes)
 	return true;
 end
 --VISIBLE ALERT UTILITY FUNCTIONS--
-function ModularActivity:____ALERTS_VISIBILITY_FUNCTIONS____() end
+function ModularActivity:____ALERT_VISIBILITY____() end
 --Return the max distance at which an alert of certain strength can be seen
 function ModularActivity:AlertVisibilityDistance(alertstrength)
 	return alertstrength/self.AlertGeneralVisibilityDistanceModifier;
@@ -465,7 +465,7 @@ function ModularActivity:AllVisibleAlerts(pos, awarenessmod, ...) --Optional arg
 	return alerts;
 end
 --ALERT ZOMBIE UTILITY FUNCTIONS--
-function ModularActivity:____ALERTS_ZOMBIE_FUNCTIONS____() end
+function ModularActivity:____ALERT_ZOMBIES____() end
 --Moves all zombies from fromalert to toalert, updating their zombie table information accordingly
 function ModularActivity:MoveZombiesFromOneAlertToAnother(fromalert, toalert)
 	if self.IncludeSpawns and fromalert.zombie ~= false then
@@ -561,7 +561,7 @@ end
 --------------------
 --UPDATE FUNCTIONS--
 --------------------
-function ModularActivity:____ALERTS_UPDATE_FUNCTIONS____() end
+function ModularActivity:____ALERT_UPDATING____() end
 --Main alert function, increases sound upon firing, transfers alert to locations, runs everything else
 function ModularActivity:DoAlerts()
 	--Clean the table before doing any alert stuff
@@ -585,7 +585,7 @@ end
 --------------------
 --DELETE FUNCTIONS--
 --------------------
-function ModularActivity:____ALERTS_DELETE_FUNCTIONS____() end
+function ModularActivity:____ALERT_DELETION____() end
 --Clean up the alert table for a variety of reasons
 function ModularActivity:DoAlertCleanup()
 	for key, alert in pairs(self.AlertTable) do
@@ -718,7 +718,7 @@ end
 --------------------
 --ACTION FUNCTIONS--
 --------------------
-function ModularActivity:____ALERTS_ACTION_FUNCTIONS____() end
+function ModularActivity:____ALERT_ACTIONS____() end
 --Deal with adding to humans' activity levels
 function ModularActivity:DoAlertHumanManageActivity()
 	for _, humantype in pairs(self.HumanTable) do
@@ -738,7 +738,6 @@ function ModularActivity:DoAlertHumanManageActivity()
 			--Lower activity levels rapidly a little while after a period of no relevant activity increase
 			for atype, activity in pairs(humantable.activity) do
                 if activity.total > 0 and activity.timer:IsPastSimMS(self.ActorActivityRemoveTime) then
-					print ("draining "..atype.." activity for "..tostring(humantable.actor));
 					activity.total = math.max(activity.total - self.ActorActivityRemoveSpeed, 0);
                     
                     --If the actor has an alert of this type, remove that type from the alert (if it's only got one type it will be removed soon)
@@ -755,17 +754,17 @@ function ModularActivity:DoAlertHumanCheckCurrentActivity(humantable)
 	local item = humantable.actor.EquippedItem;
 	if item ~= nil then
 		--Set the sound activity level for the actor if applicable
-		if self:AnyAlertTypeDisabled(self.SpecificAlertTypes.Weapon) == false and self.WeaponActivityValues[item.PresetName] ~= nil then
+		if self:AnyOfAlertTypesDisabled(self.SpecificAlertTypes.Weapon) == false and self.WeaponActivityValues[item.PresetName] ~= nil then
 			humantable.activity.sound.current = self.WeaponActivityValues[item.PresetName];
 			return "sound";
 		--Set the light activity level for the actor if applicable
-		elseif self:AnyAlertTypeDisabled(self.SpecificAlertTypes.Flashlight) == false and humantable.lightOn then
+		elseif self:AnyOfAlertTypesDisabled(self.SpecificAlertTypes.Flashlight) == false and humantable.lightOn then
 			humantable.activity.light.current = self.FlashlightAlertStrength*self.ActivatedHeldItemActivityGainModifier;
 			return "light";
 		--Set the light activity level for the actor if applicable
 		else
 			for atype, throwables in pairs(self.ThrowableItemAlertValues) do
-				if throwables[item.PresetName] ~= nil and self:AnyAlertTypeDisabled(atype) == false and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
+				if throwables[item.PresetName] ~= nil and self:AnyOfAlertTypesDisabled(atype) == false and ToMOSRotating(item):NumberValueExists("UseState") and ToMOSRotating(item):GetNumberValue("UseState") > 0 then
 					humantable.activity[atype].current = throwables[item.PresetName].strength*self.ActivatedHeldItemActivityGainModifier;
 					return atype;
 				end
@@ -854,7 +853,7 @@ function ModularActivity:DoAlertCreations()
 								
 							--If there's an alert and our alert-to-be targets the actor, and this strength type isn't disabled, simply update its strength and, if necessary, parent
 							else
-								if self:AnyAlertTypeDisabled(atype) and alertstrength > 0 then
+								if self:AnyOfAlertTypesDisabled(atype) == false and alertstrength > 0 then
 									local speed = humantable.alert.strengthremovespeed*10;
 									if humantable.alert[atype].strength > alertstrength + 2*speed then
 										humantable.alert[atype].strength = humantable.alert[atype].strength - speed;

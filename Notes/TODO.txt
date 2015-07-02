@@ -65,7 +65,6 @@
 
 • Hard limit on flashlight alert level (so it can't *completely* fill the "eye" UI bar) --SHOULD THIS STILL BE A THING? I THINK FLASHLIGHT SHOULD CAUSE ALERTS.
 
-• Fix recursive GetSafeRandomSpawn causing infinite loops so it can be uncommented
 ----------------------------------------------------------------------
 ------------------------------Completed-------------------------------
 ----------------------------------------------------------------------
@@ -101,6 +100,7 @@
 • Fixed bug where extra zombies would spawn when alerts on actors change to non-targeted alerts.
 • Fixed the ability to make an absurd number of zombies by picking up and dropping/throwing activated alert items (e.g. flares and stuff).
 • Added alert display system that shows alerts around players.
-• Fixed zombie spawning underground/under objects so they more reliably spawn at the correct height
-• Allowed alert zombie spawning to be disabled in the scene datafile to allow for maps where only special zombies should spawn
-• Fixed bug where localized sounds (e.g. seagulls) would spam incessantly when the player actor was not actually selected
+• Fixed zombie spawning underground/under objects so they more reliably spawn at the correct height.
+• Allowed alert zombie spawning to be disabled in the scene datafile to allow for maps where only special zombies should spawn.
+• Fixed bug where localized sounds (e.g. seagulls) would spam incessantly when the player actor was not actually selected.
+• Fixed recursive GetSafeRandomSpawn causing infinite loops by placing a limit on its repetition, allowing it to be used.

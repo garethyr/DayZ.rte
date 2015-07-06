@@ -159,7 +159,7 @@ function ModularActivity:NotifyMany_DeadHuman(humantype, player, ID, alert)
 	if self.IncludeAlerts and alert ~= false then
 		self:MoveAlertFromDeadActor(alert);
 	end
-	if (humantype == "Players") then
+	if humantype == "Players" then
 		print ("humantype for "..tostring(ID).." is "..tostring(humantype));
 		self:AddPlayerToRespawnTable(self:CreateNewPlayerActor(player), player);
 	end

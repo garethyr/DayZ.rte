@@ -33,13 +33,13 @@ function ModularActivity:StartSceneLoading()
 	self.RightMostSpawn = SceneMan.SceneWidth; --Number of pixels away from the right side of the map that zombies or npcs can spawn
 	
 	--Non-Transition Areas
-	self.NumberOfCivilianLootAreas = nil; --The number of civilian loot areas
-	self.NumberOfHospitalLootAreas = nil; --The number of hospital loot areas
-	self.NumberOfMilitaryLootAreas = nil; --The number of military loot areas
-	self.NumberOfLootZombieSpawnAreas = nil; --The number of spawn areas for loot zombies
-	self.NumberOfShelterAreas = nil; --The number of shelter areas, places players and NPCs can use to avoid getting sickness due to bad weather
-	self.NumberOfAudioCivilizationAreas = nil; --The number of areas where civilization localized audio will play instead of nature localized audio
-	self.NumberOfAudioBeachAreas = nil; --The number of areas where beach localized audio will play instead of nature localized audio
+	self.NumberOfCivilianLootAreas = 0; --The number of civilian loot areas
+	self.NumberOfHospitalLootAreas = 0; --The number of hospital loot areas
+	self.NumberOfMilitaryLootAreas = 0; --The number of military loot areas
+	self.NumberOfLootZombieSpawnAreas = 0; --The number of spawn areas for loot zombies
+	self.NumberOfShelterAreas = 0; --The number of shelter areas, places players and NPCs can use to avoid getting sickness due to bad weather
+	self.NumberOfAudioCivilizationAreas = 0; --The number of areas where civilization localized audio will play instead of nature localized audio
+	self.NumberOfAudioBeachAreas = 0; --The number of areas where beach localized audio will play instead of nature localized audio
 
 	--Transition and Spawn Areas
 	self.TransitionAreas = {}; --The various scene transition areas in the current scene,

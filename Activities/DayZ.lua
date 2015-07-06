@@ -73,6 +73,16 @@ function DayZ:StartActivity()
 	--Lag Timer
 	self.GeneralLagTimer = Timer();
 	
+	--Weapon Lists
+	self.WeaponList = {
+		--Melee weapons
+		Melee = {{weapon = "Hunting Knife", ammo = nil}, {weapon = "Crowbar", ammo = nil}, {weapon = "Hatchet", ammo = nil}},
+		--Civilian weapons
+		Civilian = {{weapon = "[DZ] Makarov PM", ammo = "Makarov PM Magazine"}, {weapon = "[DZ] .45 Revolver", ammo = ".45 ACP Speedloader"}, {weapon = "[DZ] M1911A1", ammo = "M1911A1 Magazine"}, {weapon = "[DZ] Compound Crossbow", ammo = "Metal Bolts"}, {weapon = "[DZ] MR43", ammo = "12 Gauge Buckshot (2)"}, {weapon = "[DZ] Winchester 1866", ammo = ".44 Henry Rounds"}, {weapon = "[DZ] Lee Enfield", ammo = "Lee Enfield Stripper Clip"}, {weapon = "[DZ] CZ 550", ammo = "9.3x62 Mauser Rounds"}},
+		--Military weapons
+		Military = {{weapon = "[DZ] G17", ammo = "G17 Magazine"}, {weapon = "[DZ] AKM", ammo = "AKM Magazine"}, {weapon = "[DZ] M16A2", ammo = "STANAG Magazine"}, {weapon = "[DZ] M4A1 CCO SD", ammo =  "STANAG SD Magazine"}, {weapon = "[DZ] MP5SD6", ammo = "MP5SD6 Magazine"}, {weapon = "[DZ] Mk 48 Mod 0", ammo = "M240 Belt"}, {weapon = "[DZ] M14 AIM", ammo = "DMR Magazine"}, {weapon = "[DZ] M107", ammo = "M107 Magazine"}}
+	};
+	
 	--------------------
 	--MODULE INCLUSION--
 	--------------------
@@ -254,7 +264,10 @@ function DayZ:UpdateActivity()
 	end
 	if UInputMan:KeyPressed(2) then
 		for k, v in pairs(self.HumanTable.Players) do
-			v.actor.Pos.X = math.min(v.actor.Pos.X + 600, SceneMan.SceneWidth-50);
+			--v.actor.Pos.X = math.min(v.actor.Pos.X + 600, SceneMan.SceneWidth-50);
+			v.actor.Pos = SceneMan:MovePointToGround(Vector(v.actor.Pos.X + (v.actor.HFlipped and -600 or 600), 0), 10, 5);
+			v.actor.Pos.X = math.min(v.actor.Pos.X, self.RightMostSpawn);
+			v.actor.Pos.X = math.max(v.actor.Pos.X, self.LeftMostSpawn);
 		end
 	end
 	if UInputMan:KeyPressed(26) then --Print some stuff

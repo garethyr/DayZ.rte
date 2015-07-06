@@ -39,7 +39,7 @@ function ModularActivity:CheckForNewZombieTargets()
 		
 		--Get all the possible new targets
 		local possibletargets = {};
-		possibletargets.human = self:CheckForNearbyHumans(zombie.actor.Pos, 0, self.ZombieMaxTargetDistance) and self:NearestHuman(zombie.actor.Pos, 0, self.ZombieMaxTargetDistance) or nil;
+		possibletargets.human = self:CheckForNearbyHumans(zombie.actor.Pos, nil, 0, self.ZombieMaxTargetDistance) and self:NearestHuman(zombie.actor.Pos, nil, 0, self.ZombieMaxTargetDistance) or nil;
 		--If there are visible alerts, check if they can be used
 		if self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier, 0, self.ZombieMaxTargetDistance) then
 			--Determine whether all alerts can be used or only those that are set to override target priority
@@ -118,7 +118,7 @@ function ModularActivity:ManageZombieTargets()
 				end
 			--If we have a position target and the zombie's close to it, lose the target so the zombie can idle
 			elseif zombie.target.ttype == "pos" then
-				if not self:CheckForNearbyHumans(zombie.actor.Pos, 0, self.ZombieDespawnDistance) then
+				if not self:CheckForNearbyHumans(zombie.actor.Pos, nil, 0, self.ZombieDespawnDistance) then
 					local curdist = SceneMan:ShortestDistance(zombie.target.val.pos, zombie.actor.Pos, self.Wrap).Magnitude;
 					if zombie.target.val.weight == 0 or curdist <= self.ZombieIdleDistance then
 					
@@ -161,7 +161,7 @@ end
 --Despawn any zombies with no target and nearby alerts or humans
 function ModularActivity:DespawnTargetlessZombies()
 	for k, zombie in pairs(self.ZombieTable) do
-		if not zombie.target.val and not self:CheckForNearbyHumans(zombie.actor.Pos, 0, self.ZombieDespawnDistance) and not self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier) then
+		if not zombie.target.val and not self:CheckForNearbyHumans(zombie.actor.Pos, nil, 0, self.ZombieDespawnDistance) and not self:RequestAlerts_CheckForVisibleAlerts(zombie.actor.Pos, self.ZombieAlertAwarenessModifier) then
 			print ("Kill zombie "..tostring(zombie.actor.UniqueID).." because it has no target and no nearby humans or visible alerts");
 			zombie.actor.ToDelete = true;
 			self:RemoveFromZombieTable(zombie.actor);

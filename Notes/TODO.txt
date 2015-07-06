@@ -49,6 +49,9 @@
 • Use B32 features to detect when weapons are used with perfect accuracy, and apply that to all weapon use scripts
 • Update the flashlight so it uses new scripts and is more useable
 • Fix used items so their action disabling actually works (i.e can't swap away from the weapon or fire it again or anything)
+• Determine whether or not ammo should at all be paired with weapons. I.e. if a certain weapon is spawned, should there be a higher %chance of spawning its ammo AND/OR should any ammo spawned have a higher %chance of being for that weapon?
+• Consolidate all the weapon and ammo lists into one list that is then used in the rest
+	I.e. make a weapon list (split into civ and mil) containing the weapon name and its ammo. Use this list to populate the loot lists by simple iteration and populate the alert weapon list by iterating through it for all the keys and then using a table to call a function that fills in its alert value if the weapon exists, or prints an error message if it doesn't (this way any screwups will be noted)
 
 • Make custom zombie AI (bleh)
 • Maybe allow behaviour targets to allow for different types of zombies, e.g. bloodhound zombie which would have a bonus to weight for human targets, or forgetful zombie which would have a mallus to weight for all targets and would change targets more often

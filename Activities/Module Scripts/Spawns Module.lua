@@ -4,10 +4,14 @@
 --Setup
 function ModularActivity:StartSpawns()
 	--------------------------
+	--GENERAL SPAWN CONSTANTS--
+	--------------------------
+	self.MaxNumberOfSpawnSafetyCheckAttempts = 3; --The maximum number of times spawn safety checking should try to find another safe spot, if it hasn't found one already. Limited to avoid infinite or overly long loops
+
+	--------------------------
 	--ZOMBIE SPAWN CONSTANTS--
 	--------------------------
 	--General
-	self.MaxNumberOfSpawnSafetyCheckAttempts = 3; --The maximum number of times spawn safety checking should try to find another safe spot, if it hasn't found one already. Limited to avoid infinite or overly long loops
 	self.ZombieSpawnInterval = 90000; --General purpose spawn interval used for various specific ones
 	self.ZombieSpawnMinDistance = FrameMan.PlayerScreenWidth/2 + 100; --Minimum spawn distance for all zombies, no specific minimum spawn should be less than this
 	self.ZombieSpawnMaxDistance = FrameMan.PlayerScreenWidth/2 + 300; --Maximum spawn distance for all zombies, specific maximum spawns can be greater than this
@@ -35,7 +39,7 @@ end
 --------------------
 --CREATE FUNCTIONS--
 --------------------
---Spawn 3 zombies in the area
+--Spawn a zombie in the area and return it for use
 --Spawners: alert - the actual alert table value, "loot" - spawned for loot guarding
 --TargetTypes: human, alert, pos - the first is for any actor triggered spawn, the second for alert and the third for static position
 --Note that pos targets are passed in as a table: {pos = Vector(), weight = number}
@@ -53,9 +57,9 @@ function ModularActivity:SpawnZombie(spawnpos, targetval, targettype, spawner)
 		--Note that spawner can be the same as targetval, but is not always
 		if type(spawner) == "table" then --Table spawners are only alerts,
 			local offset = spawnpos;
-			actor.Pos = self:GetSafeRandomSpawnPosition(targetpos, offset, 10, true, 0); --Less randomness and grounding on alert spawns
+			actor.Pos = self:GetSafeRandomSpawnPosition(targetpos, offset, 10, true); --Less randomness and grounding on alert spawns
 		elseif spawner == "loot" then
-			actor.Pos = self:GetSafeRandomSpawnPosition(spawnpos, 0, 30, false, 0); --More randomness on loot spawns
+			actor.Pos = self:GetSafeRandomSpawnPosition(spawnpos, 0, 30, false); --More randomness on loot spawns
 		end
 		print ("After safety adjustments, zombie spawned at "..tostring(actor.Pos));
 		
@@ -78,13 +82,13 @@ function ModularActivity:DoLootZombieSpawning()
 	local target, nearhumans, nearalerts;
 	for i, v in ipairs(self.SpawnLootZombieArea) do
 		if self.SpawnLootZombieTimer[i]:IsPastSimMS(self.SpawnLootZombieInterval) then
-			nearhumans = self:CheckForNearbyHumans(v:GetCenterPoint(), self.SpawnLootZombieMinDistance, self.SpawnLootZombieMaxDistance);
+			nearhumans = self:CheckForNearbyHumans(v:GetCenterPoint(), nil, self.SpawnLootZombieMinDistance, self.SpawnLootZombieMaxDistance);
 			nearalerts = self:RequestAlerts_CheckForVisibleAlerts(v:GetCenterPoint(), self.ZombieAlertAwarenessModifier, self.SpawnLootZombieMinDistance, self.SpawnLootZombieMaxDistance);
 			--Get the spawn target if there are nearby humans or alerts
 			if nearhumans or nearalerts then
 				--Human targets take priority - for an alert target to take priority it would have to be made before a human started it
 				if nearhumans then
-					target = self:NearestHuman(v:GetCenterPoint(), self.SpawnLootZombieMinDistance, self.SpawnLootZombieMaxDistance);
+					target = self:NearestHuman(v:GetCenterPoint(), nil, self.SpawnLootZombieMinDistance, self.SpawnLootZombieMaxDistance);
 					for j = 1, math.random(1, self.SpawnLootZombieMaxGroupSize) do
 						self:SpawnZombie(v:GetCenterPoint(), target, "human", "loot");
 					end
@@ -106,7 +110,10 @@ end
 --ACTION FUNCTIONS--
 --------------------
 --Return a safe spawn position (minimum spawn distance away from any humans), with an inputted random offset for position
-function ModularActivity:GetSafeRandomSpawnPosition(spawnpos, offset, randomoffsetrange, movetoground, repeatcount)
+function ModularActivity:GetSafeRandomSpawnPosition(spawnpos, offset, randomoffsetrange, movetoground)
+	return self:GetSafeRandomSpawnPositionRecurse(spawnpos, offset, randomoffsetrange, movetoground, 0);
+end
+function ModularActivity:GetSafeRandomSpawnPositionRecurse(spawnpos, offset, randomoffsetrange, movetoground, repeatcount)
 	local resultpos = spawnpos;
 	local randoffset = math.random(-randomoffsetrange, randomoffsetrange);
 	local viable = false;
@@ -114,15 +121,15 @@ function ModularActivity:GetSafeRandomSpawnPosition(spawnpos, offset, randomoffs
 	--See if the offset spawnpos is viable in either direction (i.e. not near humans and within the map specific outer side spawn boundaries)
 	for i = -1, 1, 2 do --Try offseting by positive and negative offset + randoffset
 		resultpos = Vector(spawnpos.X + offset*i + randoffset, spawnpos.Y);
-		if self:CheckForNearbyHumans(resultpos, 0, self.ZombieSpawnMinDistance) == false and resultpos.X > self.LeftMostSpawn and resultpos.X < self.RightMostSpawn then
+		if self:CheckForNearbyHumans(resultpos, "Players", 0, self.ZombieSpawnMinDistance) == false and resultpos.X > self.LeftMostSpawn and resultpos.X < self.RightMostSpawn then
 			viable = true;
 			break;
 		end
 	end
 	--If the position found wasn't viable, try using the position of the nearest human, offset by ZombieSpawnMinDistance
 	if not viable and repeatcount < self.MaxNumberOfSpawnSafetyCheckAttempts then
-		local humanactor = self:NearestHuman(resultpos, 0, self.ZombieSpawnMinDistance);
-		resultpos = self:GetSafeRandomSpawnPosition(humanactor.Pos, self.ZombieSpawnMinDistance, randomoffsetrange, movetoground, repeatcount + 1);
+		local humanactor = self:NearestHuman(resultpos, nil, 0, self.ZombieSpawnMinDistance);
+		resultpos = self:GetSafeRandomSpawnPositionRecurse(humanactor.Pos, self.ZombieSpawnMinDistance, randomoffsetrange, movetoground, repeatcount + 1);
 	end
 	--Move the point to ground if necessary
 	if movetoground then

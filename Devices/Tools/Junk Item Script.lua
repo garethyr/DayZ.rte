@@ -13,3 +13,12 @@ function Destroy(self)
 		self.ActivityToCheck:AddAlertFromAlertItem(self);
 	end
 end
+
+function SilentlyDiscard(actor)
+	actor = ToAHuman(actor);
+	print ("Silent discard for "..tostring(actor).." with equipped item "..tostring (actor.EquippedItem));
+	if actor.EquippedItem ~= nil then
+		actor.EquippedItem.ToDelete = true;
+		actor:GetController():SetState(Controller.WEAPON_CHANGE_PREV, true);
+	end
+end

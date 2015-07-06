@@ -64,7 +64,7 @@ function ModularActivity:StartLoot()
 							create = function(name) return CreateHeldDevice(name, self.RTE) end};
 	
 	--This table stores all military weapons names
-	self.LootMWeaponTable = {"[DZ] G17", "[DZ] AKM", "[DZ] M16A2", "[DZ] MP5SD6", "[DZ] M4A1 CCO SD", "[DZ] Mk 48 Mod 0", "[DZ] M14 AIM", {name = "[DZ] M107", chance = 0.25},
+	self.LootMWeaponTable = {"[DZ] G17", "[DZ] AKM", "[DZ] M16A2", "[DZ] M4A1 CCO SD", "[DZ] MP5SD6", "[DZ] Mk 48 Mod 0", "[DZ] M14 AIM", {name = "[DZ] M107", chance = 0.25},
 							create = function(name) return CreateHDFirearm(name, self.RTE) end};
 
 	--This table stores the spawn chances for each type of loot item, based on the lootset of the area
@@ -142,7 +142,7 @@ end
 function ModularActivity:DoLootDespawns()
 	for areanum, tab in ipairs(self.LootTable) do
 		for _, item in ipairs(tab) do
-			if item.Age > self.LootLifetime and not self:CheckForNearbyHumans(item.Pos, 0, LootSpawnMaxDistance) then
+			if item.Age > self.LootLifetime and not self:CheckForNearbyHumans(item.Pos, nil, 0, LootSpawnMaxDistance) then
 				item.ToDelete = true; --Delete it, it will be removed in the cleanup function
 			end
 		end
@@ -175,7 +175,7 @@ function ModularActivity:DoLootSpawning()
 	for i, v in ipairs(self.LootAreas) do
 		--If there's no loot in the area, a player nearby but not too close and the timer's ready, spawn loot
 		if v.filled == false and self.LootTimer[i]:IsPastSimMS(self.LootInterval) then
-			if self:CheckForNearbyHumans(v.area:GetCenterPoint(), self.LootSpawnMinDistance, self.LootSpawnMaxDistance) then
+			if self:CheckForNearbyHumans(v.area:GetCenterPoint(), nil, self.LootSpawnMinDistance, self.LootSpawnMaxDistance) then
 				if math.random() < (self.LootSpawnChance + RangeRand(0, self.LootSpawnChanceModifier)) then
 					for j = self.LootMinSpawnAmount, math.random(self.LootMinSpawnAmount, self.LootMaxSpawnAmount) do
 						self:SpawnLoot(v.area, i, v.lootSet);

@@ -75,14 +75,16 @@ end
 -----------------------------------------------------------------------------------------
 -- Return true if there is a human more than mindist and less than maxdist away from the passed in pos
 -----------------------------------------------------------------------------------------
-function ModularActivity:CheckForNearbyHumans(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+function ModularActivity:CheckForNearbyHumans(pos, humantype, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	local mindist, maxdist = self:SortMaxAndMinArguments({...});
 	local dist;
-	for _, humantable in pairs(self.HumanTable) do
-		for __, v in pairs(humantable) do
-			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
-			if dist >= mindist and dist <= maxdist then
-				return true;
+	for htype, humantable in pairs(self.HumanTable) do
+		if (humantype == nil or humantype == htype) then
+			for _, v in pairs(humantable) do
+				dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
+				if dist >= mindist and dist <= maxdist then
+					return true;
+				end
 			end
 		end
 	end
@@ -91,16 +93,47 @@ end
 -----------------------------------------------------------------------------------------
 -- Find the nearest human, more than mindist and less than maxdist to a point. Returns nil if none found
 -----------------------------------------------------------------------------------------
-function ModularActivity:NearestHuman(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+function ModularActivity:NearestHuman(pos, humantype, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	local mindist, maxdist = self:SortMaxAndMinArguments({...});
 	local dist, target;
-	for _, humantable in pairs(self.HumanTable) do
-		for __, v in pairs(humantable) do
-			dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
-			if dist >= mindist and dist <= maxdist then
-				maxdist = dist;
-				target = v.actor;
+	for htype, humantable in pairs(self.HumanTable) do
+		if (humantype == nil or humantype == htype) then
+			for _, v in pairs(humantable) do
+				dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
+				if dist >= mindist and dist <= maxdist then
+					maxdist = dist;
+					target = v.actor;
+				end
 			end
+		end
+	end
+	return target;
+end
+-----------------------------------------------------------------------------------------
+-- Return true if there is a zombie more than mindist and less than maxdist away from the passed in pos
+-----------------------------------------------------------------------------------------
+function ModularActivity:CheckForNearbyZombies(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+	local mindist, maxdist = self:SortMaxAndMinArguments({...});
+	local dist;
+	for _, v in pairs(self.ZombieTable) do
+		dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
+		if dist >= mindist and dist <= maxdist then
+			return true;
+		end
+	end
+	return false;
+end
+-----------------------------------------------------------------------------------------
+-- Find the nearest zombie, more than mindist and less than maxdist to a point. Returns nil if none found
+-----------------------------------------------------------------------------------------
+function ModularActivity:NearesZombie(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+	local mindist, maxdist = self:SortMaxAndMinArguments({...});
+	local dist, target;
+	for _, v in pairs(self.ZombieTable) do
+		dist = SceneMan:ShortestDistance(pos, v.actor.Pos, self.Wrap).Magnitude;
+		if dist >= mindist and dist <= maxdist then
+			maxdist = dist;
+			target = v.actor;
 		end
 	end
 	return target;

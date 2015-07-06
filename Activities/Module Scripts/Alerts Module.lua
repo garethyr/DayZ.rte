@@ -93,7 +93,7 @@ function ModularActivity:StartAlerts()
 		--Civilian weapon alert values
 		["Hunting Knife"] = 0, ["Crowbar"] = 0, ["Hatchet"] = 0, ["[DZ] Makarov PM"] = self.WeaponActivityLevels.L, ["[DZ] .45 Revolver"] = self.WeaponActivityLevels.LM, ["[DZ] M1911A1"] = self.WeaponActivityLevels.LM, ["[DZ] Compound Crossbow"] = self.WeaponActivityLevels.N, ["[DZ] MR43"] = self.WeaponActivityLevels.M, ["[DZ] Winchester 1866"] = self.WeaponActivityLevels.LM, ["[DZ] Lee Enfield"] = self.WeaponActivityLevels.VH, ["[DZ] CZ 550"] = self.WeaponActivityLevels.VH,
 		--Military weapons and their alert values
-		["[DZ] G17"] = self.WeaponActivityLevels.L, ["[DZ] AKM"] = self.WeaponActivityLevels.M, ["[DZ] M16A2"] = self.WeaponActivityLevels.M, ["[DZ] MP5SD6"] = self.WeaponActivityLevels.VVL, ["[DZ] M4A1 CCO SD"] = self.WeaponActivityLevels.VL, ["[DZ] Mk 48 Mod 0"] = self.WeaponActivityLevels.H, ["[DZ] M14 AIM"] = self.WeaponActivityLevels.H, ["[DZ] M107"] = self.WeaponActivityLevels.VH
+		["[DZ] G17"] = self.WeaponActivityLevels.L, ["[DZ] AKM"] = self.WeaponActivityLevels.M, ["[DZ] M16A2"] = self.WeaponActivityLevels.M, ["[DZ] M4A1 CCO SD"] = self.WeaponActivityLevels.VL, ["[DZ] MP5SD6"] = self.WeaponActivityLevels.VVL, ["[DZ] Mk 48 Mod 0"] = self.WeaponActivityLevels.H, ["[DZ] M14 AIM"] = self.WeaponActivityLevels.H, ["[DZ] M107"] = self.WeaponActivityLevels.VH
 	};
 	
 	------------------------

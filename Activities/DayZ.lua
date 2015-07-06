@@ -426,6 +426,11 @@ function DayZ:DoActorChecksAndCleanup()
 				if c:IsState(Controller.WEAPON_DROP) or c:IsState(Controller.WEAPON_PICKUP) or c:IsState(Controller.WEAPON_CHANGE_PREV) or c:IsState(Controller.WEAPON_CHANGE_NEXT) then
 					v.rounds = 0;
 				end
+				--If it's an NPC, set its ammo pool to its clipsize
+				if humantype == "NPCs" and v.actor.EquippedItem ~= nil and v.actor.EquippedItem.ClassName == "HDFirearm" then
+					local num = ToHDFirearm(v.actor.EquippedItem).Magazine ~= nil and ToHDFirearm(v.actor.EquippedItem).Magazine.Capacity or 10;
+					v.actor.EquippedItem.Sharpness = num;
+				end
 			end
 		end
 	end

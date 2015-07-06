@@ -40,6 +40,8 @@ function ModularActivity:StartSceneLoading()
 	self.NumberOfShelterAreas = 0; --The number of shelter areas, places players and NPCs can use to avoid getting sickness due to bad weather
 	self.NumberOfAudioCivilizationAreas = 0; --The number of areas where civilization localized audio will play instead of nature localized audio
 	self.NumberOfAudioBeachAreas = 0; --The number of areas where beach localized audio will play instead of nature localized audio
+	self.NumberOfNPCPatrolSpawnAreas = 0; --The number of spawn areas for NPC patrols
+	self.NumberOfNPCAmbushSpawnAreas = 0; --The number of spawn areas for ambushing NPCs
 
 	--Transition and Spawn Areas
 	self.TransitionAreas = {}; --The various scene transition areas in the current scene,
@@ -98,7 +100,9 @@ function ModularActivity:StartSceneLoading()
 			["LootZombieSpawnAreas"] = function(self, val) self.NumberOfLootZombieSpawnAreas = val end,
 			["ShelterAreas"] = function(self, val) self.NumberOfShelterAreas = val end,
 			["AudioCivilizationAreas"] = function(self, val) self.NumberOfAudioCivilizationAreas = val end,
-			["AudioBeachAreas"] = function(self, val) self.NumberOfAudioBeachAreas = val end
+			["AudioBeachAreas"] = function(self, val) self.NumberOfAudioBeachAreas = val end,
+			["NPCPatrolSpawnAreas"] = function(self, val) self.NumberOfNPCPatrolSpawnAreas = val end,
+			["NPCAmbushSpawnAreas"] = function(self, val) self.NumberOfNPCAmbushSpawnAreas = val end
 		},
 		
 		["PLAYER SPAWNS"] = {

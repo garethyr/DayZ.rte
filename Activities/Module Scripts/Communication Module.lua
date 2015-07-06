@@ -153,6 +153,21 @@ function ModularActivity:NotifyMany_DeadHuman(humantype, player, ID, alert)
 	if self.IncludeIcons and self.MeterTable[ID] ~= nil then
 		self:IconsRemoveMeters(ID);
 	end
+	if self.IncludeSpawns and humantype == "NPCs" then
+		local found = true;
+		--Clean the actor out of the ambushing set if it's an ambusher
+		for i, v in ipairs(self.SpawnNPCAmbushActors) do
+			if self.SpawnNPCAmbushActors[i].UniqueID == ID then
+				self.SpawnNPCAmbushActors[i] = nil;
+				found = false;
+				break;
+			end
+		end
+		--Otherwise clean it out from the patrol set
+		if not found then
+			self.SpawnNPCPatrolActors[ID] = nil;
+		end
+	end
 	if self.IncludeBehaviours then
 		self:RemoveZombieTargetsForDeadActor(ID);
 	end
@@ -161,6 +176,7 @@ function ModularActivity:NotifyMany_DeadHuman(humantype, player, ID, alert)
 	end
 	if humantype == "Players" then
 		print ("humantype for "..tostring(ID).." is "..tostring(humantype));
+		self.NightsSurvived = 0; --Reset nights survived on death
 		self:AddPlayerToRespawnTable(self:CreateNewPlayerActor(player), player);
 	end
 end

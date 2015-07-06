@@ -172,7 +172,7 @@ function ModularActivity:AddToNPCTable(actor)
 			light = {current = 0, total = 0, timer = Timer()},
 		}
 	};
-	self:RequestSustenance_AddToSustenanceTable(actor);
+	--self:RequestSustenance_AddToSustenanceTable(actor);
 end
 -- Add a zombie
 function ModularActivity:AddToZombieTable(actor, targetval, targettype, spawner, startdist)

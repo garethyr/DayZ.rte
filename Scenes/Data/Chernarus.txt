@@ -23,6 +23,8 @@ LootZombieSpawnAreas = 26
 ShelterAreas = 20
 AudioCivilizationAreas = 5
 AudioBeachAreas = 2
+NPCPatrolSpawnAreas = 1
+NPCAmbushSpawnAreas = 6
 
 ||PLAYER SPAWNS
 PlayerSpawnAreas = 4

@@ -23,6 +23,8 @@ LootZombieSpawnAreas = 0
 ShelterAreas = 0
 AudioCivilizationAreas = 0
 AudioBeachAreas = 0
+NPCPatrolSpawnAreas = 0
+NPCAmbushSpawnAreas = 0
 
 ||PLAYER SPAWNS
 PlayerSpawnAreas = 2

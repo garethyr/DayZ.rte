@@ -56,9 +56,13 @@ function ModularActivity:CreateNewPlayerActor(player)
 	actor:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
 	actor:AddInventoryItem(CreateHeldDevice(".45 ACP Speedloader" , self.RTE));
 	actor:AddInventoryItem(CreateHDFirearm("Hunting Knife" , self.RTE));
-	actor:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
-	actor:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
-	actor:AddInventoryItem(CreateTDExplosive("Flare" , self.RTE));
+	if self.IncludeSustenance then
+		actor:AddInventoryItem(CreateHDFirearm("Baked Beans" , self.RTE));
+		actor:AddInventoryItem(CreateHDFirearm("Coke" , self.RTE));
+	end
+	if self.IncludeDayNight then
+		actor:AddInventoryItem(CreateTDExplosive("Flare" , self.RTE));
+	end
 	if self.IncludeFlashlight then
 		self:AddFlashlightForActor(actor);
 	end
@@ -72,11 +76,14 @@ function ModularActivity:CreateNewPlayerActor(player)
 end
 function ModularActivity:SpawnPlayerActors(spawnareanum)
 	for i, v in ipairs(self.PlayerRespawnTable) do
-		self:SpawnPlayerActor(spawnareanum, v.actor, v.player, v.args, i); --Note: the last argument here is a position modifier, it is not necessarily equal to the table index in all cases
-		table.remove(self.PlayerRespawnTable, i);
+		self:SpawnPlayerActorAndRemoveFromRespawnTable(i, spawnareanum, v.actor, v.player, v.args, i); --Note: the last argument here is a position modifier, it is not necessarily equal to the table index in all cases
 	end
 end
-function ModularActivity:SpawnPlayerActor(spawnareanum, actor, player, args, positionmodifier) --Setting spawnarea as -1 defaults to DefaultPlayerSpawnArea, and for safety, a nil value defaults to spawn area 1
+function ModularActivity:SpawnPlayerActorAndRemoveFromRespawnTable(tableindex, spawnareanum, actor, player, args, positionmodifier)
+	self:SpawnPlayerActorWithoutRemovingFromRespawnTable(spawnareanum, actor, player, args, positionmodifier);
+	table.remove(self.PlayerRespawnTable, tableindex);
+end
+function ModularActivity:SpawnPlayerActorWithoutRemovingFromRespawnTable(spawnareanum, actor, player, args, positionmodifier) --Setting spawnarea as -1 defaults to DefaultPlayerSpawnArea, and for safety, a nil value defaults to spawn area 1
 	if spawnareanum == -1 then
 		spawnareanum = self.DefaultPlayerSpawnAreaNumber;
 	end

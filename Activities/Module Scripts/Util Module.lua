@@ -126,7 +126,7 @@ end
 -----------------------------------------------------------------------------------------
 -- Find the nearest zombie, more than mindist and less than maxdist to a point. Returns nil if none found
 -----------------------------------------------------------------------------------------
-function ModularActivity:NearesZombie(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
+function ModularActivity:NearestZombie(pos, ...) --Optional args: [1] - Minimum distance, [2] - Maximum distance
 	local mindist, maxdist = self:SortMaxAndMinArguments({...});
 	local dist, target;
 	for _, v in pairs(self.ZombieTable) do

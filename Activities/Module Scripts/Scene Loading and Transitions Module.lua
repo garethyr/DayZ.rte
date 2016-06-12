@@ -282,7 +282,7 @@ end
 function ModularActivity:DoSceneTransition(target, playerspawnareanum)
 	local stateandtime = self:RequestDayNight_GetCurrentStateAndTime() or {};
 	self.TransitionAreas = {};
-	self:SavePlayersForTransition();
+	self:SavePlayersForTransition(true, true); --Save players and save their health and wounds
 	
 	SceneMan:LoadScene(target, true); --Load the actual scene
 	self.Wrap = SceneMan.SceneWrapsX;
@@ -303,21 +303,21 @@ function ModularActivity:DoSceneTransition(target, playerspawnareanum)
 	self.D = self.D + 1;
 end
 --Save players so they keep their stats on scene transitions
-function ModularActivity:SavePlayersForTransition()
+function ModularActivity:SavePlayersForTransition(savehealth, savewounds)
 	self.TransitionHumanTable = {};
 	for k, v in pairs(self.HumanTable.Players) do
-		self:SavePlayerForTransition(v.actor);
+		self:SavePlayerForTransition(v.actor, savehealth, savewounds);
 	end
 end
 --Save a player for transition to keep its stats
-function ModularActivity:SavePlayerForTransition(actor)
-	table.insert(self.TransitionHumanTable, {name = actor.PresetName, team = actor.Team, health = actor.Health, sharpness = actor.Sharpness, player = actor:GetController().Player, sust = {}, wounds = {}, inventory = {}});
+function ModularActivity:SavePlayerForTransition(actor, savehealth, savewounds)
+	table.insert(self.TransitionHumanTable, {name = actor.PresetName, team = actor.Team, health = savehealth and actor.Health or actor.MaxHealth, sharpness = actor.Sharpness, player = actor:GetController().Player, sust = {}, wounds = {}, inventory = {}});
 	--Add the player's sust
 	for susttype, sustamount in pairs(self:RequestSustenance_GetSustenanceValuesForID(actor.UniqueID)) do
 		self.TransitionHumanTable[#self.TransitionHumanTable].sust[susttype] = sustamount;
 	end
 	--Add the player's wounds
-	if DayZHumanWoundTable ~= nil and DayZHumanWoundTable[actor.UniqueID] ~= nil then
+	if savewounds and DayZHumanWoundTable ~= nil and DayZHumanWoundTable[actor.UniqueID] ~= nil then
 		for ID, wound in pairs(DayZHumanWoundTable[actor.UniqueID].wounds) do
 			table.insert(self.TransitionHumanTable[#self.TransitionHumanTable].wounds, {name = wound.PresetName, offset = wound.ParentOffset});
 		end
@@ -365,6 +365,7 @@ function ModularActivity:LoadPlayersAfterTransition()
 			local wound = CreateAEmitter(tablewound.name);
 			if wound ~= nil and wound.ClassName ~= "Entity" then
 				newactor:AttachEmitter(wound, tablewound.offset, true);
+				
 			end
 		end
 		--Add inventory

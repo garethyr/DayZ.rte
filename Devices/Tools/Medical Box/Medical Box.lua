@@ -52,8 +52,8 @@ end
 
 function MedicalBoxActivityRespawn(oldactor, player, activity) --TODO this only works for players at the moment as it needs to be implemented for NPCs too. A lot of similar functions can probably be reused
 	print ("Activity based respawn from medbox");
-	--Save and load the actor
-	activity:SavePlayerForTransition(oldactor);
+	--Save the actor but don't save his health or wounds, then force load him
+	activity:SavePlayerForTransition(oldactor, false, false);
 	activity:LoadPlayersAfterTransition();
 	
 	--Get the human table entry for the old actor and the respawn table entry for the new actor
@@ -64,18 +64,8 @@ function MedicalBoxActivityRespawn(oldactor, player, activity) --TODO this only 
 	--Add any alert and activity values to the new actor's respawn table args so they'll be automatically moved over on spawning
 	respawntableentry.args.activity = oldhumantableentry.activity;
 	respawntableentry.args.alert = oldhumantableentry.alert;
-	activity:SpawnPlayerActor(nil, newactor, player, respawntableentry.args, 0);
+	activity:SpawnPlayerActorWithoutRemovingFromRespawnTable(nil, newactor, player, respawntableentry.args, 0);
 	table.remove(activity.PlayerRespawnTable, #activity.PlayerRespawnTable);
-	
-	--Remove wounds and set health to max
-	newactor.Health = newactor.MaxHealth;
-	if DayZHumanWoundTable ~= nil and DayZHumanWoundTable[newactor.UniqueID] ~= nil then
-		for _, wound in pairs(DayZHumanWoundTable[newactor.UniqueID].wounds) do
-			wound:EnableEmission(false);
-			wound.ToDelete = true;
-		end
-		DayZHumanWoundTable[oldactor.UniqueID] = nil;
-	end
 	
 	--Delete the old actor and remove it from whichever human table it was in, so it doesn't get removed by the activity and trigger communications
 	oldactor.ToDelete = true;

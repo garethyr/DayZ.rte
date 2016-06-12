@@ -109,3 +109,4 @@
 • Allowed alert zombie spawning to be disabled in the scene datafile to allow for maps where only special zombies should spawn.
 • Fixed bug where localized sounds (e.g. seagulls) would spam incessantly when the player actor was not actually selected.
 • Fixed recursive GetSafeRandomSpawn causing infinite loops by placing a limit on its repetition, allowing it to be used.
+• Fixed medical box not properly healing and removing wounds and, to do so, added the option to heal actors' wounds or health when they travel from scene to scene or are otherwise saved and loaded

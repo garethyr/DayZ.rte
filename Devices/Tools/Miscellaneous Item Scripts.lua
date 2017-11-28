@@ -10,9 +10,10 @@ function HasParent(self)
 	--Various parent checks
 	--If we have no parent or no non-self root
 	if self.Parent == nil or self.RootID == self.ID or self.RootID == 255 then
-		--Check if there's a parent to be had
+		--Check if there's a parent to be had and set it if there is
 		if self.RootID ~= 255 and self.RootID ~= self.ID and MovableMan:IsActor(MovableMan:GetMOFromID(self.RootID)) then
 			self.Parent = ToActor(MovableMan:GetMOFromID(self.RootID));
+			return true;
 		else
 			self.Parent = nil;
 		end
